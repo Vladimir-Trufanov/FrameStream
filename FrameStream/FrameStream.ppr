@@ -36,15 +36,16 @@ FrameStream
 4=stream32.h
 5=inimem.h
 6=sd.h
+7=hwifi.h
 [Selected Project Files]
 Main=
-Selected=errors.txt
+Selected=hwifi.h
 [FrameStream.ino]
-TopLine=430
-Caret=7,442
+TopLine=509
+Caret=1,529
 [CameraServer.h]
-TopLine=1232
-Caret=7,1269
+TopLine=1045
+Caret=18,883
 [errors.txt]
 TopLine=1
 Caret=1,37
@@ -60,3 +61,6 @@ Caret=6,54
 [sd.h]
 TopLine=232
 Caret=13,258
+[hwifi.h]
+TopLine=53
+Caret=7,68

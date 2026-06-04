@@ -58,6 +58,7 @@ void print_sock(int sock);
 //static esp_err_t reindex_handler(httpd_req_t *req); 
 //static esp_err_t edit_handler(httpd_req_t *req); 
 //static esp_err_t ota_handler(httpd_req_t *req);
+
 static esp_err_t status_handler(httpd_req_t *req); 
 static esp_err_t find_handler(httpd_req_t *req); 
 static esp_err_t start_handler(httpd_req_t *req); 
@@ -69,6 +70,7 @@ static esp_err_t sphotos_handler(httpd_req_t *req);
 static esp_err_t fphotos_handler(httpd_req_t *req); 
 static esp_err_t photos_handler(httpd_req_t *req); 
 static esp_err_t capture_handler(httpd_req_t *req); 
+
 static esp_err_t index_handler(httpd_req_t *req); 
 
 /*static esp_err_t delete_handler(httpd_req_t *req) 
@@ -1109,6 +1111,7 @@ void startCameraServer()
     return ESP_OK;
   }
   */
+  
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.max_uri_handlers = 17; //61.3 from 12
   config.stack_size = 4096 + 1024 + 1024 + 1024;
@@ -1135,6 +1138,8 @@ void startCameraServer()
     .handler   = index_handler,
     .user_ctx  = NULL
   };
+  
+  /*
   httpd_uri_t capture_uri = 
   {
     .uri       = "/capture",
@@ -1214,6 +1219,7 @@ void startCameraServer()
     .handler   = status_handler,
     .user_ctx  = NULL
   };
+  */
   /*61.3
   httpd_uri_t delete_uri = 
   {
@@ -1253,18 +1259,18 @@ void startCameraServer()
   if (httpd_start(&camera_httpd, &config) == ESP_OK) 
   {
     httpd_register_uri_handler(camera_httpd, &index_uri);
-    httpd_register_uri_handler(camera_httpd, &capture_uri);
-    httpd_register_uri_handler(camera_httpd, &photos_uri);
-    httpd_register_uri_handler(camera_httpd, &fphotos_uri);
-    httpd_register_uri_handler(camera_httpd, &sphotos_uri);
-    httpd_register_uri_handler(camera_httpd, &reboot_uri);
-    httpd_register_uri_handler(camera_httpd, &restart_uri);
-    httpd_register_uri_handler(camera_httpd, &time_uri);
-    httpd_register_uri_handler(camera_httpd, &start_uri);
-    httpd_register_uri_handler(camera_httpd, &stop_uri);
+    //httpd_register_uri_handler(camera_httpd, &capture_uri);
+    //httpd_register_uri_handler(camera_httpd, &photos_uri);
+    //httpd_register_uri_handler(camera_httpd, &fphotos_uri);
+    //httpd_register_uri_handler(camera_httpd, &sphotos_uri);
+    //httpd_register_uri_handler(camera_httpd, &reboot_uri);
+    //httpd_register_uri_handler(camera_httpd, &restart_uri);
+    //httpd_register_uri_handler(camera_httpd, &time_uri);
+    //httpd_register_uri_handler(camera_httpd, &start_uri);
+    //httpd_register_uri_handler(camera_httpd, &stop_uri);
     //httpd_register_uri_handler(camera_httpd, &edit_uri); //61.3 index->camera
-    httpd_register_uri_handler(camera_httpd, &find_uri);
-    httpd_register_uri_handler(camera_httpd, &status_uri);
+    //httpd_register_uri_handler(camera_httpd, &find_uri);
+    //httpd_register_uri_handler(camera_httpd, &status_uri);
     //httpd_register_uri_handler(camera_httpd, &reindex_uri);
     //httpd_register_uri_handler(camera_httpd, &ota_uri);
   }

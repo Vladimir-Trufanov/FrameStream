@@ -65,6 +65,8 @@ bool initWiFi()
     if (WiFi.status() == WL_CONNECTED) 
     {
       sayln("\nWiFi подключен!");
+      Serial.println(WiFi.localIP()); 
+
       ssid = String(tssid); 
       pass = String(tpass);   
       Result=true;

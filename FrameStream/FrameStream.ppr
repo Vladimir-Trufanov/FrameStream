@@ -1,0 +1,71 @@
+[Config]
+Compilator.SaveAll=0
+Compilator.Capture=0
+Compilator.CompileOnBackground=0
+Compilator.ProgSaveAll=0
+Compilator.ProgRunSelection=0
+Compilator.LogType=0
+Compilator.LogEncoding=0
+DefaultDir=C:\KwinFlat\FrameStream\FrameStream
+DefaultCP=0
+LogtoEnd=1
+DontOpen=0
+AbsolutePath=0
+FileFormat=0
+ProjectFilesOnly=0
+HTServer=localhost
+Extensions=*.*
+[Project tree]
+FrameStream
+	+FrameStream
+		camera.h
+		CameraServer.h
+		eprom.h
+		errors.txt
+		FrameStream.ino
+		FrameStream.ppr
+		hwifi.h
+		inimem.h
+		sd.h
+		stream32.h
+		trass.h
+[Open project files]
+0=FrameStream.ino
+1=inimem.h
+2=errors.txt
+3=camera.h
+4=CameraServer.h
+5=hwifi.h
+6=trass.h
+7=sd.h
+8=eprom.h
+[Selected Project Files]
+Main=
+Selected=FrameStream.ino
+[FrameStream.ino]
+TopLine=324
+Caret=22,330
+[inimem.h]
+TopLine=82
+Caret=33,104
+[errors.txt]
+TopLine=34
+Caret=40,71
+[camera.h]
+TopLine=411
+Caret=10,379
+[CameraServer.h]
+TopLine=1115
+Caret=6,1063
+[hwifi.h]
+TopLine=132
+Caret=1,170
+[trass.h]
+TopLine=194
+Caret=1,230
+[sd.h]
+TopLine=37
+Caret=12,66
+[eprom.h]
+TopLine=42
+Caret=6,59

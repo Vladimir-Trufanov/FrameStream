@@ -328,7 +328,7 @@ void setup()
   // Запускаем задачи
   saymem("MEM - перед запуском Web-сервисов");
   startCameraServer();
-  //start_Stream_81_server();
+  start_Stream_81_server();
   //start_Stream_82_server();
  
   /*

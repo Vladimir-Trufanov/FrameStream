@@ -9,7 +9,8 @@
 
 #pragma once   
 
-/*
+#include "esp_http_server.h"
+
 #define PART_BOUNDARY "123456789000000000000987654321"
 
 static const char* _STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
@@ -303,36 +304,35 @@ void the_streaming_loop (void* pvParameter)
         if (res != ESP_OK) 
         {
           stream_81 = false;
-          jprln("Ошибка потока 81_STREAM_BOUNDARY: %d\n", res);
+          //jprln("Ошибка потока 81_STREAM_BOUNDARY: %d\n", res);
         }
       }
       // Трассируем каждый 10-ый кадр с расчетными данными по частоте кадров
       if (stream_81_frames % 100 == 10) 
       {
-        if (Lots_of_Stats) 
-        {
-           jprln("Поток 81: время = %3.3f сек, частота кадров = %3.3f кадров/сек", (float)(millis() - stream_81_start)/1000, (float)(stream_81_frames/((millis() - stream_81_start)/1000)));
-        }
+        //if (Lots_of_Stats) 
+        //{
+           //jprln("Поток 81: время = %3.3f сек, частота кадров = %3.3f кадров/сек", (float)(millis() - stream_81_start)/1000, (float)(stream_81_frames/((millis() - stream_81_start)/1000)));
+        //}
       }
       if (stream_82_frames % 100 == 10) 
       {
-        if (Lots_of_Stats) 
-        {
-          jprln("Поток 81: время = %3.3f сек, частота кадров = %3.1f кадров/сек", (float)(millis() - stream_82_start)/1000, (float)(stream_82_frames/((millis() - stream_82_start)/1000)));
-        }
+        //if (Lots_of_Stats) 
+        //{
+          //jprln("Поток 81: время = %3.3f сек, частота кадров = %3.1f кадров/сек", (float)(millis() - stream_82_start)/1000, (float)(stream_82_frames/((millis() - stream_82_start)/1000)));
+        //}
       }
       // Делаем задержку между кадрами в потоке
       int new_delay = 10; 
       if (millis() - send_time > 5000) 
       {
         new_delay = 1000;
-        jprln("Медленный доступ к Wi-Fi: отправка кадра %d мсек", millis() - send_time);
+        //jprln("Медленный доступ к Wi-Fi: отправка кадра %d мсек", millis() - send_time);
       }
       delay(new_delay); 
       start = millis();
     }
   }  
 }
-*/
 
 // ************************************************************* stream32.h ***

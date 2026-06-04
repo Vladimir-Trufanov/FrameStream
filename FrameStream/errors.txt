@@ -1,36 +1,23 @@
-Компиляция скетча...
-"C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp-x32\\2601/bin/xtensa-esp32-elf-g++" -MMD -c "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/cpp_flags" -w -Os -Werror=return-type -DF_CPU=240000000L -DARDUINO=10818 -DARDUINO_ESP32_DEV -DARDUINO_ARCH_ESP32 "-DARDUINO_BOARD=\"ESP32_DEV\"" "-DARDUINO_VARIANT=\"esp32\"" -DARDUINO_PARTITION_min_spiffs "-DARDUINO_HOST_OS=\"windows\"" "-DARDUINO_FQBN=\"esp32:esp32:esp32cam:CPUFreq=240,FlashMode=qio,PartitionScheme=min_spiffs,FlashFreq=80,DebugLevel=none,EraseFlash=none\"" -DESP32=ESP32 -DCORE_DEBUG_LEVEL=0 -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw -DARDUINO_USB_CDC_ON_BOOT=0 "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/defines" "-IC:\\FrameStream\\FrameStream" -iprefix "C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/include/" "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/includes" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/qio_qspi/include" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\cores\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\variants\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WiFi\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Network\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\FS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\SD_MMC\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\EEPROM\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WebServer\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\HTTPClient\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\NetworkClientSecure\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ArduinoOTA\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Update\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Hash\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ESPmDNS\\src" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_659018/build_opt.h" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_659018/file_opts" "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_659018\\sketch\\FrameStream.ino.cpp" -o "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_659018\\sketch\\FrameStream.ino.cpp.o"
-In file included from C:\FrameStream\FrameStream\FrameStream.ino:65:
-C:\FrameStream\FrameStream\sd.h: In function 'void delete_old_stuff()':
-sd.h:258:11: error: 'jpr' was not declared in this scope
-  258 |           jpr("Удален пустой каталог\n"); Serial.println("/" + the_dir);
-      |           ^~~
-In file included from C:\FrameStream\FrameStream\FrameStream.ino:69:
-C:\FrameStream\FrameStream\CameraServer.h: In function 'void startCameraServer()':
-CameraServer.h:1265:47: error: 'edit_uri' was not declared in this scope
- 1265 |     httpd_register_uri_handler(camera_httpd, &edit_uri); //61.3 index->camera
-      |                                               ^~~~~~~~
-CameraServer.h:1268:47: error: 'reindex_uri' was not declared in this scope; did you mean 'index_uri'?
- 1268 |     httpd_register_uri_handler(camera_httpd, &reindex_uri);
-      |                                               ^~~~~~~~~~~
-      |                                               index_uri
-CameraServer.h:1269:47: error: 'ota_uri' was not declared in this scope
- 1269 |     httpd_register_uri_handler(camera_httpd, &ota_uri);
-      |                                               ^~~~~~~
+In file included from C:\FrameStream\FrameStream\FrameStream.ino:68:
+C:\FrameStream\FrameStream\stream32.h: In function 'void the_streaming_loop(void*)':
+stream32.h:307:11: error: 'jprln' was not declared in this scope
+  307 |           jprln("Ошибка потока 81_STREAM_BOUNDARY: %d\n", res);
+      |           ^~~~~
+stream32.h:313:13: error: 'Lots_of_Stats' was not declared in this scope
+  313 |         if (Lots_of_Stats)
+      |             ^~~~~~~~~~~~~
+stream32.h:315:12: error: 'jprln' was not declared in this scope
+  315 |            jprln("Поток 81: время = %3.3f сек, частота кадров = %3.3f кадров/сек", (float)(millis() - stream_81_start)/1000, (float)(stream_81_frames/((millis() - stream_81_start)/1000)));
+      |            ^~~~~
+stream32.h:320:13: error: 'Lots_of_Stats' was not declared in this scope
+  320 |         if (Lots_of_Stats)
+      |             ^~~~~~~~~~~~~
+stream32.h:322:11: error: 'jprln' was not declared in this scope
+  322 |           jprln("Поток 81: время = %3.3f сек, частота кадров = %3.1f кадров/сек", (float)(millis() - stream_82_start)/1000, (float)(stream_82_frames/((millis() - stream_82_start)/1000)));
+      |           ^~~~~
+stream32.h:330:9: error: 'jprln' was not declared in this scope
+  330 |         jprln("Медленный доступ к Wi-Fi: отправка кадра %d мсек", millis() - send_time);
+      |         ^~~~~
 Несколько библиотек найдено для "WiFi.h"
  Используется: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi
-Не используется: C:\Program Files (x86)\Arduino\libraries\WiFi
-Используем библиотеку WiFi версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi 
-Используем библиотеку Network версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Network 
-Используем библиотеку FS версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\FS 
-Используем библиотеку SD_MMC версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\SD_MMC 
-Используем библиотеку EEPROM версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\EEPROM 
-Используем библиотеку WebServer версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WebServer 
-Используем библиотеку HTTPClient версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\HTTPClient 
-Используем библиотеку NetworkClientSecure версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\NetworkClientSecure 
-Используем библиотеку ArduinoOTA версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\ArduinoOTA 
-Используем библиотеку Update версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Update 
-Используем библиотеку Hash версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Hash 
-Используем библиотеку ESPmDNS версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\ESPmDNS 
-exit status 1
-'jpr' was not declared in this scope
+Не используется: C:\Program Files (x86)\Ardu

@@ -44,7 +44,7 @@ static esp_err_t stream_81_handler(httpd_req_t *req)
 {
   esp_err_t res;
   long start = millis();
-  print_mem("MEM - перед запуском stream_81_handler         ");
+  //print_mem("MEM - перед запуском stream_81_handler         ");
   req_81 = req;
   stream_81_frames = 0;
   stream_81_start = millis();
@@ -86,7 +86,7 @@ static esp_err_t stream_82_handler(httpd_req_t *req)
 {
   esp_err_t res;
   long start = millis();
-  print_mem("MEM - перед запуском stream_82_handler         ");
+  //print_mem("MEM - перед запуском stream_82_handler         ");
   stream_82_frames = 0;
   stream_82_start = millis();
   // Связываем идентификатор запроса с потоком the_streaming_loop через req_82 
@@ -185,7 +185,7 @@ void the_streaming_loop (void* pvParameter)
   uint8_t * _jpg_buf = NULL;
   char * part_buf[64];
   long start = millis();
-  print_mem("MEM - стартовала задача the_streaming_loop     ");
+  //print_mem("MEM - стартовала задача the_streaming_loop     ");
 
   while (true) 
   {

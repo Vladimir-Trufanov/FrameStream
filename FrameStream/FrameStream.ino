@@ -327,7 +327,7 @@ void setup()
   
   // Запускаем задачи
   saymem("MEM - перед запуском Web-сервисов");
-  //startCameraServer();
+  startCameraServer();
   //start_Stream_81_server();
   //start_Stream_82_server();
  
@@ -439,7 +439,7 @@ void loop()
   {
     last_wakeup = millis();
     Serial.println(" "); 
-    print_mem("---------- 10 Minute Internet Check -----------");
+    //print_mem("---------- 10 Minute Internet Check -----------");
     time(&now);
     jpr("Текущее время: "); jpr(ctime(&now));
     if (!InternetOff ) 

@@ -9,8 +9,6 @@
 
 #pragma once 
 
-/*
-
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
   #include <ESP8266WebServer.h>
@@ -25,6 +23,7 @@
 #include "lwip/sockets.h"
 #include <lwip/netdb.h>
 #include <ArduinoOTA.h>
+#include "esp_http_server.h"
 
 #include "inimem.h"
 #include "sd.h"
@@ -56,9 +55,9 @@ void stopCameraServer();
 void print_sock(int sock); 
 
 //static esp_err_t delete_handler(httpd_req_t *req); 
-static esp_err_t reindex_handler(httpd_req_t *req); 
-static esp_err_t edit_handler(httpd_req_t *req); 
-static esp_err_t ota_handler(httpd_req_t *req);
+//static esp_err_t reindex_handler(httpd_req_t *req); 
+//static esp_err_t edit_handler(httpd_req_t *req); 
+//static esp_err_t ota_handler(httpd_req_t *req);
 static esp_err_t status_handler(httpd_req_t *req); 
 static esp_err_t find_handler(httpd_req_t *req); 
 static esp_err_t start_handler(httpd_req_t *req); 
@@ -72,7 +71,7 @@ static esp_err_t photos_handler(httpd_req_t *req);
 static esp_err_t capture_handler(httpd_req_t *req); 
 static esp_err_t index_handler(httpd_req_t *req); 
 
-/ *static esp_err_t delete_handler(httpd_req_t *req) 
+/*static esp_err_t delete_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
 
@@ -85,7 +84,7 @@ static esp_err_t index_handler(httpd_req_t *req);
   delete_all_files = 1;
   return res;;
   }
-* /
+*/
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,16 +101,16 @@ void print_sock(int sock)
   if (getpeername(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
   {
     //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    jpr("family %d ", clientAddr.sin6_family);
+    //jpr("family %d ", clientAddr.sin6_family);
     inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr("Peer Client IP4: ");
-    jpr(ip);
+    //jpr("Peer Client IP4: ");
+    //jpr(ip);
     inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr(", Peer Client IP6: ");
-    jpr(ip);
+    //jpr(", Peer Client IP6: ");
+    //jpr(ip);
     uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    jpr(", Client Port: ");
-    jprln("%d", clientPort);
+    //jpr(", Client Port: ");
+    //jprln("%d", clientPort);
 
   } 
   else 
@@ -122,28 +121,28 @@ void print_sock(int sock)
   if (getsockname(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
   {
     //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    jpr("family %d ", clientAddr.sin6_family);
+    //jpr("family %d ", clientAddr.sin6_family);
     inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr("Sock Client IP4: ");
-    jpr(ip);
+    //jpr("Sock Client IP4: ");
+    //jpr(ip);
     inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr(", Sock Client IP6: ");
-    jpr(ip);
+    //jpr(", Sock Client IP6: ");
+    //jpr(ip);
     uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    jpr(", Client Port: ");
-    jprln("%d", clientPort);
+    //jpr(", Client Port: ");
+    //jprln("%d", clientPort);
 
   } else {
     Serial.println("Failed to get client address.");
   }
 }
 
-
+/*
 static esp_err_t reindex_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
 
-  print_mem("reindex_handler");
+  //print_mem("reindex_handler");
 
   char  buf[150];
   size_t buf_len;
@@ -174,8 +173,9 @@ static esp_err_t reindex_handler(httpd_req_t *req)
 
   return res;
 }
+*/
 
-
+/*
 static esp_err_t edit_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -183,7 +183,7 @@ static esp_err_t edit_handler(httpd_req_t *req)
   size_t buf_len;
   char  new_res[20];
 
-  print_mem("edit_handler");
+  //print_mem("edit_handler");
 
   buf_len = httpd_req_get_url_query_len(req) + 1;
   if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
@@ -200,12 +200,14 @@ static esp_err_t edit_handler(httpd_req_t *req)
 
   return res;;
 }
+*/
 
+/*
 static esp_err_t ota_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
 
-  print_mem("ota_handler");
+  //print_mem("ota_handler");
 
   delay(100);
 
@@ -288,14 +290,14 @@ Do the ota, or reboot ...
 
   return ESP_OK;
 }
-
+*/
 
 
 //61.3up
 static esp_err_t status_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
-  print_mem("status_handler");
+  //print_mem("status_handler");
 
   delay(101);
 
@@ -364,7 +366,7 @@ static esp_err_t find_handler(httpd_req_t *req)
   int frame_pct;
   char filename[50];
 
-  print_mem("find_handler");
+  //print_mem("find_handler");
 
   buf_len = httpd_req_get_url_query_len(req) + 1;
   if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
@@ -478,6 +480,7 @@ static esp_err_t time_handler(httpd_req_t *req)
         //Serial.print("new time: "); Serial.println(ctime(&now));
         //Serial.printf(">%i<", now);
 
+
         char tzchar[60];
         TIMEZONE.toCharArray(tzchar, TIMEZONE.length() + 1);        // name of your camera for mDNS, Router, and filenames
         setenv("TZ", tzchar, 1);  // mountain time zone from #define at top
@@ -490,13 +493,13 @@ static esp_err_t time_handler(httpd_req_t *req)
 
         //time(&now);
         //Serial.print("\nLocal time: "); Serial.println(ctime(&now));
-        / *
+        /*
                 time_t rawtime;
                 struct tm * ptm;
                 time ( &rawtime );
                 ptm = gmtime ( &rawtime );
                 Serial.printf ("GMT: %2d:%02d\n", (ptm->tm_hour) % 24, ptm->tm_min);
-        * /
+        */
       }
     }
   }
@@ -534,7 +537,7 @@ static esp_err_t time_handler(httpd_req_t *req)
 static esp_err_t restart_handler(httpd_req_t *req) 
 {
   long start = millis();
-  print_mem("restart_handler");
+  //print_mem("restart_handler");
   // Отмечаем, что началась запись нового avi-видео
   restart_now = true;
   const char the_message[] = "Status";
@@ -573,7 +576,7 @@ static esp_err_t reboot_handler(httpd_req_t *req)
 
   long start = millis();
 
-  print_mem("reboot_handler");
+  //print_mem("reboot_handler");
 
   start_record = 0;
   // Устанавливаем флаг "Отменить запись avi-файла"
@@ -616,7 +619,7 @@ static esp_err_t sphotos_handler(httpd_req_t *req)
 
   long start = millis();
 
-  print_mem("sphotos_handler");
+  //print_mem("sphotos_handler");
 
   const char the_message[] = "Status";
 
@@ -676,7 +679,7 @@ static esp_err_t fphotos_handler(httpd_req_t *req)
 
   long start = millis();
 
-  print_mem("fphotos_handler");
+  //print_mem("fphotos_handler");
 
   const char the_message[] = "Status";
 
@@ -736,7 +739,7 @@ static esp_err_t photos_handler(httpd_req_t *req)
 
   long start = millis();
 
-  print_mem("photos_handler");
+  //print_mem("photos_handler");
 
   const char the_message[] = "Status";
 
@@ -806,12 +809,12 @@ static esp_err_t capture_handler(httpd_req_t *req)
 
   if (capture_timer + 30000 <  millis() ) {
     if  (frame_cnt < 1000 ) {
-      jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+      //jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
 
-      print_mem("capture");
+      //print_mem("capture");
 
       int sock = httpd_req_to_sockfd(req);
-      jpr("Socket: %d\n", httpd_req_to_sockfd(req));
+      //jpr("Socket: %d\n", httpd_req_to_sockfd(req));
       print_sock(sock);
     }
     
@@ -913,16 +916,16 @@ static esp_err_t index_handler(httpd_req_t *req)
   // 09:53:44.673 -> -----
   // 09:53:44.673 -> Found header => Host: 10.120.175.2
   // 09:53:44.673 -> -----
-  / *
+  /*
   if (httpd_req_get_hdr_value_str(req, "Host", localip, buf_len) == ESP_OK) 
   {
     Serial.println("-----"); 
     Serial.printf("Found header => Host: %s\n", localip);
     Serial.println("-----"); 
   }
-  * /
+  */
   //sprintf(localip, "%s", buf);
-  / *
+  /*
     buf_len = httpd_req_get_url_query_len(req) + 1;
     if (buf_len > 1) 
     {
@@ -931,8 +934,8 @@ static esp_err_t index_handler(httpd_req_t *req)
         Serial.printf("Found URL query => %s", buf);
       }
     }
-  * /
-  print_mem("MEM - в начале обработчика index_handler        ");
+  */
+  //print_mem("MEM - в начале обработчика index_handler        ");
   const char the_message[] = "Status";
   time(&now);
   const char *strdate = ctime(&now);
@@ -1026,11 +1029,11 @@ static esp_err_t index_handler(httpd_req_t *req)
     localip, localip,  localip  
   );  
   
-  / *        
+  /*        
   Serial.println("====="); logfile.print("=====");
   Serial.println(the_page); logfile.print(the_page);
   Serial.println("====="); logfile.print("=====");
-  * /
+  */
   
   //   Функцией httpd_resp_send отправляем данные в качестве HTTP-ответа на запрос. 
   // Подразумевается, что полный готовый ответ находится в одном буфере. 
@@ -1081,7 +1084,7 @@ void startCameraServer()
   
   // Пример: в этом примере сервер по умолчанию слушает на порту 80 и регистрирует обработчик URI, 
   // который отправляет «Hello, world!» в ответ на запрос GET по пути /hello.
-  / *
+  /*
   void start_server() 
   {
     httpd_handle_t server = NULL; 
@@ -1105,7 +1108,7 @@ void startCameraServer()
     httpd_resp_send(req, resp_str, strlen(resp_str));
     return ESP_OK;
   }
-  * /
+  */
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.max_uri_handlers = 17; //61.3 from 12
   config.stack_size = 4096 + 1024 + 1024 + 1024;
@@ -1211,7 +1214,7 @@ void startCameraServer()
     .handler   = status_handler,
     .user_ctx  = NULL
   };
-  / *61.3
+  /*61.3
   httpd_uri_t delete_uri = 
   {
     .uri       = "/delete",
@@ -1219,7 +1222,9 @@ void startCameraServer()
     .handler   = delete_handler,
     .user_ctx  = NULL
   };
-  61.3 * /
+  61.3 */
+  
+  /*
   httpd_uri_t edit_uri = 
   {
     .uri       = "/edit",
@@ -1227,6 +1232,9 @@ void startCameraServer()
     .handler   = edit_handler,
     .user_ctx  = NULL
   };
+  */
+  
+  /*
   httpd_uri_t reindex_uri = 
   {
     .uri       = "/reindex",
@@ -1241,6 +1249,7 @@ void startCameraServer()
     .handler   = ota_handler,
     .user_ctx  = NULL
   };
+  */
   if (httpd_start(&camera_httpd, &config) == ESP_OK) 
   {
     httpd_register_uri_handler(camera_httpd, &index_uri);
@@ -1253,11 +1262,11 @@ void startCameraServer()
     httpd_register_uri_handler(camera_httpd, &time_uri);
     httpd_register_uri_handler(camera_httpd, &start_uri);
     httpd_register_uri_handler(camera_httpd, &stop_uri);
-    httpd_register_uri_handler(camera_httpd, &edit_uri); //61.3 index->camera
+    //httpd_register_uri_handler(camera_httpd, &edit_uri); //61.3 index->camera
     httpd_register_uri_handler(camera_httpd, &find_uri);
     httpd_register_uri_handler(camera_httpd, &status_uri);
-    httpd_register_uri_handler(camera_httpd, &reindex_uri);
-    httpd_register_uri_handler(camera_httpd, &ota_uri);
+    //httpd_register_uri_handler(camera_httpd, &reindex_uri);
+    //httpd_register_uri_handler(camera_httpd, &ota_uri);
   }
   Serial.println("Camera http started");
 }
@@ -1267,7 +1276,7 @@ void stopCameraServer()
   httpd_stop(camera_httpd);
 }
 
-/ *                                                          *** Обработчики ***
+/*                                                          *** Обработчики ***
 CameraServer.h
 --------------
 --httpd_register_uri_handler(camera_httpd, &index_uri);     index_handler
@@ -1290,9 +1299,6 @@ stream32.h
 ----------
 httpd_register_uri_handler(stream81_httpd, &stream_uri);    stream_81_handler    /stream
 httpd_register_uri_handler(stream82_httpd, &stream_uri);    stream_82_handler    /stream
-* /
-
 */
- 
 
 // ********************************************************* CameraServer.h ***

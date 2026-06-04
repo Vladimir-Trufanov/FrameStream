@@ -14,7 +14,7 @@
 #include "inimem.h"
 #include "trass.h"
 
-/*
+
 #include "driver/sdmmc_host.h"
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
@@ -35,7 +35,7 @@ struct oneframe {
   long the_frame_number;
   long the_frame_total;
 };
-*/
+
 
 // ****************************************************************************
 // *                                                Инициализировать SD-карту *
@@ -69,7 +69,7 @@ static bool init_sdcard()
   return Result;
 }
 
-/*
+
 //
 // Reads an uint32_t in Big Endian at current file position
 //
@@ -143,7 +143,7 @@ void deleteFolderOrFile(const char * val)
   File f = SD_MMC.open("/" + String(val));
   if (!f) 
   {
-    jpr("Ошибка открытия %s\n", val);
+    //jpr("Ошибка открытия %s\n", val);
     return;
   }
   if (f.isDirectory()) 
@@ -228,18 +228,18 @@ void delete_old_stuff()
   int total = SD_MMC.totalBytes()/(1024*1024); // общее количество байтов, доступных на карте
   int used = SD_MMC.usedBytes()/(1024*1024);   // количество используемых байтов на карте SD
 
-  jpr("Общий размер SD-карты памяти:                %5dMB\n", card);  // %llu
-  jpr("Общее количество байтов, доступных на карте: %5dMB\n", total);
-  jpr("Количество используемых байтов на карте SD:  %5dMB\n", used);
+  //jpr("Общий размер SD-карты памяти:                %5dMB\n", card);  // %llu
+  //jpr("Общее количество байтов, доступных на карте: %5dMB\n", total);
+  //jpr("Количество используемых байтов на карте SD:  %5dMB\n", used);
 
   float full = 1.0 * used / total;
   if (full  <  0.8) 
   {
-    jpr("Удаление невозможно, SD-карта заполнена на %.1f%%\n", 100.0 * full);
+    //jpr("Удаление невозможно, SD-карта заполнена на %.1f%%\n", 100.0 * full);
   } 
   else 
   {
-    jpr("SD-карта заполнена на %.1f%%, удаляются старые файлы ...\n", 100.0 * full);
+    //jpr("SD-карта заполнена на %.1f%%, удаляются старые файлы ...\n", 100.0 * full);
     // Фиксируем начало перебора файлов, формирования списка и сортировки
     int x = millis();
     // Задаём корневой каталог
@@ -255,7 +255,7 @@ void delete_old_stuff()
         // Если каталог пустой, то удаляем его
         if (SD_MMC.rmdir("/" + the_dir )) 
         {                
-          jpr("Удален пустой каталог\n"); Serial.println("/" + the_dir);
+          //jpr("Удален пустой каталог\n"); Serial.println("/" + the_dir);
         } 
         else 
         {
@@ -301,7 +301,7 @@ void delete_old_stuff()
       return false;
     });
 
-    jprln("Перебор файлов и сортировка для удаления старых заняло %d мс", millis() - x);
+    //jprln("Перебор файлов и сортировка для удаления старых заняло %d мс", millis() - x);
 
     for ( auto& iter : dirList) 
     {
@@ -489,6 +489,5 @@ oneframe find_a_frame (char * avi_file_name, long frame_num)
 
   } // else yes to no avi file
 }
-*/
 
 // ******************************************************************* sd.h ***

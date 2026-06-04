@@ -78,7 +78,7 @@ Partition Scheme: "Huge App"
 // определены в файле esp_err.h. Различные компоненты в ESP-IDF могут определять дополнительные коды ошибок для отдельных ситуаций. 
 static esp_err_t cam_err;
 
-/*
+
 uint8_t* fb_streaming;
 uint8_t* fb_capture;
 
@@ -141,7 +141,7 @@ const int avi_header[AVIOFFSET] PROGMEM =
   0x10, 0x00, 0x00, 0x00, 0x6A, 0x61, 0x6D, 0x65, 0x73, 0x7A, 0x61, 0x68, 0x61, 0x72, 0x79, 0x20,
   0x76, 0x36, 0x32, 0x20, 0x4C, 0x49, 0x53, 0x54, 0x00, 0x01, 0x0E, 0x00, 0x6D, 0x6F, 0x76, 0x69,
 };
-*/
+
 
 
 // Здесь используются две ссылки на Git-репозитарии, которые сохранены в каталоге Info приложения: 
@@ -241,7 +241,7 @@ static const frameSizeStruct frameSizeData[] =
   {{0x00, 0x0A}, {0x80, 0x07}}  // FRAMESIZE_QSXGA,    // 2560x1920 23
 };
 
-/*
+
 uint16_t remnant = 0;
 uint32_t startms;             // время начала работы с камерой и файлом avi    
 uint32_t elapsedms;           // общее время работы с камерой и файлом avi 
@@ -291,7 +291,6 @@ int we_are_already_stopped=0; // 1 - "видео-запись уже остан�
 
 // Сбрасываем флаг "удалить старые файлы по завершению записи текущего файла avi"
 int delete_old_stuff_flag = 0;
-*/
 
 // ****************************************************************************
 // *                      Установить параметры камеры                         *
@@ -965,7 +964,7 @@ void the_camera_loop (void* pvParameter)
   long wait_for_cam_start;       // Промежуточная точка начала ожидания камеры
   long delay_wait_for_sd_start;  // Промежуточная точка начала ожидания работы с SD
 
-  print_mem("MEM - стартовала задача the_camera_loop        ");
+  //print_mem("MEM - стартовала задача the_camera_loop        ");
   // Инициируем счетчик кадров в файле
   frame_cnt = 0;
   // Считываем состояние 12 контакта (начинать запись видео или нет)

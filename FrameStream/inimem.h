@@ -39,8 +39,8 @@ static const char _hsoftIP[] ="IP-адрес своей сети контрол�
 static const char _hlocalIP[]="IP-адрес в локальной сети       - http://";
 */
 
-//const word filemanagerport=8080;       // порт файлового менеджера
-//char localip[20];                      // IP-адрес локальной сети
+const word filemanagerport=8080;       // порт файлового менеджера
+char localip[20];                      // IP-адрес локальной сети
 
 /*
 char softip[20];                       // IP-адрес собственной сети контроллера
@@ -50,13 +50,13 @@ TaskHandle_t the_camera_loop_task;
 TaskHandle_t the_streaming_loop_task;
 */
 SemaphoreHandle_t baton;
-/*
+
 bool restart_now = false;   // true - начать запись нового avi-видео
 bool reboot_now = false;    // true - завершить запись и перезагрузить контроллер
 bool web_stop = false;      // true - завершить запись для OTA или по команде Stop из браузера
 
 #define blinking 0
-*/
+
 
 // Настройки для работы камеры, которые в дальнейшем будут управляться через сайт
 /*
@@ -110,8 +110,6 @@ char devname[30];
 // который будет первоначально сформирован и заполнен при инициировании камеры
 int frame_buffer_size;     
 
-/*
-
 bool do_the_reindex = false;
 //bool done_the_reparse = false;
 bool done_the_reindex = false;
@@ -124,7 +122,7 @@ uint8_t buf[BUFFSIZE];
 long avi_start_time = 0;   // время начала видео-записи
 long avi_end_time = 0;
 char avi_file_name[100];   // название записываемого файла *.avi
-*/
+
 uint16_t frame_cnt = 0;    // общее количество кадров в файле
 
 

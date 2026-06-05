@@ -1,23 +1,57 @@
-In file included from C:\FrameStream\FrameStream\FrameStream.ino:68:
-C:\FrameStream\FrameStream\stream32.h: In function 'void the_streaming_loop(void*)':
-stream32.h:307:11: error: 'jprln' was not declared in this scope
-  307 |           jprln("Ошибка потока 81_STREAM_BOUNDARY: %d\n", res);
-      |           ^~~~~
-stream32.h:313:13: error: 'Lots_of_Stats' was not declared in this scope
-  313 |         if (Lots_of_Stats)
-      |             ^~~~~~~~~~~~~
-stream32.h:315:12: error: 'jprln' was not declared in this scope
-  315 |            jprln("Поток 81: время = %3.3f сек, частота кадров = %3.3f кадров/сек", (float)(millis() - stream_81_start)/1000, (float)(stream_81_frames/((millis() - stream_81_start)/1000)));
-      |            ^~~~~
-stream32.h:320:13: error: 'Lots_of_Stats' was not declared in this scope
-  320 |         if (Lots_of_Stats)
-      |             ^~~~~~~~~~~~~
-stream32.h:322:11: error: 'jprln' was not declared in this scope
-  322 |           jprln("Поток 81: время = %3.3f сек, частота кадров = %3.1f кадров/сек", (float)(millis() - stream_82_start)/1000, (float)(stream_82_frames/((millis() - stream_82_start)/1000)));
-      |           ^~~~~
-stream32.h:330:9: error: 'jprln' was not declared in this scope
-  330 |         jprln("Медленный доступ к Wi-Fi: отправка кадра %d мсек", millis() - send_time);
-      |         ^~~~~
+Компиляция скетча...
+"C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp-x32\\2601/bin/xtensa-esp32-elf-g++" -MMD -c "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/cpp_flags" -w -Os -Werror=return-type -DF_CPU=240000000L -DARDUINO=10818 -DARDUINO_ESP32_DEV -DARDUINO_ARCH_ESP32 "-DARDUINO_BOARD=\"ESP32_DEV\"" "-DARDUINO_VARIANT=\"esp32\"" -DARDUINO_PARTITION_min_spiffs "-DARDUINO_HOST_OS=\"windows\"" "-DARDUINO_FQBN=\"esp32:esp32:esp32cam:CPUFreq=240,FlashMode=qio,PartitionScheme=min_spiffs,FlashFreq=80,DebugLevel=none,EraseFlash=none\"" -DESP32=ESP32 -DCORE_DEBUG_LEVEL=0 -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw -DARDUINO_USB_CDC_ON_BOOT=0 "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/defines" "-IC:\\FrameStream\\FrameStream" -iprefix "C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/include/" "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/includes" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/qio_qspi/include" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\cores\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\variants\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WiFi\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Network\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\FS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\SD_MMC\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\EEPROM\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WebServer\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\HTTPClient\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\NetworkClientSecure\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ArduinoOTA\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Update\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Hash\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ESPmDNS\\src" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_346891/build_opt.h" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_346891/file_opts" "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_346891\\sketch\\FrameStream.ino.cpp" -o "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_346891\\sketch\\FrameStream.ino.cpp.o"
+In file included from C:\FrameStream\FrameStream\FrameStream.ino:63:
+inimem.h:36:1: error: 'File' does not name a type
+   36 | File avifile;  // файл потока графических изображений (кадров)
+      | ^~~~
+inimem.h:37:1: error: 'File' does not name a type
+   37 | File idxfile;  // файл указателей кадров
+      | ^~~~
+In file included from C:\FrameStream\FrameStream\FrameStream.ino:66:
+C:\FrameStream\FrameStream\camera.h: In function 'void start_avi()':
+camera.h:620:3: error: 'avifile' was not declared in this scope
+  620 |   avifile = SD_MMC.open(avi_file_name, "w");
+      |   ^~~~~~~
+camera.h:621:3: error: 'idxfile' was not declared in this scope
+  621 |   idxfile = SD_MMC.open("/idx.tmp", "w");
+      |   ^~~~~~~
+C:\FrameStream\FrameStream\camera.h: In function 'void end_avi()':
+camera.h:704:31: error: 'avifile' was not declared in this scope
+  704 |   unsigned long current_end = avifile.position();
+      |                               ^~~~~~~
+camera.h:708:5: error: 'idxfile' was not declared in this scope
+  708 |     idxfile.close();
+      |     ^~~~~~~
+camera.h:742:5: error: 'idxfile' was not declared in this scope
+  742 |     idxfile.close();
+      |     ^~~~~~~
+C:\FrameStream\FrameStream\camera.h: In function 'void another_save_avi(uint8_t*, int)':
+camera.h:887:16: error: 'avifile' was not declared in this scope
+  887 |   size_t err = avifile.write(fb_record_static, fb_block_length);
+      |                ^~~~~~~
+camera.h:891:5: error: 'jprln' was not declared in this scope
+  891 |     jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
+      |     ^~~~~
+camera.h:913:7: error: 'jprln' was not declared in this scope
+  913 |       jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
+      |       ^~~~~
+camera.h:926:41: error: 'idxfile' was not declared in this scope
+  926 |   print_2quartet(idx_offset, jpeg_size, idxfile);
+      |                                         ^~~~~~~
+camera.h:936:5: error: 'jprln' was not declared in this scope
+  936 |     jprln("Кадр:  %6d, длина %6d, время камеры %7d, время записи %4d", gframe_cnt, gfblen, gmdelay / 1000, millis() - bw);
+      |     ^~~~~
+C:\FrameStream\FrameStream\camera.h: In function 'void the_camera_loop(void*)':
+camera.h:994:40: error: 'jpr' was not declared in this scope
+  994 |       if (we_are_already_stopped == 0) jpr("\nОтсоедините Pin12 от GND для того, чтобы начать запись или http://192.168.1.100/start \n");
+      |                                        ^~~
+camera.h:1008:7: error: 'jprln' was not declared in this scope
+ 1008 |       jprln("Началась видеозапись на %d мс. ", avi_start_time);
+      |       ^~~~~
+camera.h:1062:7: error: 'jpr' was not declared in this scope
+ 1062 |       jpr("End the avi at %d.  It was %d frames, %d ms at %.2f fps...\n", millis(), frame_cnt, avi_end_time, avi_end_time - avi_start_time, fps);
+      |       ^~~
+camera.h:1121:17: error: 'Lots_of_Stats' was not declared in this scope
+ 1121 |           if ( (Lots_of_Stats && frame_cnt < 1011) || (Lots_of_Stats && frame_cnt % 1000 == 10))
+      |                 ^~~~~~~~~~~~~
 Несколько библиотек найдено для "WiFi.h"
- Используется: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi
-Не используется: C:\Program Files (x86)\Ardu

@@ -329,9 +329,8 @@ void setup()
   saymem("MEM - перед запуском Web-сервисов");
   startCameraServer();
   start_Stream_81_server();
-  //start_Stream_82_server();
+  start_Stream_82_server();
  
-  /*
   xTaskCreatePinnedToCore(
     the_camera_loop,       // TaskFunction_t pvTaskCode          - имя функции, которая содержит код
     "the_camera_loop",     // const char * const pcName          - имя задачи
@@ -344,7 +343,6 @@ void setup()
   delay(100);
   
   
-  jprln("Создаётся задача the_streaming_loop");
   xTaskCreate(
     the_streaming_loop,    // TaskFunction_t pvTaskCode          - имя функции, которая содержит код
     "the_streaming_loop",  // const char * const pcName          - имя задачи
@@ -359,8 +357,8 @@ void setup()
     Serial.printf("Не удалось запустить задачу do_the_steaming_task! %d\n", the_streaming_loop_task);
   }
 
-  jprln("Проверяется SD-карта на наличие свободного места ...");
-  delete_old_stuff();
+  //jprln("Проверяется SD-карта на наличие свободного места ...");
+  //delete_old_stuff();
 
   char logname[60];
   char the_directory[50];
@@ -369,7 +367,7 @@ void setup()
   SD_MMC.mkdir(the_directory);
 
   sprintf(logname, "/%s%03d/%s%03d.999.txt",  devname, file_group, devname, file_group);
-  jprln("Создается logfile %s\n", logname);
+  //jprln("Создается logfile %s\n", logname);
   if (logfile) logfile.close();
   logfile = SD_MMC.open(logname, FILE_WRITE);
   if (!logfile) 
@@ -379,11 +377,9 @@ void setup()
   const char *strdate = ctime(&now);
   //logfile.println(strdate);
   digitalWrite(33, HIGH);         // red light turns off when setup is complete
-  */
 
   // Показываем установленные настройки камеры и видео
   sayconfig(); 
-
   saymem("МЕМ - после завершения setup");
 }
 

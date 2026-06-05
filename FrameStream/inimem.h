@@ -26,7 +26,6 @@ uint32_t errState=0;        // карта ошибочных состояний 
 #define errSD    100000000  // проблема с SD
 #define errCamera 10000000  // проблема с камерой
 
-/*
 #include "time.h"
 #include "FS.h"
 #include <SD_MMC.h>
@@ -37,18 +36,15 @@ File idxfile;  // файл указателей кадров
 
 static const char _hsoftIP[] ="IP-адрес своей сети контроллера - http://";
 static const char _hlocalIP[]="IP-адрес в локальной сети       - http://";
-*/
 
 const word filemanagerport=8080;       // порт файлового менеджера
 char localip[20];                      // IP-адрес локальной сети
 
-/*
 char softip[20];                       // IP-адрес собственной сети контроллера
 bool found_router = false;             // true - определена локальная сеть
 
 TaskHandle_t the_camera_loop_task;
 TaskHandle_t the_streaming_loop_task;
-*/
 SemaphoreHandle_t baton;
 
 bool restart_now = false;   // true - начать запись нового avi-видео
@@ -57,6 +53,17 @@ bool web_stop = false;      // true - завершить запись для OTA
 
 #define blinking 0
 
+// (следует изменить этот номер, чтобы сбросить номера файлов в eprom esp32)
+int MagicNumber = 12; // признак инициации новой нумерации файлов avi
+
+int file_group = 0;   // текущий номер файлов потока изображений 
+int file_number = 0;  // номер текущего файла изображений после перезагрузки контроллера
+// Структура, определяющая номер следующего avi-файла
+struct eprom_data 
+{
+  int eprom_good;
+  int file_group;
+};
 
 // Настройки для работы камеры, которые в дальнейшем будут управляться через сайт
 /*

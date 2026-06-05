@@ -211,7 +211,7 @@ typedef enum {
 */
 
 static const frameSizeStruct frameSizeData[] = 
-{                                                      //           framesize:
+{                                                      // framesize:
   {{0x60, 0x00}, {0x60, 0x00}}, // FRAMESIZE_96X96,    // 96x96     0 
   {{0xA0, 0x00}, {0x78, 0x00}}, // FRAMESIZE_QQVGA,    // 160x120   1
   {{0x60, 0x00}, {0x60, 0x00}}, // FRAMESIZE_128X128   // 128x128   2
@@ -426,7 +426,7 @@ static bool config_camera()
   return true;
 }
 
-/*
+
 // ****************************************************************************
 // *       Cделать снимок и убедиться, что он имеет хороший формат jpeg       *
 // ****************************************************************************
@@ -523,6 +523,7 @@ camera_fb_t *  get_good_jpeg()
             }
             foundffd9 = 1;  // отметили, что кадр хороший
             // Lots_of_Stats = true, включена трассировка
+            /*
             if (Lots_of_Stats) 
             {
               / *
@@ -543,6 +544,7 @@ camera_fb_t *  get_good_jpeg()
                 do_it_now = 1;
               }
             }
+            */
             break;
           }
         }
@@ -551,7 +553,7 @@ camera_fb_t *  get_good_jpeg()
       if (!foundffd9) 
       {
         bad_jpg++;
-        jprln("Плохой кадр %d, длина = %d", frame_cnt, fblen);
+        //jprln("Плохой кадр %d, длина = %d", frame_cnt, fblen);
         esp_camera_fb_return(fb);
         failures++;
       } 
@@ -568,12 +570,12 @@ camera_fb_t *  get_good_jpeg()
   // слишком высоки - понизьте их (+5) и запустите новый ролик
   if (failures == 10) 
   {
-    jprln("\n10 плохих кадров подряд!");
+    //jprln("\n10 плохих кадров подряд!");
     sensor_t * ss = esp_camera_sensor_get();
     int qual = ss->status.quality ;
     ss->set_quality(ss, qual + 5);
     quality = qual + 5;
-    jprln("Снижение качества из-за сбоев кадров: %d -> %d\n", qual, qual + 5);
+    //jprln("Снижение качества из-за сбоев кадров: %d -> %d\n", qual, qual + 5);
     delay(1000);
     start_record = 0;
   }
@@ -610,7 +612,7 @@ static void start_avi()
   long start = millis();
   // Создаем/открываем каталог и начинаем запись видео-файла
   char the_directory[50];
-  jprln("Начинается формирование avi по снимаемым кадрам");
+  //jprln("Начинается формирование avi по снимаемым кадрам");
   sprintf(the_directory,"/%s%03d",devname,file_group);
   SD_MMC.mkdir(the_directory);
   sprintf(avi_file_name, "/%s%03d/%s%03d.%03d.avi",  devname, file_group, devname, file_group, file_number);
@@ -619,12 +621,12 @@ static void start_avi()
   idxfile = SD_MMC.open("/idx.tmp", "w");
   if (avifile) 
   {
-    jpr("Файл открыт: %s\n", avi_file_name);
+    //jpr("Файл открыт: %s\n", avi_file_name);
   }  
   else  
   {
-    jprln("Не получилось открыть файл avi, контроллер будет перезагружен");
-    major_fail();
+    //jprln("Не получилось открыть файл avi, контроллер будет перезагружен");
+    //major_fail();
   }
   if (idxfile)  
   {
@@ -632,8 +634,8 @@ static void start_avi()
   }  
   else  
   {
-    jpr("Не получилось открыть файл /idx.tmp, контроллер будет перезагружен");
-    major_fail();
+    //jpr("Не получилось открыть файл /idx.tmp, контроллер будет перезагружен");
+    //major_fail();
   }
   // Формируем и записываем в avi заголовок файла в соответствии с размером изображения
   for (int i = 0; i < AVIOFFSET; i++) 
@@ -683,7 +685,7 @@ static void start_avi()
   print_quartet(3, avifile);  // magic number 3 means frame count not written // 61.3
   // Перемещаем указатель на после заголовка в файле
   avifile.seek( AVIOFFSET, SeekSet);
-  jprln("Запускается запись видео на %d секунд", avi_length);
+  //jprln("Запускается запись видео на %d секунд", avi_length);
   // Пересчитываем время работы на записи на SD-карту при записи видео
   time_in_sd += (millis() - start);
   // Очищаем оставшуюся информацию в буферах файлов, для того,
@@ -702,7 +704,7 @@ static void end_avi()
   unsigned long current_end = avifile.position();
   if (frame_cnt < 5) 
   {
-    jprln("Запись испорчена, менее 5 кадров, убираем индекс");
+    //jprln("Запись испорчена, менее 5 кадров, убираем индекс");
     idxfile.close();
     avifile.close();
     int xx = remove("/idx.tmp");
@@ -749,8 +751,8 @@ static void end_avi()
     }  
     else  
     {
-      jprln("Не удалось открыть индексный файл");
-      major_fail();
+      //jprln("Не удалось открыть индексный файл");
+      //major_fail();
     }
     // Записываем индексную информацию
     char * AteBytes;
@@ -767,7 +769,7 @@ static void end_avi()
     idxfile.close();
     avifile.close();
 
- 
+    /*
     jprln("\n*** Видео записано и сохранено ***");
     jprln("---");
     jprln("Снято и записано %5d кадров за %5d секунд", frame_cnt, elapsedms / 1000);
@@ -783,20 +785,22 @@ static void end_avi()
     jprln("Количество сломанных   кадров %3.1f %", 100.0 * bad_jpg / frame_cnt);
     jprln("Медленная запись на SD-карту %d, %5.3f %", very_high, 100.0 * very_high / frame_cnt, 5 );
     jprln("Проиндексировано (записано) %d кадров", frame_cnt);
-
+    */
     //    int resss = SD_MMC.mkdir(the_directory);
     //    Serial.printf("remake the foler ?? %d\n",resss);
     int xx = SD_MMC.remove("/idx.tmp");
   }
-  jprln("---");
+  //jprln("---");
   time_in_sd += (millis() - start);
   time_total = millis() - startms;
+  /*
   jpr("Время ожидания камеры %10dms, %4.1f%%\n", wait_for_cam , 100.0 * wait_for_cam  / time_total);
   jpr("Время съёмки          %10dms, %4.1f%%\n", time_in_camera, 100.0 * time_in_camera / time_total);
   jpr("Время ожидания SD     %10dms, %4.1f%%\n", delay_wait_for_sd , 100.0 * delay_wait_for_sd  / time_total);
   jpr("Время записи на SD    %10dms, %4.1f%%\n", time_in_sd    , 100.0 * time_in_sd     / time_total);
   jpr("Время работы браузера %10dms, %4.1f%%\n", time_in_web1  , 100.0 * time_in_web1   / time_total);
   jpr("Общее время           %10dms, %4.1f%%\n", time_total    , 100.0 * time_total     / time_total);
+  */
   logfile.flush();
   if (file_number == 100) 
   {
@@ -833,7 +837,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   // Ускорение записи на SD-карту на ESP32-CAM с камерой OV2640
   // (https://github.com/espressif/esp32-camera/issues/182)
   
-  / *
+  /*
     Информация о том, как повысить скорость записи изображений в формате JPEG с камеры esp32 на SD-карту.
   Любой, кто пытался записать фотографии с камеры esp32 на SD-карту, знает эту строку:
   file.write(fb->buf, fb->len);
@@ -861,7 +865,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
     При таком подходе можно записать видео в формате AVI на дешевую SD-карту класса 10 
   (круг 10 U1) с максимальной производительностью камеры OV2640 — 6 кадров в секунду 
   в режиме UXGA и 25 кадров в секунду в режиме SVGA.
-  * /
+  */
   
   // Записываем первый или единственный блок кадра размером fbs*1024 байт
   int block_num = 0;
@@ -884,7 +888,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   if (err != fb_block_length) 
   {
     start_record = 0;
-    jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
+    //jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
     return;
   }
   if (block_num < 10) block_delay[block_num++] = millis() - bw;
@@ -906,7 +910,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
     size_t err = avifile.write(fb_record_static,  fb_block_length);
     if (err != fb_block_length) 
     {
-      jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
+      //jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
       return;
     }
     if (block_num < 10) block_delay[block_num++] = millis() - bw;
@@ -929,7 +933,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   if (do_it_now == 1 ) 
   {  // && frame_cnt < 1011
     do_it_now = 0;
-    jprln("Кадр:  %6d, длина %6d, время камеры %7d, время записи %4d", gframe_cnt, gfblen, gmdelay / 1000, millis() - bw);
+    //jprln("Кадр:  %6d, длина %6d, время камеры %7d, время записи %4d", gframe_cnt, gfblen, gmdelay / 1000, millis() - bw);
     logfile.flush();
   }
   // Пересчитываем общее время записи всех кадров файла AVI
@@ -941,14 +945,14 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   if ((millis() - bw) > totalw / frame_cnt * 10) 
   {
     unsigned long x = avifile.position();
-    jprln("Кадр:  %6d, время записи велико к среднему %4d > %4d, позиция в файле %X, ",  frame_cnt, millis() - bw, (totalw / frame_cnt), x );
+    //jprln("Кадр:  %6d, время записи велико к среднему %4d > %4d, позиция в файле %X, ",  frame_cnt, millis() - bw, (totalw / frame_cnt), x );
     very_high++;
-    / *
+    /*
     for (int i = 1; i < block_num; i++) 
     {
       jpr("Блок %d, время %5d; ", i, block_delay[i] - block_delay[i - 1]);
     }
-    * /
+    */
   }
   // Освобождаем буферы
   avifile.flush();
@@ -987,7 +991,10 @@ void the_camera_loop (void* pvParameter)
     if ( (frame_cnt == 0 && start_record == 0)) 
     {
       // Serial.println("Do nothing");
-      if (we_are_already_stopped == 0) jpr("\nОтсоедините Pin12 от GND для того, чтобы начать запись или http://192.168.1.100/start \n");
+      if (we_are_already_stopped == 0) 
+      {
+        //jpr("\nОтсоедините Pin12 от GND для того, чтобы начать запись или http://192.168.1.100/start \n");
+      }
       we_are_already_stopped = 1;
       delay(100);
     } 
@@ -1001,8 +1008,8 @@ void the_camera_loop (void* pvParameter)
       // Отмечаем точку начала ожидания камеры
       wait_for_cam_start = millis();
       
-      jprln("Началась видеозапись на %d мс. ", avi_start_time);
-      jprln("Размер кадра %d, качество %d, время %d секунд\n", framesize, quality, avi_length);
+      //jprln("Началась видеозапись на %d мс. ", avi_start_time);
+      //jprln("Размер кадра %d, качество %d, время %d секунд\n", framesize, quality, avi_length);
       logfile.flush();
 
       // Открываем avi-файл и записываем заголовки
@@ -1039,7 +1046,7 @@ void the_camera_loop (void* pvParameter)
     ///////////////////  END THE MOVIE //////////////////
     else if (restart_now || reboot_now || (frame_cnt > 0 && start_record == 0) ||  millis() > (avi_start_time + avi_length * 1000)) 
     { 
-      jprln("Завершается запись avi-файла");
+      //jprln("Завершается запись avi-файла");
       restart_now = false;
       if (blinking)  digitalWrite(33, frame_cnt % 2);
 
@@ -1055,7 +1062,7 @@ void the_camera_loop (void* pvParameter)
 
       float fps = 1.0 * frame_cnt / ((avi_end_time - avi_start_time) / 1000) ;
 
-      jpr("End the avi at %d.  It was %d frames, %d ms at %.2f fps...\n", millis(), frame_cnt, avi_end_time, avi_end_time - avi_start_time, fps);
+      //jpr("End the avi at %d.  It was %d frames, %d ms at %.2f fps...\n", millis(), frame_cnt, avi_end_time, avi_end_time - avi_start_time, fps);
 
       if (!reboot_now) frame_cnt = 0;             // start recording again on the next loop
 
@@ -1114,10 +1121,10 @@ void the_camera_loop (void* pvParameter)
           most_recent_fps = 100.0 / ((millis() - time_before_last_100_frames) / 1000.0) ;
           most_recent_avg_framesize = (movi_size - bytes_before_last_100_frames) / 100;
 
-          if ( (Lots_of_Stats && frame_cnt < 1011) || (Lots_of_Stats && frame_cnt % 1000 == 10)) 
-          {
-            jprln("Всего: %5d кадров за %6.1f секунд, среднее недавних 100 кадров: размер и частота %6.1f kb, %.2f fps", frame_cnt, 0.001 * (millis() - avi_start_time), 1.0 / 1024  * most_recent_avg_framesize, most_recent_fps);
-          }
+          //if ( (Lots_of_Stats && frame_cnt < 1011) || (Lots_of_Stats && frame_cnt % 1000 == 10)) 
+          //{
+            //jprln("Всего: %5d кадров за %6.1f секунд, среднее недавних 100 кадров: размер и частота %6.1f kb, %.2f fps", frame_cnt, 0.001 * (millis() - avi_start_time), 1.0 / 1024  * most_recent_avg_framesize, most_recent_fps);
+          //}
           bytes_before_last_100_frames = movi_size;
           time_before_last_100_frames = millis();
         }
@@ -1125,6 +1132,5 @@ void the_camera_loop (void* pvParameter)
     }
   }
 }
-*/
 
 // *************************************************************** camera.h ***

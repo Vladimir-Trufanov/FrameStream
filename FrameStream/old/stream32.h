@@ -186,7 +186,7 @@ void the_streaming_loop (void* pvParameter)
   uint8_t * _jpg_buf = NULL;
   char * part_buf[64];
   long start = millis();
-  //print_mem("MEM - стартовала задача the_streaming_loop     ");
+  saymem("MEM - стартовала задача the_streaming_loop");
 
   while (true) 
   {
@@ -304,7 +304,7 @@ void the_streaming_loop (void* pvParameter)
         if (res != ESP_OK) 
         {
           stream_81 = false;
-          //jprln("Ошибка потока 81_STREAM_BOUNDARY: %d\n", res);
+          sayln("Ошибка потока 81_STREAM_BOUNDARY: %d\n", res);
         }
       }
       // Трассируем каждый 10-ый кадр с расчетными данными по частоте кадров
@@ -312,7 +312,7 @@ void the_streaming_loop (void* pvParameter)
       {
         //if (Lots_of_Stats) 
         //{
-           //jprln("Поток 81: время = %3.3f сек, частота кадров = %3.3f кадров/сек", (float)(millis() - stream_81_start)/1000, (float)(stream_81_frames/((millis() - stream_81_start)/1000)));
+           sayln("Поток 81: время = %3.3f сек, частота кадров = %3.3f кадров/сек", (float)(millis() - stream_81_start)/1000, (float)(stream_81_frames/((millis() - stream_81_start)/1000)));
         //}
       }
       if (stream_82_frames % 100 == 10) 
@@ -327,7 +327,7 @@ void the_streaming_loop (void* pvParameter)
       if (millis() - send_time > 5000) 
       {
         new_delay = 1000;
-        //jprln("Медленный доступ к Wi-Fi: отправка кадра %d мсек", millis() - send_time);
+        sayln("Медленный доступ к Wi-Fi: отправка кадра %d мсек", millis() - send_time);
       }
       delay(new_delay); 
       start = millis();

@@ -17,39 +17,36 @@ HTServer=localhost
 Extensions=*.*
 [Project tree]
 FrameStream
-	+FrameStream
-		camera.h
-		CameraServer.h
-		eprom.h
+	-FrameStream
+		-old
+			old\camera.h
+			old\CameraServer.h
+			old\eprom.h
+			old\FrameStream.ino
+			old\hwifi.h
+			old\inimem.h
+			old\sd.h
+			old\stream32.h
+			old\trass.h
+		config.h
+		CRC32.cpp
+		CRC32.h
 		errors.txt
+		ESPxWebFlMgr.cpp
+		ESPxWebFlMgr.h
+		ESPxWebFlMgrWp.h
+		ESPxWebFlMgrWpF.h
 		FrameStream.ino
 		FrameStream.ppr
-		hwifi.h
-		inimem.h
-		sd.h
-		stream32.h
-		trass.h
 [Open project files]
 0=FrameStream.ino
 1=errors.txt
-2=camera.h
-3=inimem.h
-4=eprom.h
 [Selected Project Files]
 Main=
-Selected=camera.h
+Selected=errors.txt
 [FrameStream.ino]
-TopLine=340
-Caret=6,340
+TopLine=223
+Caret=14,223
 [errors.txt]
 TopLine=20
-Caret=28,4
-[camera.h]
-TopLine=1095
-Caret=13,1127
-[inimem.h]
-TopLine=23
-Caret=1,32
-[eprom.h]
-TopLine=24
-Caret=1,34
+Caret=1,58

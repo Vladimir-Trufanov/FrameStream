@@ -1,4 +1,4 @@
-/** Arduino, ESP32, C/C++ ***************************************** hwifi.h ***
+/** Arduino, ESP32, C/C++ *************************************** fs_wifi.h ***
  * 
  *                                          Обеспечить работу, связанную с wifi
  *                                                     
@@ -6,7 +6,13 @@
  * Copyright © 2026 tve                               Дата создания: 24.01.2026
 **/
 
-#pragma once   
+#pragma once  
+
+// Вводим имя и пароль точки доступа
+//const char* tssid = "OPPO A9 2020";  // "TP-Link_B394" "tve-DESKTOP" "linksystve"
+//const char* tpass = "b277a4ee84e8";  // "18009217"     "Ue18-647"    "x93k6kq6wf"
+
+/* 
 
 #include "WiFi.h"
 // Обслуживаем режим энергосбережения
@@ -15,10 +21,6 @@
 // библиотекой ядра ESP32 по умолчанию и не требуют установки
 #include "esp_sntp.h"
 #include "trass.h"
-
-// Вводим имя и пароль точки доступа
-const char* tssid = "OPPO A9 2020";  // "TP-Link_B394" "tve-DESKTOP" "linksystve"
-const char* tpass = "b277a4ee84e8";  // "18009217"     "Ue18-647"    "x93k6kq6wf"
 
 // Создаем переменную локального времени (секунды с начала эпохи)
 time_t now;
@@ -32,14 +34,14 @@ struct tm timeinfo;
 // ****************************************************************************
 // По настройке в IDE "Core Debug Level: Error", выводим только ошибки,
 // сообщения "Reason: 201 - NO_AP_FOUND" зажимаем в обработке события  WiFi.onEvent:
-/*
+/ *
 12:56:58.974 -> [366612][W][STA.cpp:137] _onStaArduinoEvent(): Reason: 201 - NO_AP_FOUND
 12:57:01.399 -> [369029][W][STA.cpp:137] _onStaArduinoEvent(): Reason: 201 - NO_AP_FOUND
 12:57:03.821 -> [371446][W][STA.cpp:137] _onStaArduinoEvent(): Reason: 201 - NO_AP_FOUND
 [ESP 32 Arduino: Получение информации о событиях Wi-Fi](https://techtutorialsx.wordpress.com/2019/08/15/esp32-arduino-getting-wifi-event-information/)
 [tools/sdk/include/esp32/esp_event_legacy.h](https://github.com/espressif/arduino-esp32/blob/04963009eedfbc1e0ea2e1378ae69e7cebda6fd6/tools/sdk/include/esp32/esp_event_legacy.h#L56)
 [libraries/WiFi/src/WiFiType.h](https://github.com/espressif/arduino-esp32/blob/a59eafbc9dfa3ce818c110f996eebf68d755be24/libraries/WiFi/src/WiFiType.h#L35)
-*/
+* /
 #define onEventWiFi();                                                                       \
   eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)                         \ 
   {                                                                                          \
@@ -172,7 +174,7 @@ void initSNTP()
 // *   виде с помощью struct tm структуры данных:                             *
 // *                               https://cplusplus.com/reference/ctime/tm/  *
 // ****************************************************************************
-/*
+/ *
  "%A, %B %d %Y %H:%M:%S" - это спецификаторы формата,  которые определяют,  как
  в struct tm timeinfo; будет отформатирован текст, а члены tm struct следующие:
   
@@ -190,7 +192,7 @@ void initSNTP()
   
   function strftime() - format time as string:
   https://cplusplus.com/reference/ctime/strftime/
-*/
+* /
 void printTime() 
 {
   getLocalTime(&timeinfo);
@@ -219,6 +221,7 @@ void wait4SNTP()
     say(".");
   }
 }
+*/
 
 /* альтернативный вариант
 // ****************************************************************************
@@ -343,4 +346,4 @@ bool init_wifi()
 }
 */
 
-// **************************************************************** hwifi.h ***
+// ************************************************************** fs_wifi.h ***

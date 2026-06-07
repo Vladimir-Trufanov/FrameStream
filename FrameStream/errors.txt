@@ -1,57 +1,155 @@
 Компиляция скетча...
-"C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp-x32\\2601/bin/xtensa-esp32-elf-g++" -MMD -c "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/cpp_flags" -w -Os -Werror=return-type -DF_CPU=240000000L -DARDUINO=10818 -DARDUINO_ESP32_DEV -DARDUINO_ARCH_ESP32 "-DARDUINO_BOARD=\"ESP32_DEV\"" "-DARDUINO_VARIANT=\"esp32\"" -DARDUINO_PARTITION_min_spiffs "-DARDUINO_HOST_OS=\"windows\"" "-DARDUINO_FQBN=\"esp32:esp32:esp32cam:CPUFreq=240,FlashMode=qio,PartitionScheme=min_spiffs,FlashFreq=80,DebugLevel=none,EraseFlash=none\"" -DESP32=ESP32 -DCORE_DEBUG_LEVEL=0 -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw -DARDUINO_USB_CDC_ON_BOOT=0 "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/defines" "-IC:\\FrameStream\\FrameStream" -iprefix "C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/include/" "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/includes" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/qio_qspi/include" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\cores\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\variants\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WiFi\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Network\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\FS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\SD_MMC\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\EEPROM\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WebServer\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\HTTPClient\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\NetworkClientSecure\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ArduinoOTA\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Update\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Hash\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ESPmDNS\\src" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_913666/build_opt.h" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_913666/file_opts" "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_913666\\sketch\\FrameStream.ino.cpp" -o "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_913666\\sketch\\FrameStream.ino.cpp.o"
-In file included from C:\FrameStream\FrameStream\FrameStream.ino:68:
-C:\FrameStream\FrameStream\stream32.h: In function 'void the_streaming_loop(void*)':
-stream32.h:315:17: error: no matching function for call to 'sayln(const char [98], float, float)'
-  315 |            sayln("Поток 81: время = %3.3f сек, частота кадров = %3.3f кадров/сек", (float)(millis() - stream_81_start)/1000, (float)(stream_81_frames/((millis() - stream_81_start)/1000)));
-      |            ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In file included from C:\FrameStream\FrameStream\hwifi.h:17,
-                 from C:\FrameStream\FrameStream\FrameStream.ino:64:
-C:\FrameStream\FrameStream\trass.h:54:6: note: candidate: 'void sayln(char*)'
-   54 | void sayln(char* format) {say(format); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:54:6: note:   candidate expects 1 argument, 3 provided
-C:\FrameStream\FrameStream\trass.h:61:6: note: candidate: 'void sayln(char*, const char*)'
-   61 | void sayln(char* format, const char* s) {say(format,s); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:61:6: note:   candidate expects 2 arguments, 3 provided
-C:\FrameStream\FrameStream\trass.h:68:6: note: candidate: 'void sayln(char*, char*)'
-   68 | void sayln(char* format, char* s) {say(format,s); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:68:6: note:   candidate expects 2 arguments, 3 provided
-C:\FrameStream\FrameStream\trass.h:75:6: note: candidate: 'void sayln(char*, const char*, uint64_t)'
-   75 | void sayln(char* format, const char* s, uint64_t n) {say(format,s,n); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:75:38: note:   no known conversion for argument 2 from 'float' to 'const char*'
-   75 | void sayln(char* format, const char* s, uint64_t n) {say(format,s,n); addln();}
-      |                          ~~~~~~~~~~~~^
-C:\FrameStream\FrameStream\trass.h:82:6: note: candidate: 'void sayln(char*, String)'
-   82 | void sayln(char* format, String s) {say(format,s); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:82:6: note:   candidate expects 2 arguments, 3 provided
-C:\FrameStream\FrameStream\trass.h:89:6: note: candidate: 'void sayln(char*, unsigned int, const char*)'
-   89 | void sayln(char* format, unsigned int n, const char* s) {say(format,n,s); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:89:54: note:   no known conversion for argument 3 from 'float' to 'const char*'
-   89 | void sayln(char* format, unsigned int n, const char* s) {say(format,n,s); addln();}
-      |                                          ~~~~~~~~~~~~^
-C:\FrameStream\FrameStream\trass.h:111:6: note: candidate: 'void sayln(char*, int)'
-  111 | void sayln(char* format, int n) {say(format,n); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:111:6: note:   candidate expects 2 arguments, 3 provided
-C:\FrameStream\FrameStream\trass.h:118:6: note: candidate: 'void sayln(char*, long int)'
-  118 | void sayln(char* format, long n) {say(format,n); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:118:6: note:   candidate expects 2 arguments, 3 provided
-C:\FrameStream\FrameStream\trass.h:125:6: note: candidate: 'void sayln(char*, uint32_t)'
-  125 | void sayln(char* format, uint32_t n) {say(format,n); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:125:6: note:   candidate expects 2 arguments, 3 provided
-C:\FrameStream\FrameStream\trass.h:132:6: note: candidate: 'void sayln(char*, uint64_t)'
-  132 | void sayln(char* format, uint64_t n) {say(format,n); addln();}
-      |      ^~~~~
-C:\FrameStream\FrameStream\trass.h:132:6: note:   candidate expects 2 arguments, 3 provided
+"C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp-x32\\2601/bin/xtensa-esp32-elf-g++" -MMD -c "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/cpp_flags" -w -Os -Werror=return-type -DF_CPU=240000000L -DARDUINO=10818 -DARDUINO_ESP32_DEV -DARDUINO_ARCH_ESP32 "-DARDUINO_BOARD=\"ESP32_DEV\"" "-DARDUINO_VARIANT=\"esp32\"" -DARDUINO_PARTITION_min_spiffs "-DARDUINO_HOST_OS=\"windows\"" "-DARDUINO_FQBN=\"esp32:esp32:esp32cam:CPUFreq=240,FlashMode=qio,PartitionScheme=min_spiffs,FlashFreq=80,DebugLevel=none,EraseFlash=none\"" -DESP32=ESP32 -DCORE_DEBUG_LEVEL=0 -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw -DARDUINO_USB_CDC_ON_BOOT=0 "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/defines" "-IC:\\FrameStream\\FrameStream" -iprefix "C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/include/" "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/includes" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/qio_qspi/include" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\cores\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\variants\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\FS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\SD_MMC\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\EEPROM\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WiFi\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Network\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ArduinoOTA\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Update\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ESPmDNS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WebServer\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\HTTPClient\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\NetworkClientSecure\\src" "-IC:\\Users\\Евгеньевич\\Documents\\Arduino\\libraries\\ESPping-main\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Hash\\src" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942/build_opt.h" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942/file_opts" "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942\\sketch\\FrameStream.ino.cpp" -o "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942\\sketch\\FrameStream.ino.cpp.o"
+"C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp-x32\\2601/bin/xtensa-esp32-elf-g++" -MMD -c "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/cpp_flags" -w -Os -Werror=return-type -DF_CPU=240000000L -DARDUINO=10818 -DARDUINO_ESP32_DEV -DARDUINO_ARCH_ESP32 "-DARDUINO_BOARD=\"ESP32_DEV\"" "-DARDUINO_VARIANT=\"esp32\"" -DARDUINO_PARTITION_min_spiffs "-DARDUINO_HOST_OS=\"windows\"" "-DARDUINO_FQBN=\"esp32:esp32:esp32cam:CPUFreq=240,FlashMode=qio,PartitionScheme=min_spiffs,FlashFreq=80,DebugLevel=none,EraseFlash=none\"" -DESP32=ESP32 -DCORE_DEBUG_LEVEL=0 -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw -DARDUINO_USB_CDC_ON_BOOT=0 "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/defines" "-IC:\\FrameStream\\FrameStream" -iprefix "C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/include/" "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/includes" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/qio_qspi/include" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\cores\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\variants\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\FS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\SD_MMC\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\EEPROM\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WiFi\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Network\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ArduinoOTA\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Update\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ESPmDNS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WebServer\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\HTTPClient\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\NetworkClientSecure\\src" "-IC:\\Users\\Евгеньевич\\Documents\\Arduino\\libraries\\ESPping-main\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Hash\\src" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942/build_opt.h" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942/file_opts" "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942\\sketch\\CRC32.cpp" -o "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942\\sketch\\CRC32.cpp.o"
+"C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp-x32\\2601/bin/xtensa-esp32-elf-g++" -MMD -c "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/cpp_flags" -w -Os -Werror=return-type -DF_CPU=240000000L -DARDUINO=10818 -DARDUINO_ESP32_DEV -DARDUINO_ARCH_ESP32 "-DARDUINO_BOARD=\"ESP32_DEV\"" "-DARDUINO_VARIANT=\"esp32\"" -DARDUINO_PARTITION_min_spiffs "-DARDUINO_HOST_OS=\"windows\"" "-DARDUINO_FQBN=\"esp32:esp32:esp32cam:CPUFreq=240,FlashMode=qio,PartitionScheme=min_spiffs,FlashFreq=80,DebugLevel=none,EraseFlash=none\"" -DESP32=ESP32 -DCORE_DEBUG_LEVEL=0 -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw -DARDUINO_USB_CDC_ON_BOOT=0 "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/defines" "-IC:\\FrameStream\\FrameStream" -iprefix "C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/include/" "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/includes" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/qio_qspi/include" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\cores\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\variants\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\FS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\SD_MMC\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\EEPROM\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WiFi\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Network\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ArduinoOTA\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Update\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ESPmDNS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WebServer\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\HTTPClient\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\NetworkClientSecure\\src" "-IC:\\Users\\Евгеньевич\\Documents\\Arduino\\libraries\\ESPping-main\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Hash\\src" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942/build_opt.h" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942/file_opts" "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942\\sketch\\ESPxWebFlMgr.cpp" -o "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_617942\\sketch\\ESPxWebFlMgr.cpp.o"
+In file included from C:\FrameStream\FrameStream\fs_camera.h:13,
+                 from C:\FrameStream\FrameStream\FrameStream.ino:54:
+C:\FrameStream\FrameStream\fs_trass.h: In function 'void saymem(char*)':
+fs_trass.h:54:17: error: 'utf8len' was not declared in this scope
+   54 |     int j=nfill-utf8len(text)-2;
+      |                 ^~~~~~~
+fs_trass.h:57:7: error: '_say' was not declared in this scope; did you mean 'say'?
+   57 |       _say(" ");
+      |       ^~~~
+      |       say
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:68:5: note: in expansion of macro 'say'
+   68 |     say("[%s]",text);
+      |     ^~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:69:5: note: in expansion of macro 'say'
+   69 |     say(" ядро: %d,",          int(xPortGetCoreID()));        say(" приоритет: %d, ", int(uxTaskPriorityGet(NULL)));
+      |     ^~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:69:63: note: in expansion of macro 'say'
+   69 |     say(" ядро: %d,",          int(xPortGetCoreID()));        say(" приоритет: %d, ", int(uxTaskPriorityGet(NULL)));
+      |                                                               ^~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:70:5: note: in expansion of macro 'say'
+   70 |     say("свободная куча %6d ", uint32_t(ESP.getFreeHeap()));  say("от ОЗУ %6d, ",     uint32_t(ESP.getHeapSize()));
+      |     ^~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:70:63: note: in expansion of macro 'say'
+   70 |     say("свободная куча %6d ", uint32_t(ESP.getFreeHeap()));  say("от ОЗУ %6d, ",     uint32_t(ESP.getHeapSize()));
+      |                                                               ^~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:71:5: note: in expansion of macro 'say'
+   71 |     say("FreePSRAM %6d ",      uint32_t(ESP.getFreePsram())); say("от FLASH %6d",     uint32_t(ESP.getPsramSize()));
+      |     ^~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:71:63: note: in expansion of macro 'say'
+   71 |     say("FreePSRAM %6d ",      uint32_t(ESP.getFreePsram())); say("от FLASH %6d",     uint32_t(ESP.getPsramSize()));
+      |                                                               ^~~
+fs_trass.h:29:9: error: 'logfile' was not declared in this scope
+   29 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:72:5: note: in expansion of macro 'sayln'
+   72 |     sayln(" ");
+      |     ^~~~~
+C:\FrameStream\FrameStream\fs_trass.h: In function 'void blinkRestart()':
+fs_trass.h:29:9: error: 'logfile' was not declared in this scope
+   29 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:102:5: note: in expansion of macro 'sayln'
+  102 |     sayln("Аварийная ситуация [%d/10], перезагрузка контроллера",i);
+      |     ^~~~~
+fs_trass.h:104:7: error: 'logfile' was not declared in this scope
+  104 |   if (logfile) logfile.close();
+      |       ^~~~~~~
+C:\FrameStream\FrameStream\fs_camera.h: In function 'void config_camera()':
+fs_camera.h:333:66: error: 'framesizeconfig' was not declared in this scope
+  333 |   jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
+      |                                                                  ^~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:17:48: note: in definition of macro 'say'
+   17 |     snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+      |                                                ^~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_camera.h:333:3: note: in expansion of macro 'jpr'
+  333 |   jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
+      |   ^~~
+fs_camera.h:333:83: error: 'qualityconfig' was not declared in this scope
+  333 |   jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
+      |                                                                                   ^~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:17:48: note: in definition of macro 'say'
+   17 |     snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+      |                                                ^~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_camera.h:333:3: note: in expansion of macro 'jpr'
+  333 |   jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
+      |   ^~~
+fs_camera.h:333:98: error: 'buffersconfig' was not declared in this scope
+  333 |   jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
+      |                                                                                                  ^~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:17:48: note: in definition of macro 'say'
+   17 |     snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+      |                                                ^~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_camera.h:333:3: note: in expansion of macro 'jpr'
+  333 |   jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
+      |   ^~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:11:13: note: in expansion of macro 'say'
+   11 | #define jpr say
+      |             ^~~
+C:\FrameStream\FrameStream\fs_camera.h:333:3: note: in expansion of macro 'jpr'
+  333 |   jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
+      |   ^~~
+fs_camera.h:337:21: error: 'buffersconfig' was not declared in this scope
+  337 |   config.fb_count = buffersconfig;
+      |                     ^~~~~~~~~~~~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:11:13: note: in expansion of macro 'say'
+   11 | #define jpr say
+      |             ^~~
+C:\FrameStream\FrameStream\fs_camera.h:350:7: note: in expansion of macro 'jpr'
+  350 |       jpr("Camera init failed with error 0x%x\n", cam_err);
+      |       ^~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:11:13: note: in expansion of macro 'say'
+   11 | #define jpr say
+      |             ^~~
+C:\FrameStream\FrameStream\fs_camera.h:368:3: note: in expansion of macro 'jpr'
+  368 |   jpr("\nCamera started correctly, Type is %x (hex) of 9650, 7725, 2640, 3660, 5640\n\n", ss->id.PID);
+      |   ^~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:11:13: note: in expansion of macro 'say'
+   11 | #define jpr say
+      |             ^~~
+C:\FrameStream\FrameStream\fs_camera.h:387:28: note: in expansion of macro 'jpr'
+  387 |       if (j < 3 || j > 27) jpr("Pic %2d, len=%7d, at mem %X\n", j, fb->len, (long)fb->buf);
+      |                            ^~~
+fs_camera.h:393:3: error: 'frame_buffer_size' was not declared in this scope
+  393 |   frame_buffer_size  = (( (x * 4) / (16 * 1024) ) + 1) * 16 * 1024  ;
+      |   ^~~~~~~~~~~~~~~~~
+fs_trass.h:19:9: error: 'logfile' was not declared in this scope
+   19 |     if (logfile) { \
+      |         ^~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:11:13: note: in expansion of macro 'say'
+   11 | #define jpr say
+      |             ^~~
+C:\FrameStream\FrameStream\fs_camera.h:396:3: note: in expansion of macro 'jpr'
+  396 |   jpr("Buffer size for %d is %d\n", x, frame_buffer_size);
+      |   ^~~
 Несколько библиотек найдено для "WiFi.h"
  Используется: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi
 Не используется: C:\Program Files (x86)\Arduino\libraries\WiFi
-Используем библиотеку WiFi версии 3.3.8 из папки: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi 
+---------------------------------------------------------------------------------------

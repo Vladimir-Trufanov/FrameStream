@@ -1,4 +1,4 @@
-/** Arduino, ESP32, C/C++ **************************************** camera.h ***
+/** Arduino, ESP32, C/C++ ************************************* fs_camera.h ***
  * 
  *                                             Обслужить работу с видео-камерой
  *                                                     
@@ -7,52 +7,10 @@
  * 
 **/
 
-#pragma once   
-
-/** 
-Ошибки при инициализации камеры:
-
-10:38:16.695 -> E (3218) cam_hal: cam_dma_config(509): frame buffer malloc failed
-10:38:16.695 -> E (3219) cam_hal: cam_config(599): cam_dma_config failed
-10:38:16.695 -> E (3219) camera: Camera config failed with error 0xffffffff
-
-Ошибки означают, что библиотека esp_camera.h не смогла выделить достаточно памяти в ESP32CAM для обработки изображений. 
-ESP32CAM при захвате изображения хранит данные в буфере, который предварительно выделяется программой. 
-PSRAM (Pseudo Static RAM) — это память ESP32CAM, в которой выделяется память для входящих данных изображения. 
-
-Для устранения ошибок рекомендуется:
-- проверить конфигурацию платы. Убедиться, что в Arduino IDE выбрана правильная плата;
-- проверить назначение контактов в коде и, если нужно, изменить его согласно назначению для платы;
-- проверить питание — если ESP32-CAM питается через USB-порт, стоит попробовать использовать другой порт или внешний источник питания;
-- проверить подключение камеры — камера имеет маленький разъём, и важно, чтобы она была подключена правильно и с надёжным контактом;
-- включить опцию PSRAM в настройках платы, если она отключена. Например, в некоторых случаях ошибка возникает из-за того, что опция PSRAM («OPI PSRAM») отключена;
-- удалить и повторно подключить разъём камеры. Это может помочь, если ошибка связана с повреждением платы;
-- проверить код и, если нужно, исправить ошибку. Например, в некоторых случаях помогает добавление флагов сборки -D PREFER_PSRAM -mfix-esp32-psram-cache-issue в скетч;
-- проверить код на наличие ошибок, связанных с выделением памяти. Например, в некоторых случаях ошибка возникает из-за ошибки в коде, из-за которой PSRAM не распознаётся ESP32-CAM;
-- использовать старую версию программного обеспечения ESP32-CAM — в некоторых случаях ошибка возникала из-за ошибки в новой версии, и временное решение — использовать старую версию, которая работала в прошлом. 
-
-!!! 2026-02-23 для 
-11:34:26.716 -> ------------------------------------------
-11:34:26.716 -> SPIRAM Memory Info:
-11:34:26.716 -> ------------------------------------------
-11:34:26.716 ->   Total Size        :  2097152 B (2048.0 KB)
-11:34:26.716 ->   Free Bytes        :  1319824 B (1288.9 KB)
-11:34:26.716 ->   Allocated Bytes   :   775184 B ( 757.0 KB)
-11:34:26.716 ->   Minimum Free Bytes:  1319824 B (1288.9 KB)
-11:34:26.716 ->   Largest Free Block:  1310708 B (1280.0 KB)
-11:34:26.716 -> ------------------------------------------
-сделал 
-Core Debug Level: "Debug"
-Erase All Flash Before Scetch Upload: "Enabled"
-Partition Scheme: "Huge App"
-
-**/
-
-#include "esp_camera.h"
-#include "sensor.h"
+#pragma once  
 
 #include "inimem.h"
-#include "trass.h"
+#include "fs_trass.h"
 
 // CAMERA_MODEL_AI_THINKER
 #define PWDN_GPIO_NUM     32
@@ -71,88 +29,6 @@ Partition Scheme: "Huge App"
 #define VSYNC_GPIO_NUM    25
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
-
-// Выделяем переменную по ошибкам: esp_err_t — тип, который в ESP-IDF представляет коды ошибок. 
-// Это целое число со знаком. Успешный возврат (отсутствие ошибки) обозначается кодом ESP_OK, 
-// который определён как 0. Общие коды ошибок для традиционных отказов (out of memory, timeout, invalid argument и т. п.) 
-// определены в файле esp_err.h. Различные компоненты в ESP-IDF могут определять дополнительные коды ошибок для отдельных ситуаций. 
-static esp_err_t cam_err;
-
-
-uint8_t* fb_streaming;
-uint8_t* fb_capture;
-
-int fb_streaming_len;
-int fb_capture_len;
-long fb_streaming_time = 0;
-long fb_capture_time = 0;
-
-int first = 1;
-long frame_start = 0;
-long frame_end = 0;
-long frame_total = 0;
-long frame_average = 0;
-long loop_average = 0;
-long loop_total = 0;
-long total_frame_data = 0;
-long last_frame_length = 0;
-int done = 0;
-
-// Переменные отлова каждого 50 кадра до 1000
-int gframe_cnt;
-int gfblen;
-int gj;
-int gmdelay;
-int do_it_now = 0;
-
-// Сбрасываем первый флаг записи по событию (после первой проверки 12-ого контакта)
-int start_record_1st_opinion = 0;
-// Сбрасываем второй флаг записи по событию (после проверки 12-ого контакта на следующем цикле)
-int start_record_2nd_opinion = 0; 
-// Сбрасываем флаг запуска записи очередного видео файла
-int start_record = 0;
-
-uint8_t avi1_buf[4]        = {0x41, 0x56, 0x49, 0x31};    // "AVI1"
-uint8_t idx1_buf[4]        = {0x69, 0x64, 0x78, 0x31};    // "idx1"
-uint8_t zero_buf[4]        = {0x00, 0x00, 0x00, 0x00};    // "    "
-uint8_t dc_buf[4]          = {0x30, 0x30, 0x64, 0x63};    // "00dc"
-uint8_t dc_and_zero_buf[8] = {0x30, 0x30, 0x64, 0x63, 0x00, 0x00, 0x00, 0x00};
-
-// Декодирование JPEG для чайников - https://habr.com/ru/articles/102521/
-// Изобретаем JPEG                 - https://habr.com/ru/articles/206264/
-
-// Заголовок AVI-файла
-#define AVIOFFSET 240  // длина заголовка
-const int avi_header[AVIOFFSET] PROGMEM = 
-{
-  0x52, 0x49, 0x46, 0x46, 0xD8, 0x01, 0x0E, 0x00, 0x41, 0x56, 0x49, 0x20, 0x4C, 0x49, 0x53, 0x54,
-  0xD0, 0x00, 0x00, 0x00, 0x68, 0x64, 0x72, 0x6C, 0x61, 0x76, 0x69, 0x68, 0x38, 0x00, 0x00, 0x00,
-  0xA0, 0x86, 0x01, 0x00, 0x80, 0x66, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
-  0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x80, 0x02, 0x00, 0x00, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4C, 0x49, 0x53, 0x54, 0x84, 0x00, 0x00, 0x00,
-  0x73, 0x74, 0x72, 0x6C, 0x73, 0x74, 0x72, 0x68, 0x30, 0x00, 0x00, 0x00, 0x76, 0x69, 0x64, 0x73,
-  0x4D, 0x4A, 0x50, 0x47, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x73, 0x74, 0x72, 0x66,
-  0x28, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x00, 0xe0, 0x01, 0x00, 0x00,
-  0x01, 0x00, 0x18, 0x00, 0x4D, 0x4A, 0x50, 0x47, 0x00, 0x84, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x49, 0x4E, 0x46, 0x4F,
-  0x10, 0x00, 0x00, 0x00, 0x6A, 0x61, 0x6D, 0x65, 0x73, 0x7A, 0x61, 0x68, 0x61, 0x72, 0x79, 0x20,
-  0x76, 0x36, 0x32, 0x20, 0x4C, 0x49, 0x53, 0x54, 0x00, 0x01, 0x0E, 0x00, 0x6D, 0x6F, 0x76, 0x69,
-};
-
-
-
-// Здесь используются две ссылки на Git-репозитарии, которые сохранены в каталоге Info приложения: 
-// data structure from here https://github.com/s60sc/ESP32-CAM_MJPEG2SD/blob/master/avi.cpp, extended for ov5640
-// must match https://github.com/espressif/esp32-camera/blob/b6a8297342ed728774036089f196d599f03ea367/driver/include/sensor.h#L87
-// which changed in Nov 2024
-struct frameSizeStruct 
-{
-  uint8_t frameWidth[2];
-  uint8_t frameHeight[2];
-};
 
 /*
 // Перечисление идентификаторов типов камер, которое определено в sensor.h
@@ -210,6 +86,15 @@ typedef enum {
 } framesize_t;
 */
 
+// Определяем структуру для типа кадра
+// (здесь используются две ссылки на Git-репозитарии, которые изменены в ноябре 2024:
+// data structure - https://github.com/s60sc/ESP32-CAM_MJPEG2SD/blob/master/avi.cpp, расширены до ov5640
+// must match     - https://github.com/espressif/esp32-camera/blob/b6a8297342ed728774036089f196d599f03ea367/driver/include/sensor.h#L87)
+struct frameSizeStruct 
+{
+  uint8_t frameWidth[2];
+  uint8_t frameHeight[2];
+};
 static const frameSizeStruct frameSizeData[] = 
 {                                                      // framesize:
   {{0x60, 0x00}, {0x60, 0x00}}, // FRAMESIZE_96X96,    // 96x96     0 
@@ -241,57 +126,45 @@ static const frameSizeStruct frameSizeData[] =
   {{0x00, 0x0A}, {0x80, 0x07}}  // FRAMESIZE_QSXGA,    // 2560x1920 23
 };
 
+/** 
+Ошибки при инициализации камеры:
 
-uint16_t remnant = 0;
-uint32_t startms;             // время начала работы с камерой и файлом avi    
-uint32_t elapsedms;           // общее время работы с камерой и файлом avi 
+10:38:16.695 -> E (3218) cam_hal: cam_dma_config(509): frame buffer malloc failed
+10:38:16.695 -> E (3219) cam_hal: cam_config(599): cam_dma_config failed
+10:38:16.695 -> E (3219) camera: Camera config failed with error 0xffffffff
 
-long current_frame_time=0;    // 
-long last_frame_time=0;
+Ошибки означают, что библиотека esp_camera.h не смогла выделить достаточно памяти в ESP32CAM для обработки изображений. 
+ESP32CAM при захвате изображения хранит данные в буфере, который предварительно выделяется программой. 
+PSRAM (Pseudo Static RAM) — это память ESP32CAM, в которой выделяется память для входящих данных изображения. 
 
-camera_fb_t * fb_curr=NULL;   // структура с буфером снятого кадра
-uint8_t* fb_curr_record_buf;  // копия буфера снятого кадра
-int fb_curr_record_len;       // длина буфера снятого кадра
-long fb_curr_record_time=0;   // время записи снятого кадра с начала запуска программы (мс)
+Для устранения ошибок рекомендуется:
+- проверить конфигурацию платы. Убедиться, что в Arduino IDE выбрана правильная плата;
+- проверить назначение контактов в коде и, если нужно, изменить его согласно назначению для платы;
+- проверить питание — если ESP32-CAM питается через USB-порт, стоит попробовать использовать другой порт или внешний источник питания;
+- проверить подключение камеры — камера имеет маленький разъём, и важно, чтобы она была подключена правильно и с надёжным контактом;
+- включить опцию PSRAM в настройках платы, если она отключена. Например, в некоторых случаях ошибка возникает из-за того, что опция PSRAM («OPI PSRAM») отключена;
+- удалить и повторно подключить разъём камеры. Это может помочь, если ошибка связана с повреждением платы;
+- проверить код и, если нужно, исправить ошибку. Например, в некоторых случаях помогает добавление флагов сборки -D PREFER_PSRAM -mfix-esp32-psram-cache-issue в скетч;
+- проверить код на наличие ошибок, связанных с выделением памяти. Например, в некоторых случаях ошибка возникает из-за ошибки в коде, из-за которой PSRAM не распознаётся ESP32-CAM;
+- использовать старую версию программного обеспечения ESP32-CAM — в некоторых случаях ошибка возникала из-за ошибки в новой версии, и временное решение — использовать старую версию, которая работала в прошлом. 
 
-// Окончательные данные по кадрам, защищенные мьютексом
-uint8_t* fb_record;           // копия буфера снятого кадра
-int fb_record_len;            // длина буфера снятого кадра
-long fb_record_time = 0;      // время записи снятого кадра с начала запуска программы (мс)
+!!! 2026-02-23 для 
+11:34:26.716 -> ------------------------------------------
+11:34:26.716 -> SPIRAM Memory Info:
+11:34:26.716 -> ------------------------------------------
+11:34:26.716 ->   Total Size        :  2097152 B (2048.0 KB)
+11:34:26.716 ->   Free Bytes        :  1319824 B (1288.9 KB)
+11:34:26.716 ->   Allocated Bytes   :   775184 B ( 757.0 KB)
+11:34:26.716 ->   Minimum Free Bytes:  1319824 B (1288.9 KB)
+11:34:26.716 ->   Largest Free Block:  1310708 B (1280.0 KB)
+11:34:26.716 -> ------------------------------------------
+сделал 
+Core Debug Level: "Debug"
+Erase All Flash Before Scetch Upload: "Enabled"
+Partition Scheme: "Huge App"
+**/
 
-long totalp;                  // общее время съемки всех кадров записанного файла avi
-long totalw;                  // общее время записи всех кадров файла avi
-long time_in_loop;
-long wait_for_cam;            // общее время ожидания камеры между съемками
-long time_in_camera;          // общее время работы камеры
-long time_in_good;            // время камеры с получением целых (хороших) кадров
-long time_total;              // общее время съёмки и записи на SD
-long time_in_web1;            // время пребывания на страницах браузера
-long delay_wait_for_sd;       // общее время ожидания записи на SD
-long time_in_sd;              // время, потраченное на работу с sd-картой
-
-unsigned long jpeg_size;      // размер текущего кадра для сбора статистики
-unsigned long movi_size;      // текущий размер видео-файла для статистики
-
-long bytes_before_last_100_frames=0;  // размер видео с последними 100 кадрами
-long time_before_last_100_frames=0;   // время записи последних 100 кадров
-float most_recent_fps=0;              // количество недавних кадров в секунду
-int most_recent_avg_framesize=0;      // средний размер недавних кадров
-
-uint32_t uVideoLen = 0;       // общий размер всех блоков кадров в видео-файле
-unsigned long idx_offset=0;   // индексные метки кадров в видео-файле
-
-int bad_jpg = 0;              // количество плохих кадров
-int extend_jpg = 0;           // количество расширенных кадров
-int normal_jpg = 0;           // количество нормальных кадров
-
-int very_high = 0;
-
-int we_are_already_stopped=0; // 1 - "видео-запись уже остановлена"
-
-// Сбрасываем флаг "удалить старые файлы по завершению записи текущего файла avi"
-int delete_old_stuff_flag = 0;
-
+/*
 // ****************************************************************************
 // *                      Установить параметры камеры                         *
 // ****************************************************************************
@@ -425,6 +298,234 @@ static bool config_camera()
   saymem("MEM - после пробных фотографий");
   return true;
 }
+*/
+
+static void config_camera() 
+{
+
+  camera_config_t config;
+
+  //Serial.println("config camera");
+
+  config.ledc_channel = LEDC_CHANNEL_0;
+  config.ledc_timer = LEDC_TIMER_0;
+  config.pin_d0 = Y2_GPIO_NUM;
+  config.pin_d1 = Y3_GPIO_NUM;
+  config.pin_d2 = Y4_GPIO_NUM;
+  config.pin_d3 = Y5_GPIO_NUM;
+  config.pin_d4 = Y6_GPIO_NUM;
+  config.pin_d5 = Y7_GPIO_NUM;
+  config.pin_d6 = Y8_GPIO_NUM;
+  config.pin_d7 = Y9_GPIO_NUM;
+  config.pin_xclk = XCLK_GPIO_NUM;
+  config.pin_pclk = PCLK_GPIO_NUM;
+  config.pin_vsync = VSYNC_GPIO_NUM;
+  config.pin_href = HREF_GPIO_NUM;
+  config.pin_sscb_sda = SIOD_GPIO_NUM;
+  config.pin_sscb_scl = SIOC_GPIO_NUM;
+  config.pin_pwdn = PWDN_GPIO_NUM;
+  config.pin_reset = RESET_GPIO_NUM;
+
+  config.xclk_freq_hz = 20000000;
+
+  config.pixel_format = PIXFORMAT_JPEG;
+
+  jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
+
+  config.frame_size =  (framesize_t)framesize;
+  config.jpeg_quality = quality;
+  config.fb_count = buffersconfig;
+
+  // https://github.com/espressif/esp32-camera/issues/357#issuecomment-1047086477
+  config.grab_mode      = CAMERA_GRAB_LATEST; //61.92
+
+  if (Lots_of_Stats) {
+    print_mem("Before camera config ... ");
+  }
+  esp_err_t cam_err = ESP_FAIL;
+  int attempt = 5;
+  while (attempt && cam_err != ESP_OK) {
+    cam_err = esp_camera_init(&config);
+    if (cam_err != ESP_OK) {
+      jpr("Camera init failed with error 0x%x\n", cam_err);
+      digitalWrite(PWDN_GPIO_NUM, 1);
+      delay(500);
+      digitalWrite(PWDN_GPIO_NUM, 0); // power cycle the camera (OV2640)
+      attempt--;
+    }
+  }
+
+  if (Lots_of_Stats) {
+    print_mem("After  camera config ... ");
+  }
+
+  if (cam_err != ESP_OK) {
+    major_fail();
+  }
+
+  sensor_t * ss = esp_camera_sensor_get();
+
+  jpr("\nCamera started correctly, Type is %x (hex) of 9650, 7725, 2640, 3660, 5640\n\n", ss->id.PID);
+
+  if (ss->id.PID == OV5640_PID ) {
+    //Serial.println("56 - going mirror");
+    ss->set_hmirror(ss, 1);        // 0 = disable , 1 = enable
+  } else {
+    ss->set_hmirror(ss, 0);        // 0 = disable , 1 = enable
+  }
+
+  ss->set_brightness(ss, 1);  //up the blightness just a bit
+  ss->set_saturation(ss, -2); //lower the saturation
+
+  int x = 0;
+  delay(500);
+  for (int j = 0; j < 30; j++) {
+    camera_fb_t * fb = esp_camera_fb_get(); // get_good_jpeg();
+    if (!fb) {
+      Serial.println("Camera Capture Failed");
+    } else {
+      if (j < 3 || j > 27) jpr("Pic %2d, len=%7d, at mem %X\n", j, fb->len, (long)fb->buf);
+      x = fb->len;
+      esp_camera_fb_return(fb);
+      delay(30);
+    }
+  }
+  frame_buffer_size  = (( (x * 4) / (16 * 1024) ) + 1) * 16 * 1024  ;
+  // 4 times buffer size, rounded up to 16kb
+
+  jpr("Buffer size for %d is %d\n", x, frame_buffer_size);
+  print_mem("End of camera setup");
+}
+
+
+/*
+#include "esp_camera.h"
+#include "sensor.h"
+
+#include "inimem.h"
+#include "trass.h"
+
+// Выделяем переменную по ошибкам: esp_err_t — тип, который в ESP-IDF представляет коды ошибок. 
+// Это целое число со знаком. Успешный возврат (отсутствие ошибки) обозначается кодом ESP_OK, 
+// который определён как 0. Общие коды ошибок для традиционных отказов (out of memory, timeout, invalid argument и т. п.) 
+// определены в файле esp_err.h. Различные компоненты в ESP-IDF могут определять дополнительные коды ошибок для отдельных ситуаций. 
+static esp_err_t cam_err;
+
+
+uint8_t* fb_streaming;
+uint8_t* fb_capture;
+
+int fb_streaming_len;
+int fb_capture_len;
+long fb_streaming_time = 0;
+long fb_capture_time = 0;
+
+int first = 1;
+long frame_start = 0;
+long frame_end = 0;
+long frame_total = 0;
+long frame_average = 0;
+long loop_average = 0;
+long loop_total = 0;
+long total_frame_data = 0;
+long last_frame_length = 0;
+int done = 0;
+
+// Переменные отлова каждого 50 кадра до 1000
+int gframe_cnt;
+int gfblen;
+int gj;
+int gmdelay;
+int do_it_now = 0;
+
+// Сбрасываем первый флаг записи по событию (после первой проверки 12-ого контакта)
+int start_record_1st_opinion = 0;
+// Сбрасываем второй флаг записи по событию (после проверки 12-ого контакта на следующем цикле)
+int start_record_2nd_opinion = 0; 
+// Сбрасываем флаг запуска записи очередного видео файла
+int start_record = 0;
+
+uint8_t avi1_buf[4]        = {0x41, 0x56, 0x49, 0x31};    // "AVI1"
+uint8_t idx1_buf[4]        = {0x69, 0x64, 0x78, 0x31};    // "idx1"
+uint8_t zero_buf[4]        = {0x00, 0x00, 0x00, 0x00};    // "    "
+uint8_t dc_buf[4]          = {0x30, 0x30, 0x64, 0x63};    // "00dc"
+uint8_t dc_and_zero_buf[8] = {0x30, 0x30, 0x64, 0x63, 0x00, 0x00, 0x00, 0x00};
+
+// Декодирование JPEG для чайников - https://habr.com/ru/articles/102521/
+// Изобретаем JPEG                 - https://habr.com/ru/articles/206264/
+
+// Заголовок AVI-файла
+#define AVIOFFSET 240  // длина заголовка
+const int avi_header[AVIOFFSET] PROGMEM = 
+{
+  0x52, 0x49, 0x46, 0x46, 0xD8, 0x01, 0x0E, 0x00, 0x41, 0x56, 0x49, 0x20, 0x4C, 0x49, 0x53, 0x54,
+  0xD0, 0x00, 0x00, 0x00, 0x68, 0x64, 0x72, 0x6C, 0x61, 0x76, 0x69, 0x68, 0x38, 0x00, 0x00, 0x00,
+  0xA0, 0x86, 0x01, 0x00, 0x80, 0x66, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
+  0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x80, 0x02, 0x00, 0x00, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4C, 0x49, 0x53, 0x54, 0x84, 0x00, 0x00, 0x00,
+  0x73, 0x74, 0x72, 0x6C, 0x73, 0x74, 0x72, 0x68, 0x30, 0x00, 0x00, 0x00, 0x76, 0x69, 0x64, 0x73,
+  0x4D, 0x4A, 0x50, 0x47, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x73, 0x74, 0x72, 0x66,
+  0x28, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x00, 0xe0, 0x01, 0x00, 0x00,
+  0x01, 0x00, 0x18, 0x00, 0x4D, 0x4A, 0x50, 0x47, 0x00, 0x84, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x49, 0x4E, 0x46, 0x4F,
+  0x10, 0x00, 0x00, 0x00, 0x6A, 0x61, 0x6D, 0x65, 0x73, 0x7A, 0x61, 0x68, 0x61, 0x72, 0x79, 0x20,
+  0x76, 0x36, 0x32, 0x20, 0x4C, 0x49, 0x53, 0x54, 0x00, 0x01, 0x0E, 0x00, 0x6D, 0x6F, 0x76, 0x69,
+};
+*/
+
+/*
+uint16_t remnant = 0;
+uint32_t startms;             // время начала работы с камерой и файлом avi    
+uint32_t elapsedms;           // общее время работы с камерой и файлом avi 
+
+long current_frame_time=0;    // 
+long last_frame_time=0;
+
+camera_fb_t * fb_curr=NULL;   // структура с буфером снятого кадра
+uint8_t* fb_curr_record_buf;  // копия буфера снятого кадра
+int fb_curr_record_len;       // длина буфера снятого кадра
+long fb_curr_record_time=0;   // время записи снятого кадра с начала запуска программы (мс)
+
+// Окончательные данные по кадрам, защищенные мьютексом
+uint8_t* fb_record;           // копия буфера снятого кадра
+int fb_record_len;            // длина буфера снятого кадра
+long fb_record_time = 0;      // время записи снятого кадра с начала запуска программы (мс)
+
+long totalp;                  // общее время съемки всех кадров записанного файла avi
+long totalw;                  // общее время записи всех кадров файла avi
+long time_in_loop;
+long wait_for_cam;            // общее время ожидания камеры между съемками
+long time_in_camera;          // общее время работы камеры
+long time_in_good;            // время камеры с получением целых (хороших) кадров
+long time_total;              // общее время съёмки и записи на SD
+long time_in_web1;            // время пребывания на страницах браузера
+long delay_wait_for_sd;       // общее время ожидания записи на SD
+long time_in_sd;              // время, потраченное на работу с sd-картой
+
+unsigned long jpeg_size;      // размер текущего кадра для сбора статистики
+unsigned long movi_size;      // текущий размер видео-файла для статистики
+
+long bytes_before_last_100_frames=0;  // размер видео с последними 100 кадрами
+long time_before_last_100_frames=0;   // время записи последних 100 кадров
+float most_recent_fps=0;              // количество недавних кадров в секунду
+int most_recent_avg_framesize=0;      // средний размер недавних кадров
+
+uint32_t uVideoLen = 0;       // общий размер всех блоков кадров в видео-файле
+unsigned long idx_offset=0;   // индексные метки кадров в видео-файле
+
+int bad_jpg = 0;              // количество плохих кадров
+int extend_jpg = 0;           // количество расширенных кадров
+int normal_jpg = 0;           // количество нормальных кадров
+
+int very_high = 0;
+
+int we_are_already_stopped=0; // 1 - "видео-запись уже остановлена"
+
+// Сбрасываем флаг "удалить старые файлы по завершению записи текущего файла avi"
+int delete_old_stuff_flag = 0;
 
 
 // ****************************************************************************
@@ -523,7 +624,7 @@ camera_fb_t *  get_good_jpeg()
             }
             foundffd9 = 1;  // отметили, что кадр хороший
             // Lots_of_Stats = true, включена трассировка
-            /*
+            / *
             if (Lots_of_Stats) 
             {
               / *
@@ -544,7 +645,7 @@ camera_fb_t *  get_good_jpeg()
                 do_it_now = 1;
               }
             }
-            */
+            * /
             break;
           }
         }
@@ -769,7 +870,7 @@ static void end_avi()
     idxfile.close();
     avifile.close();
 
-    /*
+    / *
     jprln("\n*** Видео записано и сохранено ***");
     jprln("---");
     jprln("Снято и записано %5d кадров за %5d секунд", frame_cnt, elapsedms / 1000);
@@ -785,7 +886,7 @@ static void end_avi()
     jprln("Количество сломанных   кадров %3.1f %", 100.0 * bad_jpg / frame_cnt);
     jprln("Медленная запись на SD-карту %d, %5.3f %", very_high, 100.0 * very_high / frame_cnt, 5 );
     jprln("Проиндексировано (записано) %d кадров", frame_cnt);
-    */
+    * /
     //    int resss = SD_MMC.mkdir(the_directory);
     //    Serial.printf("remake the foler ?? %d\n",resss);
     int xx = SD_MMC.remove("/idx.tmp");
@@ -793,14 +894,14 @@ static void end_avi()
   //jprln("---");
   time_in_sd += (millis() - start);
   time_total = millis() - startms;
-  /*
+  / *
   jpr("Время ожидания камеры %10dms, %4.1f%%\n", wait_for_cam , 100.0 * wait_for_cam  / time_total);
   jpr("Время съёмки          %10dms, %4.1f%%\n", time_in_camera, 100.0 * time_in_camera / time_total);
   jpr("Время ожидания SD     %10dms, %4.1f%%\n", delay_wait_for_sd , 100.0 * delay_wait_for_sd  / time_total);
   jpr("Время записи на SD    %10dms, %4.1f%%\n", time_in_sd    , 100.0 * time_in_sd     / time_total);
   jpr("Время работы браузера %10dms, %4.1f%%\n", time_in_web1  , 100.0 * time_in_web1   / time_total);
   jpr("Общее время           %10dms, %4.1f%%\n", time_total    , 100.0 * time_total     / time_total);
-  */
+  * /
   logfile.flush();
   if (file_number == 100) 
   {
@@ -836,6 +937,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
 
   // Ускорение записи на SD-карту на ESP32-CAM с камерой OV2640
   // (https://github.com/espressif/esp32-camera/issues/182)
+  */
   
   /*
     Информация о том, как повысить скорость записи изображений в формате JPEG с камеры esp32 на SD-карту.
@@ -867,6 +969,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   в режиме UXGA и 25 кадров в секунду в режиме SVGA.
   */
   
+  /*
   // Записываем первый или единственный блок кадра размером fbs*1024 байт
   int block_num = 0;
   fb_block_start = fb_buf;
@@ -947,12 +1050,12 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
     unsigned long x = avifile.position();
     //jprln("Кадр:  %6d, время записи велико к среднему %4d > %4d, позиция в файле %X, ",  frame_cnt, millis() - bw, (totalw / frame_cnt), x );
     very_high++;
-    /*
+    / *
     for (int i = 1; i < block_num; i++) 
     {
       jpr("Блок %d, время %5d; ", i, block_delay[i] - block_delay[i - 1]);
     }
-    */
+    * /
   }
   // Освобождаем буферы
   avifile.flush();
@@ -1132,5 +1235,6 @@ void the_camera_loop (void* pvParameter)
     }
   }
 }
+*/
 
-// *************************************************************** camera.h ***
+// ************************************************************ fs_camera.h ***

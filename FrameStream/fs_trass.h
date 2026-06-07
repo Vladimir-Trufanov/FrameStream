@@ -1,4 +1,4 @@
-/** Arduino, ESP32, C/C++ ***************************************** trass.h ***
+/** Arduino, ESP32, C/C++ ************************************** fs_trass.h ***
  * 
  *                                Обеспечить вывод сообщений и запись лог-файла
  *                                                     
@@ -6,14 +6,135 @@
  * Copyright © 2026 tve                               Дата создания: 24.01.2026
 **/
 
-#pragma once   
+#pragma once 
 
-#include "FS.h"
+#define jpr say  
+#define jprln sayln  
 
+#define say(format, ...) \
+  { \
+    char buffer[256]; \
+    snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+    Serial.print(buffer); \
+    if (logfile) { \
+      logfile.print(buffer); \
+    } \
+  }
+
+#define sayln(format, ...) \
+  { \
+    char buffer[256]; \
+    snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+    Serial.println(buffer); \
+    if (logfile) { \
+      logfile.println(buffer); \
+    } \
+  }
+  
+// ****************************************************************************
+// *              Показать состояние памяти с заданным префиксом              *
+// ****************************************************************************
+#define print_mem saymem  
 // Специальные сообщения - это сообщения по использованию памяти, по времени ... 
 #define isSAYLOG true   // true - вести файл дублирования сообщений
 bool isSAY=true;        // true - разрешить вывод неспециальных сообщений
 bool isSAYMEM=true;     // true - разрешить трассировку состояния памяти
+
+void saymem(char* text) 
+{
+  if (isSAYMEM)
+  {
+    // Запоминаем состояние разрешения на вывод сообщений
+    bool oldSay=isSAY;       
+    // Разрешаем вывод сообщений
+    isSAY=true;      
+    // Определяем наибольшее число символов текста вместе с пробелами
+    // и дополняем текст пробелами слева 
+    int nfill=48;   
+    int j=nfill-utf8len(text)-2;
+    for (int i = 0; i<j; i++) 
+    {
+      _say(" "); 
+    }
+    // Выводим специальное сообщение по памяти
+    /**
+     * xPortGetCoreID()        - функция возвращает номер ядра, на котором выполняется текущая задача
+     * uxTaskPriorityGet(NULL) - возвращает приоритет текущей задачи (задачи, из которой была вызвана функция)
+     * ESP.getFreeHeap()       - возвращает размер свободной кучи (heap) в байтах
+     * ESP.getHeapSize()       - возвращает полный размер внутренней оперативной памяти в байтах (ОЗУ)
+     * ESP.getFreePsram()      - свободный объём внешней оперативной памяти PSRAM
+     * ESP.getPsramSize()      - полный объём внешней оперативной памяти PSRAM
+    **/
+    say("[%s]",text);
+    say(" ядро: %d,",          int(xPortGetCoreID()));        say(" приоритет: %d, ", int(uxTaskPriorityGet(NULL)));
+    say("свободная куча %6d ", uint32_t(ESP.getFreeHeap()));  say("от ОЗУ %6d, ",     uint32_t(ESP.getHeapSize()));
+    say("FreePSRAM %6d ",      uint32_t(ESP.getFreePsram())); say("от FLASH %6d",     uint32_t(ESP.getPsramSize()));
+    sayln(" ");
+    // Восстанавливаем состояние разрешения на вывод сообщений
+    isSAY=oldSay;      
+  }
+}
+//void print_mem(const char* text) 
+//{
+//  jpr("%s core: %d, Prio: %d, Internal Free Heap %6d of %6d, SPI Free %6d of %6d\n", text, xPortGetCoreID(), uxTaskPriorityGet(NULL), ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getFreePsram(), ESP.getPsramSize() );
+//}
+// ****************************************************************************
+// *      Отмигать аварийную ситуацию контрольным светодиодом в 10 циклов     *
+// *               в случае неудачной работы камеры или sd-карты              *
+// ****************************************************************************
+#define major_fail blinkRestart  
+void blinkRestart() 
+{
+  for  (int i = 0;  i < 10; i++) 
+  {                
+    for (int j = 0; j < 3; j++) 
+    {
+      digitalWrite(33, LOW);   delay(150);
+      digitalWrite(33, HIGH);  delay(150);
+    }
+    delay(1000);
+    for (int j = 0; j < 3; j++) 
+    {
+      digitalWrite(33, LOW);  delay(500);
+      digitalWrite(33, HIGH); delay(500);
+    }
+    delay(1000);
+    sayln("Аварийная ситуация [%d/10], перезагрузка контроллера",i);
+  }
+  if (logfile) logfile.close();
+  ESP.restart();
+}
+/*
+//
+// if we have no camera, or sd card, then flash rear led on and off to warn the human SOS - SOS
+//
+void major_fail() {
+
+  Serial.println(" ");
+  logfile.close();
+
+  for  (int i = 0;  i < 10; i++) {                 // 10 loops or about 100 seconds then reboot
+    for (int j = 0; j < 3; j++) {
+      digitalWrite(33, LOW);   delay(150);
+      digitalWrite(33, HIGH);  delay(150);
+    }
+    delay(1000);
+
+    for (int j = 0; j < 3; j++) {
+      digitalWrite(33, LOW);  delay(500);
+      digitalWrite(33, HIGH); delay(500);
+    }
+    delay(1000);
+    Serial.print("Major Fail  "); Serial.print(i); Serial.print(" / "); Serial.println(10);
+  }
+
+  ESP.restart();
+}
+*/
+
+/*
+#include "FS.h"
+
 
 File logfile;           // дескриптор файла информационных сообщений и об ошибках
 char buffer[256];       // буфер сообщения
@@ -88,7 +209,7 @@ void say(char* format, unsigned int n, const char* s)
 } 
 void sayln(char* format, unsigned int n, const char* s) {say(format,n,s); addln();} 
 
-/* Целочисленные типы
+/ * Целочисленные типы
 Тип	               Синоним	Число байт    От                       До
 ------------------ -------- ---------- --------------------------- ------
 bool	             -	      1          0,false                     1,true
@@ -101,7 +222,7 @@ long	             int32_t	4	         -2 147 483 648	             2 147 483 647
 unsigned long	     uint32_t	4	         0	                         4 294 967 295
 long long	         int64_t	8	         -9 223 372 036 854 775 808	 9 223 372 036 854 775 807
 unsigned long long uint64_t	8	         0	                         18 446 744 073 709 551 615
-*/
+* /
 // --- int = int = 2 или 4	 
 void say(char* format, int n) 
 {
@@ -132,31 +253,6 @@ void say(char* format, uint64_t n)
 void sayln(char* format, uint64_t n) {say(format,n); addln();}
 
 // ****************************************************************************
-// *      Отмигать аварийную ситуацию контрольным светодиодом в 10 циклов     *
-// *               в случае неудачной работы камеры или sd-карты              *
-// ****************************************************************************
-void blinkRestart() 
-{
-  for  (int i = 0;  i < 10; i++) 
-  {                
-    for (int j = 0; j < 3; j++) 
-    {
-      digitalWrite(33, LOW);   delay(150);
-      digitalWrite(33, HIGH);  delay(150);
-    }
-    delay(1000);
-    for (int j = 0; j < 3; j++) 
-    {
-      digitalWrite(33, LOW);  delay(500);
-      digitalWrite(33, HIGH); delay(500);
-    }
-    delay(1000);
-    sayln("Аварийная ситуация [%d/10], перезагрузка контроллера",i);
-  }
-  if (logfile) logfile.close();
-  ESP.restart();
-}
-// ****************************************************************************
 // *        Подсчитать число символов UTF-8 в последовательности char*        *
 // * https://stackoverflow.com/questions/4063146/getting-the-actual-length-of-a-utf-8-encoded-stdstring
 // ****************************************************************************
@@ -171,43 +267,6 @@ size_t utf8len(const char* str)
     str += 1 + ((v01 << v2) | (v01 & v3));
   }
   return len;
-}
-// ****************************************************************************
-// *              Показать состояние памяти с заданным префиксом              *
-// ****************************************************************************
-void saymem(char* text) 
-{
-  if (isSAYMEM)
-  {
-    // Запоминаем состояние разрешения на вывод сообщений
-    bool oldSay=isSAY;       
-    // Разрешаем вывод сообщений
-    isSAY=true;      
-    // Определяем наибольшее число символов текста вместе с пробелами
-    // и дополняем текст пробелами слева 
-    int nfill=48;   
-    int j=nfill-utf8len(text)-2;
-    for (int i = 0; i<j; i++) 
-    {
-      _say(" "); 
-    }
-    // Выводим специальное сообщение по памяти
-    /**
-     * xPortGetCoreID()        - функция возвращает номер ядра, на котором выполняется текущая задача
-     * uxTaskPriorityGet(NULL) - возвращает приоритет текущей задачи (задачи, из которой была вызвана функция)
-     * ESP.getFreeHeap()       - возвращает размер свободной кучи (heap) в байтах
-     * ESP.getHeapSize()       - возвращает полный размер внутренней оперативной памяти в байтах (ОЗУ)
-     * ESP.getFreePsram()      - свободный объём внешней оперативной памяти PSRAM
-     * ESP.getPsramSize()      - полный объём внешней оперативной памяти PSRAM
-    **/
-    say("[%s]",text);
-    say(" ядро: %d,",          int(xPortGetCoreID()));        say(" приоритет: %d, ", int(uxTaskPriorityGet(NULL)));
-    say("свободная куча %6d ", uint32_t(ESP.getFreeHeap()));  say("от ОЗУ %6d, ",     uint32_t(ESP.getHeapSize()));
-    say("FreePSRAM %6d ",      uint32_t(ESP.getFreePsram())); say("от FLASH %6d",     uint32_t(ESP.getPsramSize()));
-    sayln(" ");
-    // Восстанавливаем состояние разрешения на вывод сообщений
-    isSAY=oldSay;      
-  }
 }
 // ****************************************************************************
 // *           Показать установленные настройки камеры, видео и другие        *
@@ -233,5 +292,6 @@ void sayconfig()
   else                                      sayln("карта не подключена");
   say("Ёмкость SD_MMC-карты                 %llu MB\n", cardSize);
 }
+*/
 
-// **************************************************************** trass.h ***
+// ************************************************************* fs_trass.h ***

@@ -50,25 +50,10 @@
 #include "esp_camera.h"
 #include "sensor.h"
 
-#define jpr(format, ...) \
-  { \
-    char buffer[256]; \
-    snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
-    Serial.print(buffer); \
-    if (logfile) { \
-      logfile.print(buffer); \
-    } \
-  }
-
-#define jprln(format, ...) \
-  { \
-    char buffer[256]; \
-    snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
-    Serial.println(buffer); \
-    if (logfile) { \
-      logfile.println(buffer); \
-    } \
-  }
+#include "inimem.h"
+#include "fs_camera.h"
+#include "fs_trass.h"
+#include "fs_wifi.h"
 
 static const char vernum[] = "v62.34";
 char devname[30];
@@ -78,11 +63,8 @@ char devname[30];
 // String TIMEZONE = "GMT0BST,M3.5.0/01,M10.5.0/02";
 String TIMEZONE = "MSK+00";
 
-#define Lots_of_Stats 1
 #define blinking 0
 
-int framesize;
-int quality ;
 int framesizeconfig ;
 int qualityconfig ;
 int buffersconfig ;
@@ -120,24 +102,6 @@ bool web_stop = false;
 // https://github.com/espressif/esp32-camera/issues/182
 #define fbs  1 // was 64 -- how many kb of static ram for psram -> sram buffer for sd write
 uint8_t fb_record_static[fbs * 1024 + 20];
-
-// CAMERA_MODEL_AI_THINKER
-#define PWDN_GPIO_NUM     32
-#define RESET_GPIO_NUM    -1
-#define XCLK_GPIO_NUM      0
-#define SIOD_GPIO_NUM     26
-#define SIOC_GPIO_NUM     27
-#define Y9_GPIO_NUM       35
-#define Y8_GPIO_NUM       34
-#define Y7_GPIO_NUM       39
-#define Y6_GPIO_NUM       36
-#define Y5_GPIO_NUM       21
-#define Y4_GPIO_NUM       19
-#define Y3_GPIO_NUM       18
-#define Y2_GPIO_NUM        5
-#define VSYNC_GPIO_NUM    25
-#define HREF_GPIO_NUM     23
-#define PCLK_GPIO_NUM     22
 
 camera_fb_t * fb_curr = NULL;
 camera_fb_t * fb_next = NULL;
@@ -261,48 +225,6 @@ uint8_t dc_and_zero_buf[8] = {0x30, 0x30, 0x64, 0x63, 0x00, 0x00, 0x00, 0x00};
 uint8_t avi1_buf[4] = {0x41, 0x56, 0x49, 0x31};    // "AVI1"
 uint8_t idx1_buf[4] = {0x69, 0x64, 0x78, 0x31};    // "idx1"
 
-
-struct frameSizeStruct 
-{
-  uint8_t frameWidth[2];
-  uint8_t frameHeight[2];
-};
-
-// data structure from here https://github.com/s60sc/ESP32-CAM_MJPEG2SD/blob/master/avi.cpp, extended for ov5640
-// must match https://github.com/espressif/esp32-camera/blob/b6a8297342ed728774036089f196d599f03ea367/driver/include/sensor.h#L87
-// which changed in Nov 2024
-static const frameSizeStruct frameSizeData[] = 
-{
-  {{0x60, 0x00}, {0x60, 0x00}}, // FRAMESIZE_96X96,    // 96x96    0 framesize
-  {{0xA0, 0x00}, {0x78, 0x00}}, // FRAMESIZE_QQVGA,    // 160x120  1
-  {{0x60, 0x00}, {0x60, 0x00}}, // FRAMESIZE_128X128   // 128x128  2
-  {{0xB0, 0x00}, {0x90, 0x00}}, // FRAMESIZE_QCIF,     // 176x144  3
-  {{0xF0, 0x00}, {0xB0, 0x00}}, // FRAMESIZE_HQVGA,    // 240x176  4
-  {{0xF0, 0x00}, {0xF0, 0x00}}, // FRAMESIZE_240X240,  // 240x240  5
-  {{0x40, 0x01}, {0xF0, 0x00}}, // FRAMESIZE_QVGA,     // 320x240  6
-  {{0x40, 0x01}, {0xF0, 0x00}}, // FRAMESIZE_320X320,  // 320x320  7
-  {{0x90, 0x01}, {0x28, 0x01}}, // FRAMESIZE_CIF,      // 400x296  8
-  {{0xE0, 0x01}, {0x40, 0x01}}, // FRAMESIZE_HVGA,     // 480x320  9
-  {{0x80, 0x02}, {0xE0, 0x01}}, // FRAMESIZE_VGA,      // 640x480  10
-  //               38,400    61,440    153,600
-  {{0x20, 0x03}, {0x58, 0x02}}, // FRAMESIZE_SVGA,     // 800x600   11
-  {{0x00, 0x04}, {0x00, 0x03}}, // FRAMESIZE_XGA,      // 1024x768  12
-  {{0x00, 0x05}, {0xD0, 0x02}}, // FRAMESIZE_HD,       // 1280x720  13
-  {{0x00, 0x05}, {0x00, 0x04}}, // FRAMESIZE_SXGA,     // 1280x1024 14
-  {{0x40, 0x06}, {0xB0, 0x04}}, // FRAMESIZE_UXGA,     // 1600x1200 15
-  // 3MP Sensors
-  {{0x80, 0x07}, {0x38, 0x04}}, // FRAMESIZE_FHD,      // 1920x1080 16
-  {{0xD0, 0x02}, {0x00, 0x05}}, // FRAMESIZE_P_HD,     //  720x1280 17
-  {{0x60, 0x03}, {0x00, 0x06}}, // FRAMESIZE_P_3MP,    //  864x1536 18
-  {{0x00, 0x08}, {0x00, 0x06}}, // FRAMESIZE_QXGA,     // 2048x1536 19
-  // 5MP Sensors
-  {{0x00, 0x0A}, {0xA0, 0x05}}, // FRAMESIZE_QHD,      // 2560x1440 20
-  {{0x00, 0x0A}, {0x40, 0x06}}, // FRAMESIZE_WQXGA,    // 2560x1600 21
-  {{0x38, 0x04}, {0x80, 0x07}}, // FRAMESIZE_P_FHD,    // 1080x1920 22
-  {{0x00, 0x0A}, {0x80, 0x07}}  // FRAMESIZE_QSXGA,    // 2560x1920 23
-
-};
-
 const int avi_header[AVIOFFSET] PROGMEM = 
 {
   0x52, 0x49, 0x46, 0x46, 0xD8, 0x01, 0x0E, 0x00, 0x41, 0x56, 0x49, 0x20, 0x4C, 0x49, 0x53, 0x54,
@@ -351,10 +273,6 @@ static void inline print_2quartet(unsigned long i, unsigned long j, File fd) {
   y[6] = (j >> 16) % 0x100;
   y[7] = (j >> 24) % 0x100;
   size_t i1_err = fd.write(y , 8);
-}
-
-void print_mem(const char* text) {
-  jpr("%s core: %d, Prio: %d, Internal Free Heap %6d of %6d, SPI Free %6d of %6d\n", text, xPortGetCoreID(), uxTaskPriorityGet(NULL), ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getFreePsram(), ESP.getPsramSize() );
 }
 
 #include "lwip/sockets.h"
@@ -408,129 +326,7 @@ void print_sock(int sock) {
   }
 }
 
-//
-// if we have no camera, or sd card, then flash rear led on and off to warn the human SOS - SOS
-//
-void major_fail() {
 
-  Serial.println(" ");
-  logfile.close();
-
-  for  (int i = 0;  i < 10; i++) {                 // 10 loops or about 100 seconds then reboot
-    for (int j = 0; j < 3; j++) {
-      digitalWrite(33, LOW);   delay(150);
-      digitalWrite(33, HIGH);  delay(150);
-    }
-    delay(1000);
-
-    for (int j = 0; j < 3; j++) {
-      digitalWrite(33, LOW);  delay(500);
-      digitalWrite(33, HIGH); delay(500);
-    }
-    delay(1000);
-    Serial.print("Major Fail  "); Serial.print(i); Serial.print(" / "); Serial.println(10);
-  }
-
-  ESP.restart();
-}
-
-
-static void config_camera() 
-{
-
-  camera_config_t config;
-
-  //Serial.println("config camera");
-
-  config.ledc_channel = LEDC_CHANNEL_0;
-  config.ledc_timer = LEDC_TIMER_0;
-  config.pin_d0 = Y2_GPIO_NUM;
-  config.pin_d1 = Y3_GPIO_NUM;
-  config.pin_d2 = Y4_GPIO_NUM;
-  config.pin_d3 = Y5_GPIO_NUM;
-  config.pin_d4 = Y6_GPIO_NUM;
-  config.pin_d5 = Y7_GPIO_NUM;
-  config.pin_d6 = Y8_GPIO_NUM;
-  config.pin_d7 = Y9_GPIO_NUM;
-  config.pin_xclk = XCLK_GPIO_NUM;
-  config.pin_pclk = PCLK_GPIO_NUM;
-  config.pin_vsync = VSYNC_GPIO_NUM;
-  config.pin_href = HREF_GPIO_NUM;
-  config.pin_sscb_sda = SIOD_GPIO_NUM;
-  config.pin_sscb_scl = SIOC_GPIO_NUM;
-  config.pin_pwdn = PWDN_GPIO_NUM;
-  config.pin_reset = RESET_GPIO_NUM;
-
-  config.xclk_freq_hz = 20000000;
-
-  config.pixel_format = PIXFORMAT_JPEG;
-
-  jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
-
-  config.frame_size =  (framesize_t)framesize;
-  config.jpeg_quality = quality;
-  config.fb_count = buffersconfig;
-
-  // https://github.com/espressif/esp32-camera/issues/357#issuecomment-1047086477
-  config.grab_mode      = CAMERA_GRAB_LATEST; //61.92
-
-  if (Lots_of_Stats) {
-    print_mem("Before camera config ... ");
-  }
-  esp_err_t cam_err = ESP_FAIL;
-  int attempt = 5;
-  while (attempt && cam_err != ESP_OK) {
-    cam_err = esp_camera_init(&config);
-    if (cam_err != ESP_OK) {
-      jpr("Camera init failed with error 0x%x\n", cam_err);
-      digitalWrite(PWDN_GPIO_NUM, 1);
-      delay(500);
-      digitalWrite(PWDN_GPIO_NUM, 0); // power cycle the camera (OV2640)
-      attempt--;
-    }
-  }
-
-  if (Lots_of_Stats) {
-    print_mem("After  camera config ... ");
-  }
-
-  if (cam_err != ESP_OK) {
-    major_fail();
-  }
-
-  sensor_t * ss = esp_camera_sensor_get();
-
-  jpr("\nCamera started correctly, Type is %x (hex) of 9650, 7725, 2640, 3660, 5640\n\n", ss->id.PID);
-
-  if (ss->id.PID == OV5640_PID ) {
-    //Serial.println("56 - going mirror");
-    ss->set_hmirror(ss, 1);        // 0 = disable , 1 = enable
-  } else {
-    ss->set_hmirror(ss, 0);        // 0 = disable , 1 = enable
-  }
-
-  ss->set_brightness(ss, 1);  //up the blightness just a bit
-  ss->set_saturation(ss, -2); //lower the saturation
-
-  int x = 0;
-  delay(500);
-  for (int j = 0; j < 30; j++) {
-    camera_fb_t * fb = esp_camera_fb_get(); // get_good_jpeg();
-    if (!fb) {
-      Serial.println("Camera Capture Failed");
-    } else {
-      if (j < 3 || j > 27) jpr("Pic %2d, len=%7d, at mem %X\n", j, fb->len, (long)fb->buf);
-      x = fb->len;
-      esp_camera_fb_return(fb);
-      delay(30);
-    }
-  }
-  frame_buffer_size  = (( (x * 4) / (16 * 1024) ) + 1) * 16 * 1024  ;
-  // 4 times buffer size, rounded up to 16kb
-
-  jpr("Buffer size for %d is %d\n", x, frame_buffer_size);
-  print_mem("End of camera setup");
-}
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

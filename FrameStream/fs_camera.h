@@ -86,6 +86,9 @@ typedef enum {
 } framesize_t;
 */
 
+int framesizeconfig;
+int qualityconfig ;
+
 // Определяем структуру для типа кадра
 // (здесь используются две ссылки на Git-репозитарии, которые изменены в ноябре 2024:
 // data structure - https://github.com/s60sc/ESP32-CAM_MJPEG2SD/blob/master/avi.cpp, расширены до ov5640

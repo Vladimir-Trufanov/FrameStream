@@ -45,7 +45,7 @@
   - Partition Scheme Minimal SPIFFS with OTA
 */
 
-#include "esp_log.h"
+//#include "esp_log.h"
 #include "esp_http_server.h"
 #include "esp_camera.h"
 #include "sensor.h"
@@ -65,9 +65,6 @@ String TIMEZONE = "MSK+00";
 
 #define blinking 0
 
-int framesizeconfig ;
-int qualityconfig ;
-int buffersconfig ;
 int avi_length ;            // сколько длится фильм в секундах -- 1800 sec = 30 min
 int frame_interval ;        // запись на полной скорости
 int speed_up_factor ;       // воспроизведение в режиме реального времени
@@ -96,7 +93,6 @@ SemaphoreHandle_t baton;
 
 long current_frame_time;
 long last_frame_time;
-int frame_buffer_size;
 bool web_stop = false;
 
 // https://github.com/espressif/esp32-camera/issues/182
@@ -182,7 +178,6 @@ int  gmdelay;
 #include "FS.h"
 #include <SD_MMC.h>
 
-File logfile;
 File avifile;
 File idxfile;
 

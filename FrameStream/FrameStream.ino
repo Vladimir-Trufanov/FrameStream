@@ -52,6 +52,10 @@
 
 #include "inimem.h"
 #include "fs_camera.h"
+#include "fs_eprom.h"
+#include "fs_sd.h"
+#include "fs_server.h"
+#include "fs_stream.h"
 #include "fs_trass.h"
 #include "fs_wifi.h"
 
@@ -1117,7 +1121,8 @@ WiFiMulti jMulti;
 char ssidota[20];
 #include "ESPmDNS.h"
 
-#include "ESPxWebFlMgr.h"          //v56
+//#include "ESPxWebFlMgr.h"          //v56
+#include "FlMgr.h"          //v56
 const word filemanagerport = 8080;
 ESPxWebFlMgr filemgr(filemanagerport); // we want a different port than the webserver
 

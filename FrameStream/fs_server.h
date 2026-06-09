@@ -1,4 +1,4 @@
-/** Arduino, ESP32, C/C++ ********************************** CameraServer.h ***
+/** Arduino, ESP32, C/C++ ************************************* fs_server.h ***
  * 
  *                                           Обслужить Html-server видео-камеры
  *                                                     
@@ -9,6 +9,7 @@
 
 #pragma once 
 
+/*
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
   #include <ESP8266WebServer.h>
@@ -73,7 +74,8 @@ static esp_err_t capture_handler(httpd_req_t *req);
 
 static esp_err_t index_handler(httpd_req_t *req); 
 
-/*static esp_err_t delete_handler(httpd_req_t *req) 
+/ *
+static esp_err_t delete_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
 
@@ -86,7 +88,7 @@ static esp_err_t index_handler(httpd_req_t *req);
   delete_all_files = 1;
   return res;;
   }
-*/
+* /
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -139,7 +141,7 @@ void print_sock(int sock)
   }
 }
 
-/*
+/ *
 static esp_err_t reindex_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -175,9 +177,9 @@ static esp_err_t reindex_handler(httpd_req_t *req)
 
   return res;
 }
-*/
+* /
 
-/*
+/ *
 static esp_err_t edit_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -202,9 +204,9 @@ static esp_err_t edit_handler(httpd_req_t *req)
 
   return res;;
 }
-*/
+* /
 
-/*
+/ *
 static esp_err_t ota_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -292,7 +294,7 @@ Do the ota, or reboot ...
 
   return ESP_OK;
 }
-*/
+* /
 
 
 //61.3up
@@ -495,13 +497,13 @@ static esp_err_t time_handler(httpd_req_t *req)
 
         //time(&now);
         //Serial.print("\nLocal time: "); Serial.println(ctime(&now));
-        /*
+        / *
                 time_t rawtime;
                 struct tm * ptm;
                 time ( &rawtime );
                 ptm = gmtime ( &rawtime );
                 Serial.printf ("GMT: %2d:%02d\n", (ptm->tm_hour) % 24, ptm->tm_min);
-        */
+        * /
       }
     }
   }
@@ -918,16 +920,16 @@ static esp_err_t index_handler(httpd_req_t *req)
   // 09:53:44.673 -> -----
   // 09:53:44.673 -> Found header => Host: 10.120.175.2
   // 09:53:44.673 -> -----
-  /*
+  / *
   if (httpd_req_get_hdr_value_str(req, "Host", localip, buf_len) == ESP_OK) 
   {
     Serial.println("-----"); 
     Serial.printf("Found header => Host: %s\n", localip);
     Serial.println("-----"); 
   }
-  */
+  * /
   //sprintf(localip, "%s", buf);
-  /*
+  / *
     buf_len = httpd_req_get_url_query_len(req) + 1;
     if (buf_len > 1) 
     {
@@ -936,7 +938,7 @@ static esp_err_t index_handler(httpd_req_t *req)
         Serial.printf("Found URL query => %s", buf);
       }
     }
-  */
+  * /
   //print_mem("MEM - в начале обработчика index_handler        ");
   const char the_message[] = "Status";
   time(&now);
@@ -1031,11 +1033,11 @@ static esp_err_t index_handler(httpd_req_t *req)
     localip, localip,  localip  
   );  
   
-  /*        
+  / *        
   Serial.println("====="); logfile.print("=====");
   Serial.println(the_page); logfile.print(the_page);
   Serial.println("====="); logfile.print("=====");
-  */
+  * /
   
   //   Функцией httpd_resp_send отправляем данные в качестве HTTP-ответа на запрос. 
   // Подразумевается, что полный готовый ответ находится в одном буфере. 
@@ -1086,7 +1088,7 @@ void startCameraServer()
   
   // Пример: в этом примере сервер по умолчанию слушает на порту 80 и регистрирует обработчик URI, 
   // который отправляет «Hello, world!» в ответ на запрос GET по пути /hello.
-  /*
+  / *
   void start_server() 
   {
     httpd_handle_t server = NULL; 
@@ -1110,7 +1112,7 @@ void startCameraServer()
     httpd_resp_send(req, resp_str, strlen(resp_str));
     return ESP_OK;
   }
-  */
+  * /
   
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.max_uri_handlers = 17; //61.3 from 12
@@ -1139,7 +1141,7 @@ void startCameraServer()
     .user_ctx  = NULL
   };
   
-  /*
+  / *
   httpd_uri_t capture_uri = 
   {
     .uri       = "/capture",
@@ -1219,8 +1221,8 @@ void startCameraServer()
     .handler   = status_handler,
     .user_ctx  = NULL
   };
-  */
-  /*61.3
+  * /
+  / * 61.3
   httpd_uri_t delete_uri = 
   {
     .uri       = "/delete",
@@ -1228,9 +1230,9 @@ void startCameraServer()
     .handler   = delete_handler,
     .user_ctx  = NULL
   };
-  61.3 */
+  61.3 * /
   
-  /*
+  / *
   httpd_uri_t edit_uri = 
   {
     .uri       = "/edit",
@@ -1238,9 +1240,9 @@ void startCameraServer()
     .handler   = edit_handler,
     .user_ctx  = NULL
   };
-  */
+  * /
   
-  /*
+  / *
   httpd_uri_t reindex_uri = 
   {
     .uri       = "/reindex",
@@ -1255,7 +1257,7 @@ void startCameraServer()
     .handler   = ota_handler,
     .user_ctx  = NULL
   };
-  */
+  * /
   if (httpd_start(&camera_httpd, &config) == ESP_OK) 
   {
     httpd_register_uri_handler(camera_httpd, &index_uri);
@@ -1281,9 +1283,10 @@ void stopCameraServer()
 {
   httpd_stop(camera_httpd);
 }
+*/
 
 /*                                                          *** Обработчики ***
-CameraServer.h
+fs_server.h
 --------------
 --httpd_register_uri_handler(camera_httpd, &index_uri);     index_handler
 --httpd_register_uri_handler(camera_httpd, &capture_uri);   capture_handler
@@ -1307,4 +1310,4 @@ httpd_register_uri_handler(stream81_httpd, &stream_uri);    stream_81_handler   
 httpd_register_uri_handler(stream82_httpd, &stream_uri);    stream_82_handler    /stream
 */
 
-// ********************************************************* CameraServer.h ***
+// ************************************************************ fs_server.h ***

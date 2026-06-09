@@ -4,9 +4,9 @@
 
 #include <Arduino.h>
 #include <inttypes.h>
-#include "ESPxWebFlMgr.h"
-#include "ESPxWebFlMgrWp.h"
-#include "ESPxWebFlMgrWpF.h"
+#include "FlMgr.h"
+#include "FlMgrWp.h"
+#include "FlMgrWpF.h"
 
 #include "CRC32.h"
 

@@ -18,59 +18,55 @@ Extensions=*.*
 [Project tree]
 FrameStream
 	+FrameStream
-		+old
-			old\CameraServer.h
-			old\eprom.h
+		-old
 			old\FrameStream.ino
-			old\sd.h
-			old\stream32.h
 		config.h
 		CRC32.cpp
 		CRC32.h
 		errors.txt
-		ESPxWebFlMgr.cpp
-		ESPxWebFlMgr.h
-		ESPxWebFlMgrWp.h
-		ESPxWebFlMgrWpF.h
+		FlMgr.cpp
+		FlMgr.h
+		FlMgrWp.h
+		FlMgrWpF.h
 		FrameStream.ino
 		FrameStream.ppr
 		fs_camera.h
+		fs_eprom.h
+		fs_sd.h
+		fs_server.h
+		fs_stream.h
 		fs_trass.h
 		fs_wifi.h
 		inimem.h
 [Open project files]
 0=FrameStream.ino
 1=errors.txt
-2=fs_camera.h
-3=fs_trass.h
-4=old\CameraServer.h
-5=config.h
-6=inimem.h
-7=old\FrameStream.ino
+2=CRC32.h
+3=FlMgr.h
+4=FlMgr.cpp
+5=FlMgrWp.h
+6=FlMgrWpF.h
 [Selected Project Files]
 Main=
-Selected=inimem.h
+Selected=FlMgrWpF.h
 [FrameStream.ino]
-TopLine=84
-Caret=1,96
+TopLine=1110
+Caret=11,1125
 [errors.txt]
 TopLine=1
 Caret=104,11
-[fs_camera.h]
-TopLine=73
-Caret=1,91
-[fs_trass.h]
-TopLine=13
-Caret=1,13
-[old\CameraServer.h]
-TopLine=1016
-Caret=5,1028
-[config.h]
-TopLine=146
-Caret=6,255
-[inimem.h]
-TopLine=9
-Caret=1,23
-[old\FrameStream.ino]
-TopLine=99
+[CRC32.h]
+TopLine=1
+Caret=66,1
+[FlMgr.h]
+TopLine=1
+Caret=1,1
+[FlMgr.cpp]
+TopLine=1
+Caret=11,9
+[FlMgrWp.h]
+TopLine=69
+Caret=1,1
+[FlMgrWpF.h]
+TopLine=23
 Caret=1,1

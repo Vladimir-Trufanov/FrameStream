@@ -5,7 +5,7 @@
 // видео через сокеты на сайт KwinFlat 
 
 // Copyright © 2026 tve                               Труфанов В.Е., 11.01.2026
-static const char vernum[]="v2.2.0, 06.06.2026";  
+static const char vernum[]="v2.2.1, 09.06.2026";  
 /** 
  * Modify by James Zahary Sep 12, 2020 - jamzah.plc@gmail.com
  * 
@@ -44,14 +44,9 @@ static const char vernum[]="v2.2.0, 06.06.2026";
 
 #define blinking 0
 
-int MagicNumber = 12;       // изменить этот номер, чтобы сбросить номера файлов в eprom вашего esp32
-
-bool configfile = false;
 bool InternetOff = true;
 bool reboot_now = false;
 bool restart_now = false;
-String cssid1, cssid2, cssid3;
-String cpass1, cpass2, cpass3;
 
 String czone;
 //char apssid[30];
@@ -122,203 +117,6 @@ int gframe_cnt;
 int gfblen;
 int gj;
 int  gmdelay;
-
-#include "lwip/sockets.h"
-#include <lwip/netdb.h>
-
-void print_sock(int sock) {
-
-  sockaddr_in6 clientAddr;
-  socklen_t addrLen = sizeof(clientAddr);
-
-  int clientFd = sock; //client.getSocket();
-
-  char ip[INET6_ADDRSTRLEN] = {0};
-
-  if (getpeername(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
-  {
-    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    jpr("family %d ", clientAddr.sin6_family);
-    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr("Peer Client IP4: ");
-    jpr(ip);
-    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr(", Peer Client IP6: ");
-    jpr(ip);
-    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    jpr(", Client Port: ");
-    jprln("%d", clientPort);
-
-  } 
-  else 
-  {
-    Serial.println("Failed to get client address.");
-  }
-
-  if (getsockname(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
-  {
-    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    jpr("family %d ", clientAddr.sin6_family);
-    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr("Sock Client IP4: ");
-    jpr(ip);
-    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr(", Sock Client IP6: ");
-    jpr(ip);
-    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    jpr(", Client Port: ");
-    jprln("%d", clientPort);
-
-  } else {
-    Serial.println("Failed to get client address.");
-  }
-}
-
-
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-
-
-static esp_err_t init_sdcard()
-{
-
-  int succ = SD_MMC.begin("/sdcard", true, false, BOARD_MAX_SDMMC_FREQ, 7);
-  if (succ) {
-    Serial.printf("SD_MMC Begin: %d\n", succ);
-    uint8_t cardType = SD_MMC.cardType();
-    Serial.print("SD_MMC Card Type: ");
-    if (cardType == CARD_MMC) {
-      Serial.println("MMC");
-    } else if (cardType == CARD_SD) {
-      Serial.println("SDSC");
-    } else if (cardType == CARD_SDHC) {
-      Serial.println("SDHC");
-    } else {
-      Serial.println("UNKNOWN");
-    }
-
-    uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
-    Serial.printf("SD_MMC Card Size: %lluMB\n", cardSize);
-
-  } else {
-    Serial.printf("Failed to mount SD card VFAT filesystem. \n");
-    Serial.println("Do you have an SD Card installed?");
-    Serial.println("Check pin 12 and 13, not grounded, or grounded with 10k resistors!\n\n");
-    major_fail();
-  }
-
-  return ESP_OK;
-}
-
-#include "config.h"
-
-void read_config_file() {
-
-  // if there is a config.txt, use it plus defaults
-  // else use defaults, and create a config.txt
-
-  // put a file "config.txt" onto SD card, to set parameters different from your hardcoded parameters
-  // it should look like this - one paramter per line, in the correct order, followed by 2 spaces, and any comments you choose
-
-  String junk;
-
-  String cname ;
-  int cframesize ;
-  int cquality = 12 ;
-  int cbuffersconfig = 4;
-  int clength ;
-  int cinterval ;
-  int cspeedup ;
-  int cstreamdelay ;
-  String czone ;
-
-  delay(1000);
-
-  File config_file = SD_MMC.open("/config2.txt", "r");
-
-  if (config_file) {
-    jpr("Opened config2.txt from SD");
-  } else {
-    jpr("Failed to open config2.txt - writing a default");
-
-    // lets make a simple.txt config file
-    File new_simple = SD_MMC.open("/config2.txt", "w");
-    new_simple.print(config_txt);
-    new_simple.close();
-
-    file_group = 1;
-    file_number = 1;
-
-    do_eprom_write();
-
-    config_file = SD_MMC.open("/config2.txt", "r");
-  }
-
-  jpr("Reading config2.txt\n");
-  cname = config_file.readStringUntil(' ');
-  junk = config_file.readStringUntil('\n');
-  cframesize = config_file.parseInt();
-  junk = config_file.readStringUntil('\n');
-
-  clength = config_file.parseInt();
-  junk = config_file.readStringUntil('\n');
-  cinterval = config_file.parseInt();
-  junk = config_file.readStringUntil('\n');
-  cspeedup = config_file.parseInt();
-  junk = config_file.readStringUntil('\n');
-  cstreamdelay = config_file.parseInt();
-  junk = config_file.readStringUntil('\n');
-  czone = config_file.readStringUntil(' ');
-  junk = config_file.readStringUntil('\n');
-  cssid1 = config_file.readStringUntil('#');
-  junk = config_file.readStringUntil('\n');
-  cpass1 = config_file.readStringUntil('#');
-  junk = config_file.readStringUntil('\n');
-  cssid2 = config_file.readStringUntil(' ');
-  junk = config_file.readStringUntil('\n');
-  cpass2 = config_file.readStringUntil(' ');
-  junk = config_file.readStringUntil('\n');
-  cssid3 = config_file.readStringUntil(' ');
-  junk = config_file.readStringUntil('\n');
-  cpass3 = config_file.readStringUntil(' ');
-  junk = config_file.readStringUntil('\n');
-  config_file.close();
-
-  jpr("=========   Data from config2.txt and defaults  =========\n");
-  jpr("Name %s\n", cname);
-  jpr("Framesize %d\n", cframesize);
-  jpr("Quality %d\n", cquality);
-  jpr("Buffers config %d\n", cbuffersconfig);
-  jpr("Length %d\n", clength);
-  jpr("Interval %d\n", cinterval);
-  jpr("Speedup %d\n", cspeedup);
-  jpr("Streamdelay %d\n", cstreamdelay);
-
-  jpr("Zone len %d, %s\n", czone.length(), czone.c_str());
-  jpr("ssid1 %s\n", cssid1);
-  //jpr("pass1 %s\n", cpass1);
-  jpr("ssid2 %s\n", cssid2);
-  //jpr("pass2 %s\n", cpass2);
-  jpr("ssid3 %s\n", cssid3);
-  jpr("pass3 %s\n", cpass3);
-
-
-  framesize = cframesize;
-  quality = cquality;
-  buffersconfig = cbuffersconfig;
-  avi_length = clength;
-  frame_interval = cinterval;
-  speed_up_factor = cspeedup;
-  stream_delay = cstreamdelay;
-  configfile = true;
-  TIMEZONE = czone;
-
-  cname.toCharArray(devname, cname.length() + 1);
-
-}
-
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
@@ -550,53 +348,6 @@ camera_fb_t *  get_good_jpeg() {
   return fb;
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-//  eprom functions  - increment the file_group, so files are always unique
-//
-
-#include <EEPROM.h>
-
-struct eprom_data {
-  int eprom_good;
-  int file_group;
-};
-
-void do_eprom_read() {
-
-  eprom_data ed;
-
-  EEPROM.begin(200);
-  EEPROM.get(0, ed);
-
-  if (ed.eprom_good == MagicNumber) {
-    jpr("Good settings in the EPROM ");
-    file_group = ed.file_group;
-    file_group++;
-    jpr("New File Group "); Serial.println(file_group );
-  } else {
-    jpr("No settings in EPROM - Starting with File Group 1 ");
-    file_group = 1;
-  }
-  do_eprom_write();
-  file_number = 1;
-}
-
-void do_eprom_write() {
-
-  eprom_data ed;
-  ed.eprom_good = MagicNumber;
-  ed.file_group  = file_group;
-
-  Serial.println("Writing to EPROM ...");
-
-  EEPROM.begin(200);
-  EEPROM.put(0, ed);
-  EEPROM.commit();
-  EEPROM.end();
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
 // Make the avi functions
 //

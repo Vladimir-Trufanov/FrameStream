@@ -17,18 +17,25 @@
 #include <SD_MMC.h>
 
 #include "inimem.h"
+#include "fs_eprom.h"
+
 //#include "fs_trass.h"
 
 // Writes an uint32_t in Big Endian at current file position
 static void inline print_quartet(unsigned long i, File fd); 
 // Writes 2 uint32_t in Big Endian at current file position
 static void inline print_2quartet(unsigned long i, unsigned long j, File fd);
-// start_avi - open the files and write in headers
 // Открыть avi-файл и записать заголовки
 static void start_avi(); 
+// Считать или создать файл конфигурации "config.txt" и настроить переменные
+void read_config_file();
 
 File avifile;
 File idxfile;
+String cssid1, cssid2, cssid3;
+String cpass1, cpass2, cpass3;
+
+bool configfile = false;
 
 char file_to_edit[50] = "/JamCam0481.0007.avi"; //61.3
 char avi_file_name[100];    // название записываемого файла *.avi
@@ -66,8 +73,6 @@ uint32_t length = 0;
 uint32_t startms;
 uint32_t elapsedms;
 
-int file_number = 0;
-int file_group = 0;
 long boot_time = 0;
 
 #define BUFFSIZE 512
@@ -117,6 +122,109 @@ int we_are_already_stopped=0;  // 1 - "видео-запись уже остан
 
 // Сбрасываем флаг "удалить старые файлы по завершению записи текущего файла avi"
 int delete_old_stuff_flag = 0;
+
+// Считать или создать файл конфигурации "config.txt" и настроить переменные
+#include "config.h"
+void read_config_file() 
+{
+  // if there is a config.txt, use it plus defaults
+  // else use defaults, and create a config.txt
+  // put a file "config.txt" onto SD card, to set parameters different from your hardcoded parameters
+  // it should look like this - one paramter per line, in the correct order, followed by 2 spaces, and any comments you choose
+  String junk;
+  String cname ;
+  int cframesize ;
+  int cquality = 12 ;
+  int cbuffersconfig = 4;
+  int clength ;
+  int cinterval ;
+  int cspeedup ;
+  int cstreamdelay ;
+  String czone ;
+  delay(1000);
+
+  File config_file = SD_MMC.open("/config2.txt", "r");
+
+  if (config_file) {
+    jpr("Opened config2.txt from SD");
+  } else {
+    jpr("Failed to open config2.txt - writing a default");
+
+    // lets make a simple.txt config file
+    File new_simple = SD_MMC.open("/config2.txt", "w");
+    new_simple.print(config_txt);
+    new_simple.close();
+
+    file_group = 1;
+    file_number = 1;
+
+    do_eprom_write();
+
+    config_file = SD_MMC.open("/config2.txt", "r");
+  }
+
+  jpr("Reading config2.txt\n");
+  cname = config_file.readStringUntil(' ');
+  junk = config_file.readStringUntil('\n');
+  cframesize = config_file.parseInt();
+  junk = config_file.readStringUntil('\n');
+
+  clength = config_file.parseInt();
+  junk = config_file.readStringUntil('\n');
+  cinterval = config_file.parseInt();
+  junk = config_file.readStringUntil('\n');
+  cspeedup = config_file.parseInt();
+  junk = config_file.readStringUntil('\n');
+  cstreamdelay = config_file.parseInt();
+  junk = config_file.readStringUntil('\n');
+  czone = config_file.readStringUntil(' ');
+  junk = config_file.readStringUntil('\n');
+  cssid1 = config_file.readStringUntil('#');
+  junk = config_file.readStringUntil('\n');
+  cpass1 = config_file.readStringUntil('#');
+  junk = config_file.readStringUntil('\n');
+  cssid2 = config_file.readStringUntil(' ');
+  junk = config_file.readStringUntil('\n');
+  cpass2 = config_file.readStringUntil(' ');
+  junk = config_file.readStringUntil('\n');
+  cssid3 = config_file.readStringUntil(' ');
+  junk = config_file.readStringUntil('\n');
+  cpass3 = config_file.readStringUntil(' ');
+  junk = config_file.readStringUntil('\n');
+  config_file.close();
+
+  jpr("=========   Data from config2.txt and defaults  =========\n");
+  jpr("Name %s\n", cname);
+  jpr("Framesize %d\n", cframesize);
+  jpr("Quality %d\n", cquality);
+  jpr("Buffers config %d\n", cbuffersconfig);
+  jpr("Length %d\n", clength);
+  jpr("Interval %d\n", cinterval);
+  jpr("Speedup %d\n", cspeedup);
+  jpr("Streamdelay %d\n", cstreamdelay);
+
+  jpr("Zone len %d, %s\n", czone.length(), czone.c_str());
+  jpr("ssid1 %s\n", cssid1);
+  //jpr("pass1 %s\n", cpass1);
+  jpr("ssid2 %s\n", cssid2);
+  //jpr("pass2 %s\n", cpass2);
+  jpr("ssid3 %s\n", cssid3);
+  jpr("pass3 %s\n", cpass3);
+
+
+  framesize = cframesize;
+  quality = cquality;
+  buffersconfig = cbuffersconfig;
+  avi_length = clength;
+  frame_interval = cinterval;
+  speed_up_factor = cspeedup;
+  stream_delay = cstreamdelay;
+  configfile = true;
+  TIMEZONE = czone;
+
+  cname.toCharArray(devname, cname.length() + 1);
+
+}
 
 // Writes an uint32_t in Big Endian at current file position
 static void inline print_quartet(unsigned long i, File fd) 
@@ -371,7 +479,7 @@ struct oneframe {
   long the_frame_total;
 };
 
-
+*/
 // ****************************************************************************
 // *                                                Инициализировать SD-карту *
 // *  CARD_NONE — карта не подключена;                                        *
@@ -379,6 +487,34 @@ struct oneframe {
 // *  CARD_SD   — карта SDSC;                                                 *
 // *  CARD_SDHC — карта SDHC.                                                 *
 // ****************************************************************************
+static esp_err_t init_sdcard()
+{
+  int succ = SD_MMC.begin("/sdcard", true, false, BOARD_MAX_SDMMC_FREQ, 7);
+  if (succ) {
+    Serial.printf("SD_MMC Begin: %d\n", succ);
+    uint8_t cardType = SD_MMC.cardType();
+    Serial.print("SD_MMC Card Type: ");
+    if (cardType == CARD_MMC) {
+      Serial.println("MMC");
+    } else if (cardType == CARD_SD) {
+      Serial.println("SDSC");
+    } else if (cardType == CARD_SDHC) {
+      Serial.println("SDHC");
+    } else {
+      Serial.println("UNKNOWN");
+    }
+
+    uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
+    Serial.printf("SD_MMC Card Size: %lluMB\n", cardSize);
+  } else {
+    Serial.printf("Failed to mount SD card VFAT filesystem. \n");
+    Serial.println("Do you have an SD Card installed?");
+    Serial.println("Check pin 12 and 13, not grounded, or grounded with 10k resistors!\n\n");
+    major_fail();
+  }
+  return ESP_OK;
+}
+/*
 static bool init_sdcard()
 {
   ncardType=0;  // тип карты SD_MMC для инфо.сообщения

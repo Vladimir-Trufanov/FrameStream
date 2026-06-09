@@ -1,8 +1,12 @@
-/** Arduino, ESP32, C/C++ ************* VideoRecorderESP32-CAM-junior62.ino ***
- * 
- * v1.0.0, 11.01.2026                                 Автор:      Труфанов В.Е.
- * Copyright © 2026 tve                               Дата создания: 11.01.2026
- * 
+// Arduino, ESP32, C/C++ ********************************** FrameStream.ino ***
+//
+// Формирование потока изображений, постоянной записи фрагментов видео на 
+// SD-диск или при возникновении движения, а также передача снимков и фрагментов 
+// видео через сокеты на сайт KwinFlat 
+
+// Copyright © 2026 tve                               Труфанов В.Е., 11.01.2026
+static const char vernum[]="v2.2.0, 06.06.2026";  
+/** 
  * Modify by James Zahary Sep 12, 2020 - jamzah.plc@gmail.com
  * 
  * По версии https://github.com/jameszah/ESP32-CAM-Video-Recorder,
@@ -15,35 +19,13 @@
  * 001 - это число, сохраненное в eprom, которое будет увеличиваться при каждой загрузке устройства
  * 003 - это третий файл, созданный во время текущей загрузки
  * 
- * Arduino IDE 2.3.7 
- * Esp32 от Espressif Systems версии 3.3.5
+ * Arduino IDE 2.3.7 - 1.1.18
+ * Esp32 от Espressif Systems версии 3.3.0
  * Payment:           "Al Thinker ESP32-CAM"
  * CPU Frequency:     "240MHz (WiFi/BT)"
  * Flash Frequency:   "80MHz"
  * Flash Mode:        "QIO"
 **/
-
-/*
-  - Sep 17, 2024 arduino 1.8.19
-    esp32-arduino 3.04
-    change to soc line
-    ESP32-CAM-Video-Recorder-junior-60x.4.7soc ~ ArduinoSketch folder
-
-  - Feb 24, 2025 arduino 1.8.19
-    esp32-arduino 3.1.1
-    ESP32-CAM-Video-Recorder-junior-62
-    ota passowrd "mrpeanut"
-    ap mode password "12344321"
-    config file is now config2.txt
-
-  https://github.com/jameszah/ESP32-CAM-Video-Recorder-junior
-  jameszah/ESP32-CAM-Video-Recorder-junior is licensed under the
-  GNU General Public License v3.0
-
-  The is Arduino code, with standard setup for ESP32-CAM
-  - Board ESP32 Wrover Module or AI Thinker ESP32-CAM
-  - Partition Scheme Minimal SPIFFS with OTA
-*/
 
 //#include "esp_log.h"
 #include "esp_http_server.h"
@@ -59,20 +41,8 @@
 #include "fs_trass.h"
 #include "fs_wifi.h"
 
-static const char vernum[] = "v62.34";
-char devname[30];
-
-// Определяем Московскую timezone в соответствии с:
-// https://www.gnu.org/software/libc/manual/html_node/Proleptic-TZ.html
-// String TIMEZONE = "GMT0BST,M3.5.0/01,M10.5.0/02";
-String TIMEZONE = "MSK+00";
 
 #define blinking 0
-
-int avi_length ;            // сколько длится фильм в секундах -- 1800 sec = 30 min
-int frame_interval ;        // запись на полной скорости
-int speed_up_factor ;       // воспроизведение в режиме реального времени
-int stream_delay ;          // задержка между кадрами не менее 500 мс
 
 int MagicNumber = 12;       // изменить этот номер, чтобы сбросить номера файлов в eprom вашего esp32
 
@@ -117,19 +87,14 @@ camera_fb_t * fb_next = NULL;
 #include "soc/rtc_cntl_reg.h"
 
 static esp_err_t cam_err;
-float most_recent_fps = 0;
-int most_recent_avg_framesize = 0;
 
-uint8_t* fb_record;
 uint8_t* fb_curr_record_buf;
 uint8_t* fb_streaming;
 uint8_t* fb_capture;
 
-int fb_record_len;
 int fb_curr_record_len;
 int fb_streaming_len;
 int fb_capture_len;
-long fb_record_time = 0;
 long fb_curr_record_time = 0;
 long fb_streaming_time = 0;
 long fb_capture_time = 0;
@@ -144,27 +109,11 @@ long loop_total = 0;
 long total_frame_data = 0;
 long last_frame_length = 0;
 int done = 0;
-long avi_start_time = 0;
-long avi_end_time = 0;
 int start_record = 0;
 int start_record_2nd_opinion = -2;
 int start_record_1st_opinion = -1;
 
-int we_are_already_stopped = 0;
 long total_delay = 0;
-long bytes_before_last_100_frames = 0;
-long time_before_last_100_frames = 0;
-
-long time_in_loop = 0;
-long time_in_camera = 0;
-long time_in_sd = 0;
-long time_in_good = 0;
-long time_total = 0;
-long time_in_web1 = 0;
-long time_in_web2 = 0;
-long delay_wait_for_sd = 0;
-long wait_for_cam = 0;
-int very_high = 0;
 
 bool do_the_ota = false;
 
@@ -173,106 +122,6 @@ int gframe_cnt;
 int gfblen;
 int gj;
 int  gmdelay;
-
-// MicroSD
-#include "driver/sdmmc_host.h"
-#include "driver/sdmmc_defs.h"
-#include "sdmmc_cmd.h"
-#include "esp_vfs_fat.h"
-#include "FS.h"
-#include <SD_MMC.h>
-
-File avifile;
-File idxfile;
-
-char avi_file_name[100];
-char file_to_edit[50] = "/JamCam0481.0007.avi"; //61.3
-
-static int i = 0;
-uint16_t frame_cnt = 0;
-uint16_t remnant = 0;
-uint32_t length = 0;
-uint32_t startms;
-uint32_t elapsedms;
-uint32_t uVideoLen = 0;
-
-int bad_jpg = 0;
-int extend_jpg = 0;
-int normal_jpg = 0;
-
-int file_number = 0;
-int file_group = 0;
-long boot_time = 0;
-
-long totalp;
-long totalw;
-
-#define BUFFSIZE 512
-
-uint8_t buf[BUFFSIZE];
-
-#define AVIOFFSET 240 // AVI main header length
-
-unsigned long movi_size = 0;
-unsigned long jpeg_size = 0;
-unsigned long idx_offset = 0;
-
-uint8_t zero_buf[4] = {0x00, 0x00, 0x00, 0x00};
-uint8_t dc_buf[4] = {0x30, 0x30, 0x64, 0x63};    // "00dc"
-uint8_t dc_and_zero_buf[8] = {0x30, 0x30, 0x64, 0x63, 0x00, 0x00, 0x00, 0x00};
-
-uint8_t avi1_buf[4] = {0x41, 0x56, 0x49, 0x31};    // "AVI1"
-uint8_t idx1_buf[4] = {0x69, 0x64, 0x78, 0x31};    // "idx1"
-
-const int avi_header[AVIOFFSET] PROGMEM = 
-{
-  0x52, 0x49, 0x46, 0x46, 0xD8, 0x01, 0x0E, 0x00, 0x41, 0x56, 0x49, 0x20, 0x4C, 0x49, 0x53, 0x54,
-  0xD0, 0x00, 0x00, 0x00, 0x68, 0x64, 0x72, 0x6C, 0x61, 0x76, 0x69, 0x68, 0x38, 0x00, 0x00, 0x00,
-  0xA0, 0x86, 0x01, 0x00, 0x80, 0x66, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
-  0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x80, 0x02, 0x00, 0x00, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4C, 0x49, 0x53, 0x54, 0x84, 0x00, 0x00, 0x00,
-  0x73, 0x74, 0x72, 0x6C, 0x73, 0x74, 0x72, 0x68, 0x30, 0x00, 0x00, 0x00, 0x76, 0x69, 0x64, 0x73,
-  0x4D, 0x4A, 0x50, 0x47, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x73, 0x74, 0x72, 0x66,
-  0x28, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x00, 0xe0, 0x01, 0x00, 0x00,
-  0x01, 0x00, 0x18, 0x00, 0x4D, 0x4A, 0x50, 0x47, 0x00, 0x84, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x49, 0x4E, 0x46, 0x4F,
-  0x10, 0x00, 0x00, 0x00, 0x6A, 0x61, 0x6D, 0x65, 0x73, 0x7A, 0x61, 0x68, 0x61, 0x72, 0x79, 0x20,
-  0x76, 0x36, 0x32, 0x20, 0x4C, 0x49, 0x53, 0x54, 0x00, 0x01, 0x0E, 0x00, 0x6D, 0x6F, 0x76, 0x69,
-};
-
-
-//
-// Writes an uint32_t in Big Endian at current file position
-//
-static void inline print_quartet(unsigned long i, File fd) {
-
-  uint8_t y[4];
-  y[0] = i % 0x100;
-  y[1] = (i >> 8) % 0x100;
-  y[2] = (i >> 16) % 0x100;
-  y[3] = (i >> 24) % 0x100;
-  size_t i1_err = fd.write(y , 4);
-}
-
-//
-// Writes 2 uint32_t in Big Endian at current file position
-//
-static void inline print_2quartet(unsigned long i, unsigned long j, File fd) {
-
-  uint8_t y[8];
-  y[0] = i % 0x100;
-  y[1] = (i >> 8) % 0x100;
-  y[2] = (i >> 16) % 0x100;
-  y[3] = (i >> 24) % 0x100;
-  y[4] = j % 0x100;
-  y[5] = (j >> 8) % 0x100;
-  y[6] = (j >> 16) % 0x100;
-  y[7] = (j >> 24) % 0x100;
-  size_t i1_err = fd.write(y , 8);
-}
 
 #include "lwip/sockets.h"
 #include <lwip/netdb.h>
@@ -756,105 +605,6 @@ void do_eprom_write() {
 //   end_avi() - write the final parameters and close the file
 
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-// start_avi - open the files and write in headers
-//
-
-static void start_avi() {
-  char the_directory[50];
-
-  long start = millis();
-
-  jpr("Starting an avi ");
-  sprintf(the_directory, "/%s%03d",  devname, file_group);
-  SD_MMC.mkdir(the_directory);
-
-  sprintf(avi_file_name, "/%s%03d/%s%03d.%03d.avi",  devname, file_group, devname, file_group, file_number);
-
-  file_number++;
-
-  avifile = SD_MMC.open(avi_file_name, "w");
-  idxfile = SD_MMC.open("/idx.tmp", "w");
-
-  if (avifile) {
-    jpr("File open: %s\n", avi_file_name);
-  }  else  {
-    jpr("Could not open avi file");
-    major_fail();
-  }
-
-  if (idxfile)  {
-    //Serial.printf("File open: %s\n", "//idx.tmp");
-  }  else  {
-    jpr("Could not open file /idx.tmp");
-    major_fail();
-  }
-
-  for ( i = 0; i < AVIOFFSET; i++) {
-    char ch = pgm_read_byte(&avi_header[i]);
-    buf[i] = ch;
-  }
-
-  memcpy(buf + 0x40, frameSizeData[framesize].frameWidth, 2);
-  memcpy(buf + 0xA8, frameSizeData[framesize].frameWidth, 2);
-  memcpy(buf + 0x44, frameSizeData[framesize].frameHeight, 2);
-  memcpy(buf + 0xAC, frameSizeData[framesize].frameHeight, 2);
-
-  size_t err = avifile.write(buf, AVIOFFSET);
-
-  uint8_t ex_fps = 1;
-  if (frame_interval == 0) {
-    if (framesize >= 11) {
-      ex_fps = 12.5 * speed_up_factor ;;
-    } else {
-      ex_fps = 25.0 * speed_up_factor;
-    }
-  } else {
-    ex_fps = round(1000.0 / frame_interval * speed_up_factor);
-  }
-
-  avifile.seek( 0x84 , SeekSet);
-  print_quartet((int)ex_fps, avifile);
-
-  avifile.seek( 0x30 , SeekSet);
-  print_quartet(3, avifile);  // magic number 3 means frame count not written // 61.3
-
-  avifile.seek( AVIOFFSET, SeekSet);
-
-  jpr("Recording %d seconds\n", avi_length);
-
-  startms = millis();
-
-  totalp = 0;
-  totalw = 0;
-
-  jpeg_size = 0;
-  movi_size = 0;
-  uVideoLen = 0;
-  idx_offset = 4;
-
-  bad_jpg = 0;
-  extend_jpg = 0;
-  normal_jpg = 0;
-
-  time_in_loop = 0;
-  time_in_camera = 0;
-  time_in_sd = 0;
-  time_in_good = 0;
-  time_total = 0;
-  time_in_web1 = 0;
-  time_in_web2 = 0;
-  delay_wait_for_sd = 0;
-  wait_for_cam = 0;
-  very_high = 0;
-
-  time_in_sd += (millis() - start);
-
-  logfile.flush();
-  avifile.flush();
-
-} // end of start avi
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
@@ -2455,7 +2205,6 @@ void re_index( char * avi_file_name, char * out_file_name) {
     int prev_frame_start = 240;
     int index_frame_length;
     int index_frame_start;
-    int idx_offset = 4;
     int movi_size = 0;
     int frame_cnt_out = 0;
     int frame_num = 0;
@@ -2724,7 +2473,6 @@ void re_index_bad( char * avi_file_name) {
     int prev_frame_start = 240;
     int index_frame_length;
     int index_frame_start;
-    int idx_offset = 4;
     int movi_size = 0;
     int frame_cnt_out = 0;
     int frame_num = 0;
@@ -3508,7 +3256,6 @@ void setup()
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // the_camera_loop()
-int delete_old_stuff_flag = 0;
 
 void the_camera_loop (void* pvParameter) {
 

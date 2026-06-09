@@ -20,19 +20,22 @@ int buffersconfig   = 4;         // количество отдельных бу
 // Резервируем размер буфера, округленный до 16 Кбайт для 4 кадров, в соответствии с buffersconfig = 4,
 // который будет первоначально сформирован и заполнен при инициировании камеры
 int frame_buffer_size;     
+// Резервируем место под имя устройства по названию камеры
+char devname[30];                 
+// Определяем Московскую timezone в соответствии с:
+// https://www.gnu.org/software/libc/manual/html_node/Proleptic-TZ.html
+// String TIMEZONE = "GMT0BST,M3.5.0/01,M10.5.0/02";
+String TIMEZONE     = "MSK-3";   // часовой пояс для определения дат и времени в файлах
 
-/*
 int avi_length      = 420;       // размер записываемого видео в секундах (на 7 минут) = 420  
 int frame_interval  = 0;         // интервал между записями кадров в миллисекундах (ms) 
 int speed_up_factor = 1;         // ускорение воспроизведения (1 - в режиме реального времени)
 int stream_delay    = 0;         // задержка между кадрами (интервал между потоковыми кадрами - ms)
-String TIMEZONE     = "MSK-3";   // часовой пояс для определения дат и времени в файлах
+
 String ssid         = "ssid";  
 String pass         = "pass"; 
 uint8_t ncardType   = 0;         // тип карты SD_MMC для инфо.сообщения
 uint64_t cardSize   = 0;         // ёмкость SD_MMC-карты в MB
-*/
-
 
 /*
 #define idctrl   205                           // идентификатор контроллера
@@ -124,21 +127,13 @@ struct eprom_data
 https://esp32tutorials.com/esp32-cam-esp-idf-take-photos-save-sd-card/
 * /
 
-// Резервируем место под имя устройства по названию камеры
-char devname[30];                 
 
 bool do_the_reindex = false;
 //bool done_the_reparse = false;
 bool done_the_reindex = false;
 
-char file_to_edit[50] = "/JamCam0481.0007.avi"; //61.3
-
 #define BUFFSIZE 512
 uint8_t buf[BUFFSIZE];
-
-long avi_start_time = 0;   // время начала видео-записи
-long avi_end_time = 0;
-char avi_file_name[100];   // название записываемого файла *.avi
 
 uint16_t frame_cnt = 0;    // общее количество кадров в файле
 */

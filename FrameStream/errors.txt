@@ -3,22 +3,86 @@ support@arduino.cc
 Здравствуйте! Я, tve58, попытался авторизоваться, но вышло сообщение: "Sorry, you have been blocked
 You are unable to access arduino.cc". Что делать далее?
 
-"C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp-x32\\2601/bin/xtensa-esp32-elf-g++" -MMD -c "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/cpp_flags" -w -Os -Werror=return-type -DF_CPU=240000000L -DARDUINO=10818 -DARDUINO_ESP32_DEV -DARDUINO_ARCH_ESP32 "-DARDUINO_BOARD=\"ESP32_DEV\"" "-DARDUINO_VARIANT=\"esp32\"" -DARDUINO_PARTITION_min_spiffs "-DARDUINO_HOST_OS=\"windows\"" "-DARDUINO_FQBN=\"esp32:esp32:esp32cam:CPUFreq=240,FlashMode=qio,PartitionScheme=min_spiffs,FlashFreq=80,DebugLevel=none,EraseFlash=none\"" -DESP32=ESP32 -DCORE_DEBUG_LEVEL=0 -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw -DARDUINO_USB_CDC_ON_BOOT=0 "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/defines" "-IC:\\FrameStream\\FrameStream" -iprefix "C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/include/" "@C:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/flags/includes" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-libs\\3.3.8/qio_qspi/include" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\cores\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\variants\\esp32" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\FS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\SD_MMC\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\EEPROM\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WiFi\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Network\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ArduinoOTA\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Update\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\ESPmDNS\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\WebServer\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\HTTPClient\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\NetworkClientSecure\\src" "-IC:\\Users\\Евгеньевич\\Documents\\Arduino\\libraries\\ESPping-main\\src" "-IC:\\Users\\Евгеньевич\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\libraries\\Hash\\src" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_384695/build_opt.h" "@C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_384695/file_opts" "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_384695\\sketch\\ESPxWebFlMgr.cpp" -o "C:\\Users\\615A~1\\AppData\\Local\\Temp\\arduino_build_384695\\sketch\\ESPxWebFlMgr.cpp.o"
-In file included from C:\FrameStream\FrameStream\fs_camera.h:13,
-                 from C:\FrameStream\FrameStream\FrameStream.ino:54:
-C:\FrameStream\FrameStream\fs_camera.h: In function 'void config_camera()':
-fs_camera.h:335:83: error: 'qualityconfig' was not declared in this scope
-  335 |   jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
-      |                                                                                   ^~~~~~~~~~~~~
-C:\FrameStream\FrameStream\fs_trass.h:23:48: note: in definition of macro 'say'
-   23 |     snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
-      |                                                ^~~~~~~~~~~
-C:\FrameStream\FrameStream\fs_camera.h:335:3: note: in expansion of macro 'jpr'
-  335 |   jpr("Frame config %d, quality config %d, buffers config %d\n", framesizeconfig, qualityconfig, buffersconfig);
-      |   ^~~
-fs_camera.h:395:3: error: 'frame_buffer_size' was not declared in this scope
-  395 |   frame_buffer_size  = (( (x * 4) / (16 * 1024) ) + 1) * 16 * 1024  ;
-      |   ^~~~~~~~~~~~~~~~~
+In file included from C:\FrameStream\FrameStream\FrameStream.ino:38:
+fs_sd.h:112:15: error: redefinition of 'long unsigned int jpeg_size'
+  112 | unsigned long jpeg_size;      // размер текущего кадра для сбора статистики
+      |               ^~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:83:15: note: 'long unsigned int jpeg_size' previously defined here
+   83 | unsigned long jpeg_size = 0;
+      |               ^~~~~~~~~
+fs_sd.h:113:15: error: redefinition of 'long unsigned int movi_size'
+  113 | unsigned long movi_size;      // текущий размер видео-файла для статистики
+      |               ^~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:82:15: note: 'long unsigned int movi_size' previously defined here
+   82 | unsigned long movi_size = 0;
+      |               ^~~~~~~~~
+fs_sd.h:120:10: error: redefinition of 'uint32_t uVideoLen'
+  120 | uint32_t uVideoLen = 0;       // общий размер всех блоков кадров в видео-файле
+      |          ^~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:68:10: note: 'uint32_t uVideoLen' previously defined here
+   68 | uint32_t uVideoLen = 0;
+      |          ^~~~~~~~~
+fs_sd.h:121:15: error: redefinition of 'long unsigned int idx_offset'
+  121 | unsigned long idx_offset=0;   // индексные метки кадров в видео-файле
+      |               ^~~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:84:15: note: 'long unsigned int idx_offset' previously defined here
+   84 | unsigned long idx_offset = 0;
+      |               ^~~~~~~~~~
+fs_sd.h:123:5: error: redefinition of 'int bad_jpg'
+  123 | int bad_jpg = 0;              // количество плохих кадров
+      |     ^~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:70:5: note: 'int bad_jpg' previously defined here
+   70 | int bad_jpg = 0;
+      |     ^~~~~~~
+fs_sd.h:124:5: error: redefinition of 'int extend_jpg'
+  124 | int extend_jpg = 0;           // количество расширенных кадров
+      |     ^~~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:71:5: note: 'int extend_jpg' previously defined here
+   71 | int extend_jpg = 0;
+      |     ^~~~~~~~~~
+fs_sd.h:125:5: error: redefinition of 'int normal_jpg'
+  125 | int normal_jpg = 0;           // количество нормальных кадров
+      |     ^~~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:72:5: note: 'int normal_jpg' previously defined here
+   72 | int normal_jpg = 0;
+      |     ^~~~~~~~~~
+FrameStream:90:7: error: redefinition of 'float most_recent_fps'
+   90 | float most_recent_fps = 0;
+      |       ^~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:117:7: note: 'float most_recent_fps' previously defined here
+  117 | float most_recent_fps=0;              // количество недавних кадров в секунду
+      |       ^~~~~~~~~~~~~~~
+FrameStream:91:5: error: redefinition of 'int most_recent_avg_framesize'
+   91 | int most_recent_avg_framesize = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:118:5: note: 'int most_recent_avg_framesize' previously defined here
+  118 | int most_recent_avg_framesize=0;      // средний размер недавних кадров
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~
+FrameStream:118:5: error: redefinition of 'int we_are_already_stopped'
+  118 | int we_are_already_stopped = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:126:5: note: 'int we_are_already_stopped' previously defined here
+  126 | int we_are_already_stopped=0; // 1 - "видео-запись уже остановлена"
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+FrameStream:120:6: error: redefinition of 'long int bytes_before_last_100_frames'
+  120 | long bytes_before_last_100_frames = 0;
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:115:6: note: 'long int bytes_before_last_100_frames' previously defined here
+  115 | long bytes_before_last_100_frames=0;  // размер видео с последними 100 кадрами
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+FrameStream:121:6: error: redefinition of 'long int time_before_last_100_frames'
+  121 | long time_before_last_100_frames = 0;
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:116:6: note: 'long int time_before_last_100_frames' previously defined here
+  116 | long time_before_last_100_frames=0;   // время записи последних 100 кадров
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+FrameStream:3266:5: error: redefinition of 'int delete_old_stuff_flag'
+ 3266 | int delete_old_stuff_flag = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_sd.h:129:5: note: 'int delete_old_stuff_flag' previously defined here
+  129 | int delete_old_stuff_flag = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~
 Несколько библиотек найдено для "WiFi.h"
  Используется: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi
 Не используется: C:\Program Files (x86)\Arduino\libraries\WiFi
+Используем библиотеку FS версии 3.3.8 из папки: C:\Users\Евгеньевич\App

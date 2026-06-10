@@ -1472,35 +1472,6 @@ void start_Stream_82_server() {
   Serial.println("Stream 82 http started");
 }
 
-//
-// Reads an uint32_t in Big Endian at current file position
-//
-int read_quartet( File fd) {
-
-  uint8_t y[4];
-  size_t i1_err = fd.read(y , 4);
-  uint32_t value = y[0] | y[1] << 8 | y[2] << 16 | y[3] << 24;
-  //Serial.printf("read_quartet %d %d %d %d, %d\n", y[0], y[1], y[2], y[3], value);
-  return value;
-}
-//
-// Writes an uint32_t in Big Endian at current file position
-//
-static void inline print_dc_quartet(unsigned long i, File fd) {
-
-  uint8_t y[8];
-  y[0] = 0x30;       // "00dc"
-  y[1] = 0x30;
-  y[2] = 0x64;
-  y[3] = 0x63;
-
-  y[4] = i % 0x100;
-  y[5] = (i >> 8) % 0x100;
-  y[6] = (i >> 16) % 0x100;
-  y[7] = (i >> 24) % 0x100;
-  size_t i1_err = fd.write(y , 8);
-}
-
 oneframe find_a_frame (char * avi_file_name, long frame_num) {
   File findfile;
 

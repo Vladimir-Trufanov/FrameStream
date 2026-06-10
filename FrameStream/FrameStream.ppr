@@ -18,10 +18,9 @@ Extensions=*.*
 [Project tree]
 FrameStream
 	+FrameStream
-		+old
+		-old
 			old\FrameStream.ino
 		config.h
-		CRC32.cpp
 		CRC32.h
 		errors.txt
 		FlMgr.cpp
@@ -42,39 +41,19 @@ FrameStream
 0=FrameStream.ino
 1=old\FrameStream.ino
 2=errors.txt
-3=fs_server.h
-4=fs_trass.h
-5=inimem.h
-6=fs_wifi.h
-7=fs_camera.h
-8=fs_sd.h
+3=fs_sd.h
 [Selected Project Files]
 Main=
-Selected=fs_server.h
+Selected=FrameStream.ino
 [FrameStream.ino]
-TopLine=1467
-Caret=1,1475
+TopLine=1660
+Caret=1,1474
 [old\FrameStream.ino]
 TopLine=302
 Caret=11,314
 [errors.txt]
 TopLine=1
 Caret=37,22
-[fs_server.h]
-TopLine=1052
-Caret=1,1245
-[fs_trass.h]
-TopLine=35
-Caret=12,59
-[inimem.h]
-TopLine=31
-Caret=1,34
-[fs_wifi.h]
-TopLine=17
-Caret=1,25
-[fs_camera.h]
-TopLine=437
-Caret=1,448
 [fs_sd.h]
-TopLine=463
-Caret=1,471
+TopLine=17
+Caret=1,32

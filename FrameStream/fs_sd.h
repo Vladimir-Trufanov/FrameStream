@@ -21,10 +21,16 @@
 
 //#include "fs_trass.h"
 
-// Writes an uint32_t in Big Endian at current file position
+// Записать в файл беззнаковое целое, как 4 последовательных байта 
+// (writes an uint32_t in Big Endian at current file position)
 static void inline print_quartet(unsigned long i, File fd); 
-// Writes 2 uint32_t in Big Endian at current file position
-static void inline print_2quartet(unsigned long i, unsigned long j, File fd);
+// Записать uint32_t в порядке возрастания в текущей позиции файла
+// (Writes 2 uint32_t in Big Endian at current file position)   
+static void inline print_2quartet(unsigned long i, unsigned long j, File fd); 
+// Writes an uint32_t in Big Endian at current file position
+static void inline print_dc_quartet(unsigned long i, File fd); 
+// Reads an uint32_t in Big Endian at current file position
+int read_quartet(File fd); 
 // Открыть avi-файл и записать заголовки
 static void start_avi(); 
 // Считать или создать файл конфигурации "config.txt" и настроить переменные
@@ -225,8 +231,11 @@ void read_config_file()
   cname.toCharArray(devname, cname.length() + 1);
 
 }
-
-// Writes an uint32_t in Big Endian at current file position
+// ****************************************************************************
+// *    Записать в файл беззнаковое целое, как 4 последовательных байта -     *
+// *            от первого (с наименьшим адресом) к четвертому                *
+// *                      c текущего положения в файле                        *
+// ****************************************************************************
 static void inline print_quartet(unsigned long i, File fd) 
 {
   uint8_t y[4];
@@ -234,9 +243,11 @@ static void inline print_quartet(unsigned long i, File fd)
   y[1] = (i >> 8) % 0x100;
   y[2] = (i >> 16) % 0x100;
   y[3] = (i >> 24) % 0x100;
-  size_t i1_err = fd.write(y , 4);
+  size_t i1_err = fd.write(y,4);
 }
-// Writes 2 uint32_t in Big Endian at current file position
+// ****************************************************************************
+// *     Записать uint32_t в порядке возрастания в текущей позиции файла      *
+// ****************************************************************************
 static void inline print_2quartet(unsigned long i, unsigned long j, File fd) 
 {
   uint8_t y[8];
@@ -248,8 +259,9 @@ static void inline print_2quartet(unsigned long i, unsigned long j, File fd)
   y[5] = (j >> 8) % 0x100;
   y[6] = (j >> 16) % 0x100;
   y[7] = (j >> 24) % 0x100;
-  size_t i1_err = fd.write(y , 8);
+  size_t i1_err = fd.write(y,8);
 }
+
 // start_avi - open the files and write in headers
 static void start_avi() 
 {
@@ -529,53 +541,17 @@ static bool init_sdcard()
   }
   return Result;
 }
-
-
-//
+*/
 // Reads an uint32_t in Big Endian at current file position
-//
-int read_quartet( File fd) 
+int read_quartet(File fd) 
 {
-
   uint8_t y[4];
-  size_t i1_err = fd.read(y , 4);
+  size_t i1_err = fd.read(y,4);
   uint32_t value = y[0] | y[1] << 8 | y[2] << 16 | y[3] << 24;
   //Serial.printf("read_quartet %d %d %d %d, %d\n", y[0], y[1], y[2], y[3], value);
   return value;
 }
-// ****************************************************************************
-// *    Записать в файл беззнаковое целое, как 4 последовательных байта -     *
-// *            от первого (с наименьшим адресом) к четвертому                *
-// *                      c текущего положения в файле                        *
-// ****************************************************************************
-static void inline print_quartet(unsigned long i, File fd) 
-{
-  uint8_t y[4];
-  y[0] = i % 0x100;
-  y[1] = (i >> 8) % 0x100;
-  y[2] = (i >> 16) % 0x100;
-  y[3] = (i >> 24) % 0x100;
-  size_t i1_err = fd.write(y,4);
-}
-// ****************************************************************************
-// *     Записать uint32_t в порядке возрастания в текущей позиции файла      *
-// ****************************************************************************
-static void inline print_2quartet(unsigned long i, unsigned long j, File fd) 
-{
-  uint8_t y[8];
-  y[0] = i % 0x100;
-  y[1] = (i >> 8) % 0x100;
-  y[2] = (i >> 16) % 0x100;
-  y[3] = (i >> 24) % 0x100;
-  y[4] = j % 0x100;
-  y[5] = (j >> 8) % 0x100;
-  y[6] = (j >> 16) % 0x100;
-  y[7] = (j >> 24) % 0x100;
-  size_t i1_err = fd.write(y,8);
-}
-//
 // Writes an uint32_t in Big Endian at current file position
-//
 static void inline print_dc_quartet(unsigned long i, File fd) 
 {
   uint8_t y[8];
@@ -591,6 +567,7 @@ static void inline print_dc_quartet(unsigned long i, File fd)
   size_t i1_err = fd.write(y , 8);
 }
 
+/*
 #include <list>
 #include <tuple>
 

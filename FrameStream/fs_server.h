@@ -9,14 +9,6 @@
 
 #pragma once 
 
-
-#include "lwip/sockets.h"
-#include <lwip/netdb.h>
-
-
-
-
-/*
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
   #include <ESP8266WebServer.h>
@@ -26,6 +18,13 @@
   #include <WiFi.h>
   #include <WebServer.h>
 #endif
+
+#include "lwip/sockets.h"
+#include <lwip/netdb.h>
+
+#include "inimem.h"
+
+/*
 
 #include <HTTPClient.h>
 #include <ArduinoOTA.h>
@@ -40,6 +39,14 @@
 //void stopCameraServer();
 void print_sock(int sock); 
 
+char the_page[4200];
+int previous_capture = 0;
+int capture_timer = 0;
+int captures = 0;
+int total_captures = 0;
+int skips = 0;
+int extras = 0;
+
 /*
 char ssidota[20];
 bool do_the_ota = false;
@@ -51,17 +58,14 @@ bool do_the_ota = false;
 // возвращает указатель на экземпляр. 
 httpd_handle_t camera_httpd = NULL;
 
-char the_page[4200];
-int previous_capture = 0;
-int capture_timer = 0;
-int captures = 0;
-int total_captures = 0;
-int skips = 0;
-int extras = 0;
 
 char file_to_read[50];
 char file_to_write[50];
+*/
 
+static esp_err_t index_handler(httpd_req_t *req); 
+
+/*
 //static esp_err_t delete_handler(httpd_req_t *req); 
 //static esp_err_t reindex_handler(httpd_req_t *req); 
 //static esp_err_t edit_handler(httpd_req_t *req); 
@@ -79,7 +83,6 @@ static esp_err_t fphotos_handler(httpd_req_t *req);
 static esp_err_t photos_handler(httpd_req_t *req); 
 static esp_err_t capture_handler(httpd_req_t *req); 
 
-static esp_err_t index_handler(httpd_req_t *req); 
 
 / *
 static esp_err_t delete_handler(httpd_req_t *req) 
@@ -939,6 +942,130 @@ static esp_err_t capture_handler(httpd_req_t *req)
 
   return res;
 }
+
+*/
+
+
+static esp_err_t index_handler(httpd_req_t *req) 
+{
+
+  long start = millis();
+
+  int buf_len;
+  char  buf[120];
+  int hdr_len ;
+
+  buf_len = httpd_req_get_hdr_value_len(req, "Host") + 1;
+
+  if (httpd_req_get_hdr_value_str(req, "Host", localip, buf_len) == ESP_OK) {
+    //Serial.printf( "Found header => Host: %s\n", localip);
+  }
+
+  //sprintf(localip, "%s", buf);
+  /*
+    buf_len = httpd_req_get_url_query_len(req) + 1;
+    if (buf_len > 1) {
+      if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+        Serial.printf("Found URL query => %s", buf);
+      }
+    }
+  */
+  print_mem("index_handler");
+
+  const char the_message[] = "Status";
+
+  time(&now);
+  const char *strdate = ctime(&now);
+
+  int tot = SD_MMC.totalBytes() / (1024 * 1024);
+  int use = SD_MMC.usedBytes() / (1024 * 1024);
+  long rssi = WiFi.RSSI();
+
+  //const query = `${baseHost}:8080/e?edit=config.txt`
+
+  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>%s ESP32-CAM Video Recorder Junior</title>
+<script>
+function initialize() {
+   var baseHost = document.location.origin
+   const query = `${baseHost}/time?time=`
+   const x = new Date();
+   var timing = x.getTime() / 1000;
+   const query2 = query + String(timing)
+   fetch(query2)
+      .then(response => {
+         console.log(`request to ${query2} finished, status: ${response.status}`)
+      })
+}   
+   </script>
+      </head>
+       <body onload="initialize()" style="background-color: white">
+        
+</head>
+<body>
+<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
+
+ Used / Total SD Space <font color="red"> %d MB / %d MB</font>, Rssi %d<br>
+
+ Filename: %s <br>
+ Framesize %d, Quality %d, Frame %d <br>
+ Record Interval %dms, Stream Interval %dms <br>
+ Avg framesize %d, fps %.1f <br>
+ Time left in current video %d seconds<br>
+
+ <h3><a href="http://%s/">http://%s/</a></h3>
+ Current Frame:<br>
+ <img src="http://%s/capture"/> <br>
+ First Frame of Current Recording: (see more in File Management section)<br>
+ <img src="http://%s/find?f=/%s&n=0"> <br>
+ <h3>Streaming</h3>
+ <a href="http://%s:81/stream"><button>Stream 81</button></a>
+ <a href="http://%s:82/stream"><button>Stream 82</button></a>
+ <h3>Series of pictures</h3>
+ <a href="http://%s/photos"><button>10 x 3 sec</button> </a>
+ <a href="http://%s/fphotos"><button>10 x 1 sec</button></a>
+ <a href="http://%s/sphotos"><button>120 x 15 sec</button></a> 
+ <h3>Recording is <font color="red"> %s </font> - overrides hardware pin 12 stop/start</h3>
+ <a href="http://%s/start"><button>start</button> </a>
+ <a href="http://%s/stop"><button>stop</button></a> 
+ <h3>File Management</h3>
+ <h4>
+ <a href="http://%s:%d/e?edit=config2.txt"><button>edit config2.txt </button></a>
+ <a href="http://%s:%d"><button>File Manager - download, delete, view videos </button></a> </h4>
+
+ <h4><a href="http://%s/restart"><button>End recording, and start new video (write the index) </button></a></h4>
+ <h4><a href="http://%s/reboot"><button>End recording, and reboot (using new settings)</button> </a></h4>
+ <br>
+</body>
+</html>)rawliteral";
+
+  int time_left = (- millis() +  (avi_start_time + avi_length * 1000)) / 1000;
+  if (start_record == 0) {
+    time_left = 0;
+  }
+
+  String stopstart = "Stopped";
+  if (start_record) {
+    stopstart = "Recording";
+  }
+
+  sprintf(the_page, msg, devname, devname, vernum, strdate, use, tot, rssi, avi_file_name,
+          framesize, quality, frame_cnt, frame_interval, stream_delay,
+          most_recent_avg_framesize, most_recent_fps, time_left, localip,  localip,  localip,  localip, avi_file_name,
+          localip, localip, localip, localip, localip, stopstart.c_str(), localip, localip, localip, filemanagerport, localip, filemanagerport,
+          localip, localip,  localip  );
+
+  httpd_resp_send(req, the_page, strlen(the_page));
+
+  time_in_web1 += (millis() - start);
+  return ESP_OK;
+}
+
+/*
 // ****************************************************************************
 // *              Сформировать главную страницу CameraServer                  *
 // ****************************************************************************
@@ -972,40 +1099,37 @@ static esp_err_t index_handler(httpd_req_t *req)
   // обработчик URI должен дополнительно вернуть ошибку, чтобы обеспечить закрытие 
   // и очистку ошибочного сокета веб-сервером. 
   buf_len = httpd_req_get_hdr_value_len(req, "Host") + 1;
-  
-  // Получаем строку значения поля из заголовков запроса
+  // Получаем значение поля из заголовка HTTP-запроса: 
+  // esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *val, size_t val_size);
+  // r — указатель на запрос, для которого формируется ответ (httpd_req_t *r = reg);
+  // field — название поля заголовка, которое нужно найти в запросе (const char *field = "Host");
+  // val — указатель на буфер, в который будет скопировано значение, если поле найдено (char *val = localip)
+  // val_size — размер буфера val.
   // 2026-01-30 - убедились, что поле "Host" в заголовке присутствовало:
-  // 09:53:44.673 -> -----
   // 09:53:44.673 -> Found header => Host: 10.120.175.2
-  // 09:53:44.673 -> -----
-  / *
   if (httpd_req_get_hdr_value_str(req, "Host", localip, buf_len) == ESP_OK) 
   {
-    Serial.println("-----"); 
-    Serial.printf("Found header => Host: %s\n", localip);
-    Serial.println("-----"); 
+    Serial.printf( "Значение поля Host в заголовке: %s\n", localip);
   }
-  * /
-  //sprintf(localip, "%s", buf);
-  / *
-    buf_len = httpd_req_get_url_query_len(req) + 1;
-    if (buf_len > 1) 
+  //
+  sprintf(localip, "%s", buf);
+  buf_len = httpd_req_get_url_query_len(req) + 1;
+  if (buf_len > 1) 
+  {
+    if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) 
     {
-      if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) 
-      {
-        Serial.printf("Found URL query => %s", buf);
-      }
+      Serial.printf("Found URL query => %s", buf);
     }
-  * /
-  //print_mem("MEM - в начале обработчика index_handler        ");
+  }
+  saymem("MEM - в начале обработчика index_handler");
   const char the_message[] = "Status";
   time(&now);
   const char *strdate = ctime(&now);
+
   int tot = SD_MMC.totalBytes() / (1024 * 1024);  // общее количество доступных байтов на SD-карте
   int use = SD_MMC.usedBytes() / (1024 * 1024);   // количество используемых байтов на карте SD/SDIO/MMC
   long rssi = WiFi.RSSI();                        // уровень сигнала Wi-Fi сети
-
-  //const query = `${baseHost}:8080/e?edit=config.txt`
+  // const query = `${baseHost}:8080/e?edit=config.txt`
 
   const char msg[] PROGMEM = R"rawliteral(
   <!doctype html>
@@ -1039,6 +1163,7 @@ static esp_err_t index_handler(httpd_req_t *req)
   Интервалы при записи %dms, интервалы в потоке %dмс<br>
   Размер файлов %d, кадров в сек. %.1f <br>
   Time left in current video %d seconds<br>
+  
 
   <h3><a href="http://%s/">http://%s/</a></h3>
   Текущий кадр:<br>
@@ -1091,11 +1216,7 @@ static esp_err_t index_handler(httpd_req_t *req)
     localip, localip,  localip  
   );  
   
-  / *        
-  Serial.println("====="); logfile.print("=====");
   Serial.println(the_page); logfile.print(the_page);
-  Serial.println("====="); logfile.print("=====");
-  * /
   
   //   Функцией httpd_resp_send отправляем данные в качестве HTTP-ответа на запрос. 
   // Подразумевается, что полный готовый ответ находится в одном буфере. 
@@ -1120,7 +1241,9 @@ static esp_err_t index_handler(httpd_req_t *req)
   time_in_web1 += (millis() - start);
   return ESP_OK;
 }
+*/
 
+/*
 ////////////////////////////////
 //61.3 up    startCameraServer() 
 ////////////////////////////////

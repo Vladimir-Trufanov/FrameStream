@@ -445,8 +445,6 @@ int do_it_now = 0;
 int start_record_1st_opinion = 0;
 // Сбрасываем второй флаг записи по событию (после проверки 12-ого контакта на следующем цикле)
 int start_record_2nd_opinion = 0; 
-// Сбрасываем флаг запуска записи очередного видео файла
-int start_record = 0;
 
 uint8_t avi1_buf[4]        = {0x41, 0x56, 0x49, 0x31};    // "AVI1"
 uint8_t idx1_buf[4]        = {0x69, 0x64, 0x78, 0x31};    // "idx1"

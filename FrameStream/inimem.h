@@ -13,10 +13,15 @@
 #define Lots_of_Stats 1
 
 //String cname        = "DachWay"; // название для файлов камеры "Esp32-CAM на дорогу к даче"
+char localip[20];                // IP-адрес локальной сети
 int framesize       = 13;        // номер размера кадра в перечислении форматов изображений = FRAMESIZE_HD, 1280x720 
 int quality         = 12;        // качество изображения
 int buffersconfig   = 4;         // количество отдельных буферов для кадров
 
+// Создаем переменную локального времени (секунды с начала эпохи)
+time_t now;
+// Сбрасываем флаг запуска записи очередного видео файла
+int start_record = 0;
 // Резервируем размер буфера, округленный до 16 Кбайт для 4 кадров, в соответствии с buffersconfig = 4,
 // который будет первоначально сформирован и заполнен при инициировании камеры
 int frame_buffer_size;     
@@ -27,11 +32,21 @@ char devname[30];
 // String TIMEZONE = "GMT0BST,M3.5.0/01,M10.5.0/02";
 String TIMEZONE     = "MSK-3";   // часовой пояс для определения дат и времени в файлах
 
+struct oneframe 
+{
+  uint8_t* the_frame;
+  int the_frame_length;
+  long the_frame_number;
+  long the_frame_total;
+};
+
 int avi_length      = 420;       // размер записываемого видео в секундах (на 7 минут) = 420  
 int frame_interval  = 0;         // интервал между записями кадров в миллисекундах (ms) 
 int speed_up_factor = 1;         // ускорение воспроизведения (1 - в режиме реального времени)
 int stream_delay    = 0;         // задержка между кадрами (интервал между потоковыми кадрами - ms)
 
+
+const word filemanagerport=8080; // порт файлового менеджера
 String ssid         = "ssid";  
 String pass         = "pass"; 
 uint8_t ncardType   = 0;         // тип карты SD_MMC для инфо.сообщения
@@ -66,9 +81,6 @@ File idxfile;  // файл указателей кадров
 
 static const char _hsoftIP[] ="IP-адрес своей сети контроллера - http://";
 static const char _hlocalIP[]="IP-адрес в локальной сети       - http://";
-
-const word filemanagerport=8080;       // порт файлового менеджера
-char localip[20];                      // IP-адрес локальной сети
 
 char softip[20];                       // IP-адрес собственной сети контроллера
 bool found_router = false;             // true - определена локальная сеть

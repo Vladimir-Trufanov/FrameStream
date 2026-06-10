@@ -3,31 +3,23 @@ support@arduino.cc
 Здравствуйте! Я, tve58, попытался авторизоваться, но вышло сообщение: "Sorry, you have been blocked
 You are unable to access arduino.cc". Что делать далее?
 
-In file included from C:\FrameStream\FrameStream\FrameStream.ino:37:
-C:\FrameStream\FrameStream\fs_eprom.h: In function 'void do_eprom_write()':
-fs_eprom.h:42:3: error: 'eprom_data' was not declared in this scope
-   42 |   eprom_data ed;
-      |   ^~~~~~~~~~
-fs_eprom.h:43:3: error: 'ed' was not declared in this scope
-   43 |   ed.eprom_good = MagicNumber;
-      |   ^~
-fs_eprom.h:44:20: error: 'file_group' was not declared in this scope
-   44 |   ed.file_group  = file_group;
-      |                    ^~~~~~~~~~
-C:\FrameStream\FrameStream\fs_eprom.h: In function 'void do_eprom_read()':
-fs_eprom.h:53:3: error: 'eprom_data' was not declared in this scope
-   53 |   eprom_data ed;
-      |   ^~~~~~~~~~
-fs_eprom.h:55:17: error: 'ed' was not declared in this scope
-   55 |   EEPROM.get(0, ed);
-      |                 ^~
-fs_eprom.h:59:5: error: 'file_group' was not declared in this scope
-   59 |     file_group = ed.file_group;
-      |     ^~~~~~~~~~
-fs_eprom.h:66:5: error: 'file_group' was not declared in this scope
-   66 |     file_group = 1;
-      |     ^~~~~~~~~~
-fs_eprom.h:69:3: error: 'file_number' was not declared in this scope
-   69 |   file_number = 1;
-      |   ^~~~~~~~~~~
+In file included from C:\FrameStream\FrameStream\FrameStream.ino:39:
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t index_handler(httpd_req_t*)':
+fs_server.h:1264:7: error: 'start_record' was not declared in this scope
+ 1264 |   if (start_record == 0)
+      |       ^~~~~~~~~~~~
+fs_server.h:1270:7: error: 'start_record' was not declared in this scope
+ 1270 |   if (start_record)
+      |       ^~~~~~~~~~~~
+fs_server.h:1277:5: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
+ 1277 |     the_page, msg, devname, devname, vernum, strdate, use, tot, rssi, avi_file_name,
+      |     ^~~~~~~~
+      |     the_message
+fs_server.h:1280:96: error: 'filemanagerport' was not declared in this scope
+ 1280 |     localip, localip, localip, localip, localip, stopstart.c_str(), localip, localip, localip, filemanagerport, localip, filemanagerport,
+      |                                                                                                ^~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\FrameStream.ino: At global scope:
+FrameStream:1524:1: error: 'oneframe' does not name a type
+ 1524 | oneframe find_a_frame (char * avi_file_name, long frame_num) {
+      | ^~~~~~~~
 Несколько библиотек найдено для "WiFi.h"

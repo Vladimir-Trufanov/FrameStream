@@ -469,16 +469,6 @@ static void start_avi()
 #define fbs  1 
 uint8_t fb_record_static[fbs * 1024 + 20]; 
 
-//////////////////////////////
-//61.3 oneframe find_a_frame (char * avi_file_name, int frame_pct) ; // from avi.cpp file
-
-struct oneframe {
-  uint8_t* the_frame;
-  int the_frame_length;
-  long the_frame_number;
-  long the_frame_total;
-};
-
 */
 // ****************************************************************************
 // *                                                Инициализировать SD-карту *

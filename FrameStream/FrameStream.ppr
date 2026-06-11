@@ -44,16 +44,16 @@ FrameStream
 3=fs_sd.h
 [Selected Project Files]
 Main=
-Selected=FrameStream.ino
+Selected=fs_sd.h
 [FrameStream.ino]
-TopLine=1660
-Caret=1,1474
+TopLine=117
+Caret=1,120
 [old\FrameStream.ino]
 TopLine=302
 Caret=11,314
 [errors.txt]
-TopLine=1
-Caret=37,22
+TopLine=139
+Caret=5,158
 [fs_sd.h]
-TopLine=17
-Caret=1,32
+TopLine=571
+Caret=1,764

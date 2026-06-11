@@ -35,6 +35,10 @@ int read_quartet(File fd);
 static void start_avi(); 
 // Считать или создать файл конфигурации "config.txt" и настроить переменные
 void read_config_file();
+// Подготовить список для удаления функцией deleteFolderOrFile(); 
+void delete_old_stuff(); 
+// Удалить файлы и каталоги по списку, подготовленному функцией delete_old_stuff();
+void deleteFolderOrFile(const char * val); 
 
 File avifile;
 File idxfile;
@@ -566,80 +570,12 @@ static void inline print_dc_quartet(unsigned long i, File fd)
   y[7] = (i >> 24) % 0x100;
   size_t i1_err = fd.write(y , 8);
 }
-
-/*
+// ****************************************************************************
+// *        Подготовить список для удаления функцией deleteFolderOrFile();    *
+// *                   (delete oldest files to free diskspace)                *
+// ****************************************************************************
 #include <list>
 #include <tuple>
-
-// ****************************************************************************
-// *      Удалить самые старые файлы, чтобы освободить место на SD-диске      *
-// ****************************************************************************
-// Удаляем файлы и каталоги по списку, подготовленному функцией delete_old_stuff();
-void deleteFolderOrFile(const char * val) 
-{
-  Serial.printf("Удаление: %s\n", val);
-  File f = SD_MMC.open("/" + String(val));
-  if (!f) 
-  {
-    //jpr("Ошибка открытия %s\n", val);
-    return;
-  }
-  if (f.isDirectory()) 
-  {
-    File file = f.openNextFile();
-    while (file) 
-    {
-      if (file.isDirectory()) 
-      {
-        Serial.print("  DIR : ");
-        Serial.println(file.name());
-      } 
-      else 
-      {
-        Serial.print("  FILE: ");
-        Serial.print(file.name());
-        Serial.print("  SIZE: ");
-        Serial.print(file.size());
-        if (SD_MMC.remove("/" + String(val) + "/" + file.name())) 
-        {
-          Serial.println(" удалён");
-        } 
-        else 
-        {
-          Serial.println(" FAILED.");
-        }
-      }
-      int total = SD_MMC.totalBytes()/(1024 * 1024);
-      int used = SD_MMC.usedBytes()/(1024 * 1024);
-      float full = 1.0 * used / total;
-      Serial.println(full);
-      if (full < 0.7) break;
-      file = f.openNextFile();
-    }
-    f.close();
-    // Удаляем опустевший каталог
-    if (SD_MMC.rmdir("/" + String(val))) 
-    {
-      Serial.printf("Каталог %s удалён\n", val);
-    } 
-    else 
-    {
-      Serial.printf("Ошибка удаления каталога %s\n", val);
-    }
-  } 
-  else 
-  {
-    if (SD_MMC.remove("/" + String(val))) 
-    {
-      Serial.printf("Файл %s удален\n", val);
-    } 
-    else 
-    {
-      Serial.printf("Ошибка удаления файла %s\n", val);
-    }
-  }
-}
-// Подготавливаем список для удаления функцией deleteFolderOrFile();
 void delete_old_stuff() 
 {
   // Разрешаем использовать все идентификаторы из пространства имён std без указания префикса std::
@@ -731,7 +667,7 @@ void delete_old_stuff()
       }
       xf = xdir.openNextFile();
     }
-    ÿ ir ﰧ翴 se();
+    xdir.close();
     // Сортируем список по датам
     dirList.sort([](const records & f, const records & l) 
     {                                
@@ -757,7 +693,76 @@ void delete_old_stuff()
     }
   }
 }
+// ****************************************************************************
+// *      Удалить самые старые файлы, чтобы освободить место на SD-диске      *
+// ****************************************************************************
+// Удаляем файлы и каталоги по списку, подготовленному функцией delete_old_stuff();
+void deleteFolderOrFile(const char * val) 
+{
+  Serial.printf("Удаление: %s\n", val);
+  File f = SD_MMC.open("/" + String(val));
+  if (!f) 
+  {
+    //jpr("Ошибка открытия %s\n", val);
+    return;
+  }
+  if (f.isDirectory()) 
+  {
+    File file = f.openNextFile();
+    while (file) 
+    {
+      if (file.isDirectory()) 
+      {
+        Serial.print("  DIR : ");
+        Serial.println(file.name());
+      } 
+      else 
+      {
+        Serial.print("  FILE: ");
+        Serial.print(file.name());
+        Serial.print("  SIZE: ");
+        Serial.print(file.size());
+        if (SD_MMC.remove("/" + String(val) + "/" + file.name())) 
+        {
+          Serial.println(" удалён");
+        } 
+        else 
+        {
+          Serial.println(" FAILED.");
+        }
+      }
+      int total = SD_MMC.totalBytes()/(1024 * 1024);
+      int used = SD_MMC.usedBytes()/(1024 * 1024);
+      float full = 1.0 * used / total;
+      Serial.println(full);
+      if (full < 0.7) break;
+      file = f.openNextFile();
+    }
+    f.close();
+    // Удаляем опустевший каталог
+    if (SD_MMC.rmdir("/" + String(val))) 
+    {
+      Serial.printf("Каталог %s удалён\n", val);
+    } 
+    else 
+    {
+      Serial.printf("Ошибка удаления каталога %s\n", val);
+    }
+  } 
+  else 
+  {
+    if (SD_MMC.remove("/" + String(val))) 
+    {
+      Serial.printf("Файл %s удален\n", val);
+    } 
+    else 
+    {
+      Serial.printf("Ошибка удаления файла %s\n", val);
+    }
+  }
+}
 
+/*
 oneframe find_a_frame (char * avi_file_name, long frame_num) 
 {
   File findfile;

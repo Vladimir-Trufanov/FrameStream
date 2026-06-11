@@ -3,23 +3,187 @@ support@arduino.cc
 Здравствуйте! Я, tve58, попытался авторизоваться, но вышло сообщение: "Sorry, you have been blocked
 You are unable to access arduino.cc". Что делать далее?
 
-In file included from C:\FrameStream\FrameStream\FrameStream.ino:39:
-C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t index_handler(httpd_req_t*)':
-fs_server.h:1264:7: error: 'start_record' was not declared in this scope
- 1264 |   if (start_record == 0)
-      |       ^~~~~~~~~~~~
-fs_server.h:1270:7: error: 'start_record' was not declared in this scope
- 1270 |   if (start_record)
-      |       ^~~~~~~~~~~~
-fs_server.h:1277:5: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
- 1277 |     the_page, msg, devname, devname, vernum, strdate, use, tot, rssi, avi_file_name,
-      |     ^~~~~~~~
-      |     the_message
-fs_server.h:1280:96: error: 'filemanagerport' was not declared in this scope
- 1280 |     localip, localip, localip, localip, localip, stopstart.c_str(), localip, localip, localip, filemanagerport, localip, filemanagerport,
-      |                                                                                                ^~~~~~~~~~~~~~~
-C:\FrameStream\FrameStream\FrameStream.ino: At global scope:
-FrameStream:1524:1: error: 'oneframe' does not name a type
- 1524 | oneframe find_a_frame (char * avi_file_name, long frame_num) {
-      | ^~~~~~~~
-Несколько библиотек найдено для "WiFi.h"
+void delete_old_stuff()
+{
+  using namespace std;
+
+
+
+  using records = tuple<String, String, size_t, time_t>;
+  list<records> dirList;
+
+  int card = SD_MMC.cardSize()  / (1024 * 1024);
+  int total = SD_MMC.totalBytes()  / (1024 * 1024);
+  int used = SD_MMC.usedBytes()  / (1024 * 1024);
+
+  jpr("Card  space: %5dMB\n", card);  // %llu
+  jpr("Total space: %5dMB\n", total);
+  jpr("Used  space: %5dMB\n", used);
+
+  float full = 1.0 * used / total;
+  if (full  <  0.8) {
+    jpr("Nothing deleted, %.1f%% disk full\n", 100.0 * full);
+  } else {
+    jpr("Disk is %.1f%% full ... deleting ...\n", 100.0 * full);
+
+    int x = millis();
+    File xdir = SD_MMC.open("/");
+    File xf = xdir.openNextFile();
+
+    while (xf) 
+    {
+      if (xf.isDirectory()) {
+        String the_dir = xf.name();
+        if (SD_MMC.rmdir("/" + the_dir )) {                      // remove empty dir
+          jpr("Dir removed\n"); Serial.println("/" + the_dir);
+        } else {
+          String log_name = "/" + the_dir + "/" + the_dir + ".999.txt";
+          //Serial.println(log_name);
+          File the_log = SD_MMC.open(log_name, "r");
+          time_t the_fold = xf.getLastWrite();
+          time_t the_logfile = the_log.getLastWrite();
+          the_log.close();
+
+          if ( the_fold > the_logfile) 
+          {
+            dirList.emplace_back("", the_dir, 0, the_fold);
+          } else {
+            dirList.emplace_back("", the_dir, 0, the_logfile);
+            //Serial.printf("Log is newer than dir by %d -- ", the_logfile - the_fold);
+          }
+        }
+      } 
+      else 
+      {
+        // skip files
+        //dirList.emplace_back("", xf.name(), xf.size(), xf.getLastWrite());
+        //Serial.printf("Added: "); Serial.println(xf.name());
+      }
+      xf = xdir.openNextFile();
+    }
+    xdir.close();
+
+    dirList.sort([](const records & f, const records & l) 
+    {                                 // sort by date
+      return get<3>(f) < get<3>(l);
+      return false;
+    });
+
+    jpr("Sort files took %d ms\n", millis() - x);
+
+    for ( auto& iter : dirList) {
+      String fn =  get<1>(iter);
+
+      //jpr("Oldest file is "); Serial.print(fn);
+      deleteFolderOrFile(fn.c_str());
+
+      total = SD_MMC.totalBytes()  / (1024 * 1024);
+      used = SD_MMC.usedBytes()  / (1024 * 1024);
+
+      full = 1.0 * used / total;
+
+      Serial.println(full);
+      if (full < 0.7) break;
+    }
+  }
+}
+
+------------------------------------------------------------------------------
+
+
+void deleteFolderOrFile(const char * val) 
+{
+  Serial.printf("Deleting : %s\n", val);
+  File f = SD_MMC.open("/" + String(val));
+  if (!f) 
+  {
+    jpr("Failed to open %s\n", val);
+    return;
+  }
+
+  if (f.isDirectory()) 
+  {
+    File file = f.openNextFile();
+    while (file) 
+    {
+      if (file.isDirectory()) 
+      {
+        Serial.print("  DIR : ");
+        Serial.println(file.name());
+      } 
+      else 
+      {
+        Serial.print("  FILE: ");
+        Serial.print(file.name());
+        Serial.print("  SIZE: ");
+        Serial.print(file.size());
+        if (SD_MMC.remove("/" + String(val) + "/" + file.name())) 
+        {
+          Serial.println(" deleted.");
+        } 
+        else 
+        {
+          Serial.println(" FAILED.");
+        }
+      }
+      int total = SD_MMC.totalBytes()  / (1024 * 1024);
+      int used = SD_MMC.usedBytes()  / (1024 * 1024);
+
+      float full = 1.0 * used / total;
+
+      Serial.println(full);
+      if (full < 0.7) break;
+      file = f.openNextFile();
+    }
+    f.close();
+    //Remove the dir
+    if (SD_MMC.rmdir("/" + String(val))) 
+    {
+      Serial.printf("Dir %s removed\n", val);
+    } 
+    else 
+    {
+      Serial.println("Remove dir failed");
+    }
+
+  } 
+  else 
+  {
+    //Remove the file
+    if (SD_MMC.remove("/" + String(val))) 
+    {
+      Serial.printf("File %s deleted\n", val);
+    } 
+    else 
+    {
+      Serial.println("Delete failed");
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

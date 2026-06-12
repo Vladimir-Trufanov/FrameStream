@@ -8,9 +8,8 @@
 
 #pragma once   
 
-
-
 #define Lots_of_Stats 1
+#define blinking 0
 
 //String cname        = "DachWay"; // название для файлов камеры "Esp32-CAM на дорогу к даче"
 char localip[20];                // IP-адрес локальной сети
@@ -78,13 +77,15 @@ uint32_t errState=0;        // карта ошибочных состояний 
 // Объявляем дескрипторы файлов
 File avifile;  // файл потока графических изображений (кадров)
 File idxfile;  // файл указателей кадров
+*/
 
-static const char _hsoftIP[] ="IP-адрес своей сети контроллера - http://";
-static const char _hlocalIP[]="IP-адрес в локальной сети       - http://";
+//static const char _hsoftIP[] ="IP-адрес своей сети контроллера - http://";
+//static const char _hlocalIP[]="IP-адрес в локальной сети       - http://";
 
-char softip[20];                       // IP-адрес собственной сети контроллера
+// char softip[20];                       // IP-адрес собственной сети контроллера
 bool found_router = false;             // true - определена локальная сеть
 
+/*
 TaskHandle_t the_camera_loop_task;
 TaskHandle_t the_streaming_loop_task;
 SemaphoreHandle_t baton;
@@ -94,11 +95,8 @@ bool restart_now = false;   // true - начать запись нового avi
 bool reboot_now = false;    // true - завершить запись и перезагрузить контроллер
 bool web_stop = false;      // true - завершить запись для OTA или по команде Stop из браузера
 
-/*
-#define blinking 0
-
 // Настройки для работы камеры, которые в дальнейшем будут управляться через сайт
-/ *
+/*
 - DachWay - название для файлов камеры "Esp32-CAM на дорогу к даче";
 - возможные форматы изображений: 
   для ov2640 10=vga, 11=svga, 12=xga, 13=hd, 14=sxga, 15=uxga
@@ -127,9 +125,9 @@ bool web_stop = false;      // true - завершить запись для OTA
   как name_CC, где name - название камеры, а CC - последние 2 цифры MAC-адреса
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 https://esp32tutorials.com/esp32-cam-esp-idf-take-photos-save-sd-card/
-* /
+*/
 
-
+/*
 bool do_the_reindex = false;
 //bool done_the_reparse = false;
 bool done_the_reindex = false;

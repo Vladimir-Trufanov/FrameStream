@@ -6,25 +6,36 @@
  * Copyright © 2026 tve                               Дата создания: 24.01.2026
 **/
 
-#pragma once  
+#pragma once 
+
+#include "time.h"
+#include "WiFi.h"
+#include <WiFiMulti.h>
+#include <ArduinoOTA.h>
+#include "ESPmDNS.h"
+// Обслуживаем режим энергосбережения
+#include "esp_wifi.h" 
+// Подключаем библиотеку для связи с сервером SNTP, которая является 
+// библиотекой ядра ESP32 по умолчанию и не требуют установки
+#include "esp_sntp.h"
+
+#include "fs_trass.h"
+
+// Создаем структуру времени timeinfo в которую будем вкладывать
+// выбранное и преобразованное время в секундах с начала эпохи
+struct tm timeinfo;
+
+WiFiMulti jMulti;
+WiFiEventId_t eventID;
+// long total_delay = 0;
+bool do_the_ota = false;
+char ssidota[20];
 
 // Вводим имя и пароль точки доступа
 //const char* tssid = "OPPO A9 2020";  // "TP-Link_B394" "tve-DESKTOP" "linksystve"
 //const char* tpass = "b277a4ee84e8";  // "18009217"     "Ue18-647"    "x93k6kq6wf"
 
 /* 
-
-#include "WiFi.h"
-// Обслуживаем режим энергосбережения
-#include "esp_wifi.h" 
-// Подключаем библиотеку для связи с сервером SNTP, которая является 
-// библиотекой ядра ESP32 по умолчанию и не требуют установки
-#include "esp_sntp.h"
-#include "trass.h"
-
-// Создаем структуру времени timeinfo в которую будем вкладывать
-// выбранное и преобразованное время в секундах с начала эпохи
-struct tm timeinfo;
 
 // ****************************************************************************
 // *      Обеспечить заглушку через макрос на событие с WiFi=201, когда не    *
@@ -221,12 +232,19 @@ void wait4SNTP()
 }
 */
 
-/* альтернативный вариант
 // ****************************************************************************
 // *       Подключить локальные WiFi и создать одну свою от контроллера       *
 // ****************************************************************************
 bool init_wifi() 
 {
+  // Инициируем нулевую попытку подключения
+  int connAttempts = 0;
+
+  //uint32_t brown_reg_temp = READ_PERI_REG(RTC_CNTL_BROWN_OUT_REG);
+  //Serial.printf("Brownout was %d\n", brown_reg_temp);
+  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+  //WiFi.disconnect(true, true);
+
   // Устанавливаем режим работы WiFi, как станции (STA). В этом режиме контроллер 
   // не создаёт собственную сеть, а подключается к уже существующей сети WiFi, 
   // например, к локальной сети (роутеру или иному «раздающему» устройству). 
@@ -252,8 +270,47 @@ bool init_wifi()
   // затем вызвать WiFi.setHostname() и перезагрузить Wi-Fi с нуля. 
   // Если hostname не указан, будет назначено стандартное имя на основе типа чипа и MAC-адреса. 
   WiFi.setHostname(devname);
+
   // Резервируем место для параметров входа локальной сети
-  char ssidch1[20]; char passch1[20];
+  char ssidch1[20];
+  char passch1[20];
+  char ssidch2[20];
+  char passch2[20];
+  char ssidch3[20];
+  char passch3[20];
+  if (cssid3 == "ssid") 
+  {
+    cssid3 = String(devname);
+  }
+
+  cssid1.toCharArray(ssidch1, cssid1.length() + 1);
+  cpass1.toCharArray(passch1, cpass1.length() + 1);
+  cssid2.toCharArray(ssidch2, cssid2.length() + 1);
+  cpass2.toCharArray(passch2, cpass2.length() + 1);
+  cssid3.toCharArray(ssidch3, cssid3.length() + 1);
+  cssid3.toCharArray(ssidota, cssid3.length() + 1);
+  cpass3.toCharArray(passch3, cpass3.length() + 1);
+
+  jpr("\n>>>>>>>>>>>>>>>>>>>>>%s<\n", ssidch1);
+  jpr(">>>>>>>>>>>>>>>>>>>>>%s<\n", ssidch2);
+  jpr(">>>>>>>>>>>>>>>>>>>>>%s< / >%s<\n", ssidch3, passch3);
+
+  if (String(cssid1) != "ssid") 
+  {
+    found_router = true;
+    jMulti.addAP(ssidch1, passch1);
+  }
+  if (String(cssid2) != "ssid") 
+  {
+    found_router = true;
+    jMulti.addAP(ssidch2, passch2);
+  }
+  if (found_router) 
+  {
+    jMulti.run();
+  }
+
+  /*
   // Заполняем параметры для WiFi сети и показываем их
   ssid.toCharArray(ssidch1, ssid.length() + 1);
   pass.toCharArray(passch1, pass.length() + 1);
@@ -261,15 +318,28 @@ bool init_wifi()
   // Подключаемся к локальной сетим
   jMulti.addAP(ssidch1, passch1);
   jMulti.run();
+  */
   
-   // Выбираем и показываем Mac-адрес WiFi
+  // Выбираем и показываем Mac-адрес WiFi
   String wifiMacString = WiFi.macAddress();
   Serial.println("Mac-адрес точки доступа: "+wifiMacString);
 
+  String idfver = esp_get_idf_version();
+  Serial.println(esp_get_idf_version());
+
+  jpr("Setting AP (Access Point)…");
+  WiFi.softAP(ssidch3, passch3);
+
+  IPAddress IP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(IP);
+
+  sprintf(localip, "%s", WiFi.softAPIP().toString().c_str());
+  Serial.print("AP IP: "); Serial.println(localip); Serial.println(" ");
+  
+  /*
   const char _localIP[] = "  Локальный IP: ";
   sayln("Контроллер подключается к локальной точке доступа");
-  // Инициируем нулевую попытку подключения
-  int connAttempts = 0;
   Serial.println(" ");
   while (WiFi.status() != WL_CONNECTED ) 
   {
@@ -277,8 +347,10 @@ bool init_wifi()
     Serial.print(".");
     if (connAttempts++ == 15) break;   
   }
+  
   sprintf(localip,"%s",WiFi.localIP().toString().c_str());
   Serial.print(_localIP); Serial.println(localip); 
+  */
   
   Serial.println(" ");
   sayln("Определяется местное время");
@@ -298,6 +370,9 @@ bool init_wifi()
     time(&now);
   }
   Serial.print("Местное время: "); Serial.print(ctime(&now));
+  
+  sprintf(localip, "%s", WiFi.localIP().toString().c_str());
+  Serial.print("IP: "); Serial.println(localip); Serial.println(" ");
 
   // Запускаем службу multicast DNS (mDNS). Это позволяет использовать имя хоста 
   // в веб-браузере вместо IP-адреса при доступе к ESP32 с компьютера. 
@@ -340,8 +415,37 @@ bool init_wifi()
       //say( "\nframe_cnt: %8d, WiFi event Reason: %d , Status: %d\n", frame_cnt, info.wifi_sta_disconnected.reason, WiFi.status());
     }
   });
+
+  wifi_ps_type_t the_type;
+  esp_err_t get_ps = esp_wifi_get_ps(&the_type);
+  //Serial.printf("The power save was : %d\n", the_type);
+  esp_err_t set_ps = esp_wifi_set_ps(WIFI_PS_NONE);
+  esp_err_t new_ps = esp_wifi_get_ps(&the_type);
+  //Serial.printf("The power save is : %d\n", the_type);
+
+  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, brown_reg_temp);
+  
+  
   return true;
 }
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ************************************************************** fs_wifi.h ***

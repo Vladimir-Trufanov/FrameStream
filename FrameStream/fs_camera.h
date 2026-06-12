@@ -414,18 +414,19 @@ int gj;
 int gmdelay;
 int do_it_now = 0;
 
-/*
 // Сбрасываем первый флаг записи по событию (после первой проверки 12-ого контакта)
-int start_record_1st_opinion = 0;
+int start_record_1st_opinion = -1;
 // Сбрасываем второй флаг записи по событию (после проверки 12-ого контакта на следующем цикле)
-int start_record_2nd_opinion = 0; 
+int start_record_2nd_opinion = -2; 
 
+/*
 uint8_t avi1_buf[4]        = {0x41, 0x56, 0x49, 0x31};    // "AVI1"
 uint8_t idx1_buf[4]        = {0x69, 0x64, 0x78, 0x31};    // "idx1"
 uint8_t zero_buf[4]        = {0x00, 0x00, 0x00, 0x00};    // "    "
 uint8_t dc_buf[4]          = {0x30, 0x30, 0x64, 0x63};    // "00dc"
 uint8_t dc_and_zero_buf[8] = {0x30, 0x30, 0x64, 0x63, 0x00, 0x00, 0x00, 0x00};
 */
+
 /*
 uint16_t remnant = 0;
 uint32_t startms;             // время начала работы с камерой и файлом avi    

@@ -42,9 +42,6 @@ static const char vernum[]="v2.2.2, 12.06.2026";
 #include "fs_trass.h"
 #include "fs_wifi.h"
 
-
-#define blinking 0
-
 bool InternetOff = true;
 
 String czone;
@@ -98,152 +95,9 @@ long loop_total = 0;
 long total_frame_data = 0;
 long last_frame_length = 0;
 int done = 0;
-int start_record_2nd_opinion = -2;
-int start_record_1st_opinion = -1;
 
-long total_delay = 0;
-
-bool do_the_ota = false;
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Time
-#include "time.h"
-
-#include "WiFi.h"
-#include <WiFiMulti.h>
-WiFiMulti jMulti;
-#include <ArduinoOTA.h>
-char ssidota[20];
-#include "ESPmDNS.h"
-
-//#include "ESPxWebFlMgr.h"          //v56
-#include "FlMgr.h"          //v56
+#include "FlMgr.h"          
 ESPxWebFlMgr filemgr(filemanagerport); // we want a different port than the webserver
-
-struct tm timeinfo;
-WiFiEventId_t eventID;
-#include "esp_wifi.h"
-bool found_router = false;
-
-bool init_wifi() {
-
-  int connAttempts = 0;
-
-  //uint32_t brown_reg_temp = READ_PERI_REG(RTC_CNTL_BROWN_OUT_REG);
-  //Serial.printf("Brownout was %d\n", brown_reg_temp);
-  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-
-  //WiFi.disconnect(true, true);
-
-  WiFi.setHostname(devname);
-  WiFi.mode(WIFI_STA);
-  WiFi.setHostname(devname);
-
-  char ssidch1[20];
-  char passch1[20];
-  char ssidch2[20];
-  char passch2[20];
-  char ssidch3[20];
-  char passch3[20];
-
-  if (cssid3 == "ssid") {
-    cssid3 = String(devname);
-  }
-
-  cssid1.toCharArray(ssidch1, cssid1.length() + 1);
-  cpass1.toCharArray(passch1, cpass1.length() + 1);
-  cssid2.toCharArray(ssidch2, cssid2.length() + 1);
-  cpass2.toCharArray(passch2, cpass2.length() + 1);
-  cssid3.toCharArray(ssidch3, cssid3.length() + 1);
-  cssid3.toCharArray(ssidota, cssid3.length() + 1);
-  cpass3.toCharArray(passch3, cpass3.length() + 1);
-
-
-  jpr("\n>>>>>>>>>>>>>>>>>>>>>%s<\n", ssidch1);
-  jpr(">>>>>>>>>>>>>>>>>>>>>%s<\n", ssidch2);
-  jpr(">>>>>>>>>>>>>>>>>>>>>%s< / >%s<\n", ssidch3, passch3);
-
-  if (String(cssid1) != "ssid") {
-    found_router = true;
-    jMulti.addAP(ssidch1, passch1);
-  }
-  if (String(cssid2) != "ssid") {
-    found_router = true;
-    jMulti.addAP(ssidch2, passch2);
-  }
-  if (found_router) {
-    jMulti.run();
-  }
-  String wifiMacString = WiFi.macAddress();
-  Serial.println(wifiMacString);
-  String idfver = esp_get_idf_version();
-  Serial.println(esp_get_idf_version());
-
-  jpr("Setting AP (Access Point)…");
-
-  WiFi.softAP(ssidch3, passch3);
-
-  IPAddress IP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
-  Serial.println(IP);
-
-  sprintf(localip, "%s", WiFi.softAPIP().toString().c_str());
-  Serial.print("AP IP: "); Serial.println(localip); Serial.println(" ");
-
-  /*
-    while (WiFi.status() != WL_CONNECTED ) {
-      delay(1000);
-      Serial.print(".");
-      if (connAttempts++ == 5) break;     // try for 15 seconds to get internet, then give up
-    }
-  */
-  configTime(0, 0, "pool.ntp.org");
-
-  char tzchar[60];
-  TIMEZONE.toCharArray(tzchar, TIMEZONE.length() + 1);        // name of your camera for mDNS, Router, and filenames
-
-  Serial.printf("Char >%s<\n", tzchar);
-  setenv("TZ", tzchar, 1);  // mountain time zone from #define at top
-  tzset();
-
-  time(&now);
-
-  while (now < 5) {        // try for 15 seconds to get the time, then give up - 10 seconds after boot
-    delay(1000);
-    Serial.print("o");
-    time(&now);
-  }
-
-  Serial.print("\nLocal time: "); Serial.print(ctime(&now));
-  sprintf(localip, "%s", WiFi.localIP().toString().c_str());
-  Serial.print("IP: "); Serial.println(localip); Serial.println(" ");
-
-  if (!MDNS.begin(devname)) {
-    jpr("Error setting up MDNS responder!");
-  } else {
-    jpr("mDNS responder started '%s'\n", devname);
-  }
-
-  eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-    //  info.disconnected.reason ==>  info.wifi_sta_disconnected.reason - update with esp32_arduino 2.00 v58
-    if (info.wifi_sta_disconnected.reason != 201) {
-      jpr( "\nframe_cnt: %8d, WiFi event Reason: %d , Status: %d\n", frame_cnt, info.wifi_sta_disconnected.reason, WiFi.status());
-    }
-  });
-
-
-  wifi_ps_type_t the_type;
-  esp_err_t get_ps = esp_wifi_get_ps(&the_type);
-  //Serial.printf("The power save was : %d\n", the_type);
-  esp_err_t set_ps = esp_wifi_set_ps(WIFI_PS_NONE);
-  esp_err_t new_ps = esp_wifi_get_ps(&the_type);
-  //Serial.printf("The power save is : %d\n", the_type);
-
-  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, brown_reg_temp);
-
-  return true;
-}
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
@@ -2477,7 +2331,7 @@ void the_camera_loop (void* pvParameter) {
             jpr("So far: %04d frames, in %6.1f seconds, for last 100 frames: avg frame size %6.1f kb, %.2f fps ...\n", frame_cnt, 0.001 * (millis() - avi_start_time), 1.0 / 1024  * most_recent_avg_framesize, most_recent_fps);
           }
 
-          total_delay = 0;
+          //total_delay = 0;
 
           bytes_before_last_100_frames = movi_size;
           time_before_last_100_frames = millis();

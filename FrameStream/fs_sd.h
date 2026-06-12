@@ -52,6 +52,46 @@ char avi_file_name[100];    // название записываемого фа�
 long avi_start_time = 0;    // время начала видео-записи
 long avi_end_time = 0;
 
+// Определяем структуру для типа кадра
+// (здесь используются две ссылки на Git-репозитарии, которые изменены в ноябре 2024:
+// data structure - https://github.com/s60sc/ESP32-CAM_MJPEG2SD/blob/master/avi.cpp, расширены до ov5640
+// must match     - https://github.com/espressif/esp32-camera/blob/b6a8297342ed728774036089f196d599f03ea367/driver/include/sensor.h#L87)
+struct frameSizeStruct 
+{
+  uint8_t frameWidth[2];
+  uint8_t frameHeight[2];
+};
+static const frameSizeStruct frameSizeData[] = 
+{                                                      // framesize:
+  {{0x60, 0x00}, {0x60, 0x00}}, // FRAMESIZE_96X96,    // 96x96     0 
+  {{0xA0, 0x00}, {0x78, 0x00}}, // FRAMESIZE_QQVGA,    // 160x120   1
+  {{0x60, 0x00}, {0x60, 0x00}}, // FRAMESIZE_128X128   // 128x128   2
+  {{0xB0, 0x00}, {0x90, 0x00}}, // FRAMESIZE_QCIF,     // 176x144   3
+  {{0xF0, 0x00}, {0xB0, 0x00}}, // FRAMESIZE_HQVGA,    // 240x176   4
+  {{0xF0, 0x00}, {0xF0, 0x00}}, // FRAMESIZE_240X240,  // 240x240   5
+  {{0x40, 0x01}, {0xF0, 0x00}}, // FRAMESIZE_QVGA,     // 320x240   6
+  {{0x40, 0x01}, {0xF0, 0x00}}, // FRAMESIZE_320X320,  // 320x320   7
+  {{0x90, 0x01}, {0x28, 0x01}}, // FRAMESIZE_CIF,      // 400x296   8
+  {{0xE0, 0x01}, {0x40, 0x01}}, // FRAMESIZE_HVGA,     // 480x320   9
+  {{0x80, 0x02}, {0xE0, 0x01}}, // FRAMESIZE_VGA,      // 640x480   10
+  //               38,400    61,440    153,600
+  {{0x20, 0x03}, {0x58, 0x02}}, // FRAMESIZE_SVGA,     // 800x600   11
+  {{0x00, 0x04}, {0x00, 0x03}}, // FRAMESIZE_XGA,      // 1024x768  12
+  {{0x00, 0x05}, {0xD0, 0x02}}, // FRAMESIZE_HD,       // 1280x720  13 - по умолчанию
+  {{0x00, 0x05}, {0x00, 0x04}}, // FRAMESIZE_SXGA,     // 1280x1024 14
+  {{0x40, 0x06}, {0xB0, 0x04}}, // FRAMESIZE_UXGA,     // 1600x1200 15
+  // 3MP Sensors
+  {{0x80, 0x07}, {0x38, 0x04}}, // FRAMESIZE_FHD,      // 1920x1080 16
+  {{0xD0, 0x02}, {0x00, 0x05}}, // FRAMESIZE_P_HD,     //  720x1280 17
+  {{0x60, 0x03}, {0x00, 0x06}}, // FRAMESIZE_P_3MP,    //  864x1536 18
+  {{0x00, 0x08}, {0x00, 0x06}}, // FRAMESIZE_QXGA,     // 2048x1536 19
+  // 5MP Sensors
+  {{0x00, 0x0A}, {0xA0, 0x05}}, // FRAMESIZE_QHD,      // 2560x1440 20
+  {{0x00, 0x0A}, {0x40, 0x06}}, // FRAMESIZE_WQXGA,    // 2560x1600 21
+  {{0x38, 0x04}, {0x80, 0x07}}, // FRAMESIZE_P_FHD,    // 1080x1920 22
+  {{0x00, 0x0A}, {0x80, 0x07}}  // FRAMESIZE_QSXGA,    // 2560x1920 23
+};
+
 // Декодирование JPEG для чайников - https://habr.com/ru/articles/102521/
 // Изобретаем JPEG                 - https://habr.com/ru/articles/206264/
 
@@ -478,14 +518,13 @@ static void start_avi()
   avifile.flush();
 } 
 */
-/*
+
 // Обеспечиваем ускорение записи на SD-карту [https://github.com/espressif/esp32-camera/issues/182],
 // ранее было fbs=64 - столько КБ статической оперативной памяти 
 // для psram -> буфер sram для записи на sd
-#define fbs  1 
+#define fbs 4 // 1?
 uint8_t fb_record_static[fbs * 1024 + 20]; 
 
-*/
 // ****************************************************************************
 // *                                                Инициализировать SD-карту *
 // *  CARD_NONE — карта не подключена;                                        *

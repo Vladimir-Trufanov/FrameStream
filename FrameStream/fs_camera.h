@@ -11,6 +11,17 @@
 
 #include "inimem.h"
 #include "fs_trass.h"
+#include "fs_sd.h"
+
+// Cделать снимок и убедиться, что он имеет хороший формат jpeg
+camera_fb_t *get_good_jpeg(); 
+// Cохранить очередной кадр в avi-файл, обновить индекс-указатель для fb на добавляемый кадр 
+static void another_save_avi(uint8_t* fb_buf, int fblen); 
+// Записать индекс, закрыть  файлы и вывести протокол
+static void end_avi(); 
+// Установить параметры камеры
+// static bool config_camera() 
+static void config_camera(); 
 
 // CAMERA_MODEL_AI_THINKER
 #define PWDN_GPIO_NUM     32
@@ -88,46 +99,6 @@ typedef enum {
 
 int framesizeconfig;
 int qualityconfig ;
-
-// Определяем структуру для типа кадра
-// (здесь используются две ссылки на Git-репозитарии, которые изменены в ноябре 2024:
-// data structure - https://github.com/s60sc/ESP32-CAM_MJPEG2SD/blob/master/avi.cpp, расширены до ov5640
-// must match     - https://github.com/espressif/esp32-camera/blob/b6a8297342ed728774036089f196d599f03ea367/driver/include/sensor.h#L87)
-struct frameSizeStruct 
-{
-  uint8_t frameWidth[2];
-  uint8_t frameHeight[2];
-};
-static const frameSizeStruct frameSizeData[] = 
-{                                                      // framesize:
-  {{0x60, 0x00}, {0x60, 0x00}}, // FRAMESIZE_96X96,    // 96x96     0 
-  {{0xA0, 0x00}, {0x78, 0x00}}, // FRAMESIZE_QQVGA,    // 160x120   1
-  {{0x60, 0x00}, {0x60, 0x00}}, // FRAMESIZE_128X128   // 128x128   2
-  {{0xB0, 0x00}, {0x90, 0x00}}, // FRAMESIZE_QCIF,     // 176x144   3
-  {{0xF0, 0x00}, {0xB0, 0x00}}, // FRAMESIZE_HQVGA,    // 240x176   4
-  {{0xF0, 0x00}, {0xF0, 0x00}}, // FRAMESIZE_240X240,  // 240x240   5
-  {{0x40, 0x01}, {0xF0, 0x00}}, // FRAMESIZE_QVGA,     // 320x240   6
-  {{0x40, 0x01}, {0xF0, 0x00}}, // FRAMESIZE_320X320,  // 320x320   7
-  {{0x90, 0x01}, {0x28, 0x01}}, // FRAMESIZE_CIF,      // 400x296   8
-  {{0xE0, 0x01}, {0x40, 0x01}}, // FRAMESIZE_HVGA,     // 480x320   9
-  {{0x80, 0x02}, {0xE0, 0x01}}, // FRAMESIZE_VGA,      // 640x480   10
-  //               38,400    61,440    153,600
-  {{0x20, 0x03}, {0x58, 0x02}}, // FRAMESIZE_SVGA,     // 800x600   11
-  {{0x00, 0x04}, {0x00, 0x03}}, // FRAMESIZE_XGA,      // 1024x768  12
-  {{0x00, 0x05}, {0xD0, 0x02}}, // FRAMESIZE_HD,       // 1280x720  13 - по умолчанию
-  {{0x00, 0x05}, {0x00, 0x04}}, // FRAMESIZE_SXGA,     // 1280x1024 14
-  {{0x40, 0x06}, {0xB0, 0x04}}, // FRAMESIZE_UXGA,     // 1600x1200 15
-  // 3MP Sensors
-  {{0x80, 0x07}, {0x38, 0x04}}, // FRAMESIZE_FHD,      // 1920x1080 16
-  {{0xD0, 0x02}, {0x00, 0x05}}, // FRAMESIZE_P_HD,     //  720x1280 17
-  {{0x60, 0x03}, {0x00, 0x06}}, // FRAMESIZE_P_3MP,    //  864x1536 18
-  {{0x00, 0x08}, {0x00, 0x06}}, // FRAMESIZE_QXGA,     // 2048x1536 19
-  // 5MP Sensors
-  {{0x00, 0x0A}, {0xA0, 0x05}}, // FRAMESIZE_QHD,      // 2560x1440 20
-  {{0x00, 0x0A}, {0x40, 0x06}}, // FRAMESIZE_WQXGA,    // 2560x1600 21
-  {{0x38, 0x04}, {0x80, 0x07}}, // FRAMESIZE_P_FHD,    // 1080x1920 22
-  {{0x00, 0x0A}, {0x80, 0x07}}  // FRAMESIZE_QSXGA,    // 2560x1920 23
-};
 
 /** 
 Ошибки при инициализации камеры:
@@ -303,11 +274,12 @@ static bool config_camera()
 }
 */
 
+// ****************************************************************************
+// *                      Установить параметры камеры                         *
+// ****************************************************************************
 static void config_camera() 
 {
-
   camera_config_t config;
-
   //Serial.println("config camera");
 
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -433,6 +405,7 @@ long loop_total = 0;
 long total_frame_data = 0;
 long last_frame_length = 0;
 int done = 0;
+*/
 
 // Переменные отлова каждого 50 кадра до 1000
 int gframe_cnt;
@@ -441,6 +414,7 @@ int gj;
 int gmdelay;
 int do_it_now = 0;
 
+/*
 // Сбрасываем первый флаг записи по событию (после первой проверки 12-ого контакта)
 int start_record_1st_opinion = 0;
 // Сбрасываем второй флаг записи по событию (после проверки 12-ого контакта на следующем цикле)
@@ -464,9 +438,11 @@ camera_fb_t * fb_curr=NULL;   // структура с буфером снято
 uint8_t* fb_curr_record_buf;  // копия буфера снятого кадра
 int fb_curr_record_len;       // длина буфера снятого кадра
 long fb_curr_record_time=0;   // время записи снятого кадра с начала запуска программы (мс)
+*/
 
 // ****************************************************************************
 // *       Cделать снимок и убедиться, что он имеет хороший формат jpeg       *
+// *            (take a picture and make sure it has a good jpeg)             *
 // ****************************************************************************
 camera_fb_t *  get_good_jpeg() 
 {
@@ -561,17 +537,14 @@ camera_fb_t *  get_good_jpeg()
             }
             foundffd9 = 1;  // отметили, что кадр хороший
             // Lots_of_Stats = true, включена трассировка
-            / *
             if (Lots_of_Stats) 
             {
-              / *
               if (j > 9000) 
               {
                 // Ранее 900 - иногда случалось на 2640
                 jpr("9000: Кадр %d, длина %d, Extra %d ", frame_cnt, fblen, j - 1 );
                 logfile.flush();
               }
-              * /
               // Отлавливаем и помечаем 50-ые кадры для их показа при трассировке
               if ( (frame_cnt % 1000 == 50) || (frame_cnt < 1000 && frame_cnt % 100 == 50)) 
               {
@@ -579,10 +552,11 @@ camera_fb_t *  get_good_jpeg()
                 gfblen = fblen;
                 gj = j;
                 gmdelay = mdelay;
+                //Serial.printf("Frame %6d, len %6d, extra  %4d, cam time %7d ", frame_cnt, fblen, j - 1, mdelay / 1000);
+                //logfile.printf("Frame %6d, len %6d, extra  %4d, cam time %7d ", frame_cnt, fblen, j - 1, mdelay / 1000);
                 do_it_now = 1;
               }
             }
-            * /
             break;
           }
         }
@@ -601,8 +575,7 @@ camera_fb_t *  get_good_jpeg()
       }
     }
 
-  } 
-  while (failures < 10);  
+  } while (failures < 10);  
 
   // !!! Если мы получаем 10 плохих кадров подряд, значит, параметры качества 
   // слишком высоки - понизьте их (+5) и запустите новый ролик
@@ -616,6 +589,7 @@ camera_fb_t *  get_good_jpeg()
     //jprln("Снижение качества из-за сбоев кадров: %d -> %d\n", qual, qual + 5);
     delay(1000);
     start_record = 0;
+    //reboot_now = true;
   }
   return fb;
 }
@@ -626,6 +600,7 @@ static void end_avi()
 {
   long start = millis();
   unsigned long current_end = avifile.position();
+  jpr("End of avi - closing the files");
   if (frame_cnt < 5) 
   {
     //jprln("Запись испорчена, менее 5 кадров, убираем индекс");
@@ -662,6 +637,7 @@ static void end_avi()
     print_quartet((int)iAttainedFPS, avifile);
     avifile.seek(0xe8 , SeekSet);
     print_quartet(movi_size + frame_cnt * 8 + 4, avifile);
+    
     avifile.seek(current_end, SeekSet);
     idxfile.close();
     size_t i1_err = avifile.write(idx1_buf, 4);
@@ -675,8 +651,8 @@ static void end_avi()
     }  
     else  
     {
-      //jprln("Не удалось открыть индексный файл");
-      //major_fail();
+      jprln("Не удалось открыть индексный файл");
+      major_fail();
     }
     // Записываем индексную информацию
     char * AteBytes;
@@ -692,8 +668,24 @@ static void end_avi()
 
     idxfile.close();
     avifile.close();
+    
+    jpr("\n*** Video recorded and saved ***\n");
 
-    / *
+    jpr("Recorded %5d frames in %5d seconds\n", frame_cnt, elapsedms / 1000);
+    jpr("File size is %u bytes\n", movi_size + 12 * frame_cnt + 4);
+    jpr("Adjusted FPS is %5.2f\n", fRealFPS);
+    jpr("Max data rate is %lu bytes/s\n", max_bytes_per_sec);
+    jpr("Frame duration is %d us\n", us_per_frame);
+    jpr("Average frame length is %d bytes\n", uVideoLen / frame_cnt);
+    jpr("Average picture time (ms) %f\n", 1.0 * totalp / frame_cnt);
+    jpr("Average write time (ms)  %f\n", 1.0 * totalw / frame_cnt );
+    jpr("Normal jpg % %3.1f\n", 100.0 * normal_jpg / frame_cnt );
+    jpr("Extend jpg % %3.1f\n", 100.0 * extend_jpg / frame_cnt );
+    jpr("Bad    jpg % %6.5f\n", 100.0 * bad_jpg / frame_cnt);
+    jpr("Slow sd writes %d, %5.3f %% \n", very_high, 100.0 * very_high / frame_cnt, 5 );
+    jpr("Writng the index, %d frames\n", frame_cnt);
+
+    /*
     jprln("\n*** Видео записано и сохранено ***");
     jprln("---");
     jprln("Снято и записано %5d кадров за %5d секунд", frame_cnt, elapsedms / 1000);
@@ -709,22 +701,23 @@ static void end_avi()
     jprln("Количество сломанных   кадров %3.1f %", 100.0 * bad_jpg / frame_cnt);
     jprln("Медленная запись на SD-карту %d, %5.3f %", very_high, 100.0 * very_high / frame_cnt, 5 );
     jprln("Проиндексировано (записано) %d кадров", frame_cnt);
-    * /
-    //    int resss = SD_MMC.mkdir(the_directory);
-    //    Serial.printf("remake the foler ?? %d\n",resss);
+    */
+
+    // int resss = SD_MMC.mkdir(the_directory);
+    // Serial.printf("remake the foler ?? %d\n",resss);
     int xx = SD_MMC.remove("/idx.tmp");
   }
-  //jprln("---");
+  jprln("---");
   time_in_sd += (millis() - start);
   time_total = millis() - startms;
-  / *
+  
   jpr("Время ожидания камеры %10dms, %4.1f%%\n", wait_for_cam , 100.0 * wait_for_cam  / time_total);
   jpr("Время съёмки          %10dms, %4.1f%%\n", time_in_camera, 100.0 * time_in_camera / time_total);
   jpr("Время ожидания SD     %10dms, %4.1f%%\n", delay_wait_for_sd , 100.0 * delay_wait_for_sd  / time_total);
   jpr("Время записи на SD    %10dms, %4.1f%%\n", time_in_sd    , 100.0 * time_in_sd     / time_total);
   jpr("Время работы браузера %10dms, %4.1f%%\n", time_in_web1  , 100.0 * time_in_web1   / time_total);
   jpr("Общее время           %10dms, %4.1f%%\n", time_total    , 100.0 * time_total     / time_total);
-  * /
+  
   logfile.flush();
   if (file_number == 100) 
   {
@@ -748,6 +741,8 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   // Пересчитываем длину кадра, чтобы она была кратна 4
   remnant = (4 - (jpeg_size & 0x00000003)) & 0x00000003;
   int jpeg_size_rem = jpeg_size + remnant;
+
+
   // В первые 8 байт укладываем новую длину кадра, как Big Endian
   fb_record_static[0] = 0x30;       // "00dc"
   fb_record_static[1] = 0x30;
@@ -760,7 +755,6 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
 
   // Ускорение записи на SD-карту на ESP32-CAM с камерой OV2640
   // (https://github.com/espressif/esp32-camera/issues/182)
-  */
   
   /*
     Информация о том, как повысить скорость записи изображений в формате JPEG с камеры esp32 на SD-карту.
@@ -792,7 +786,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   в режиме UXGA и 25 кадров в секунду в режиме SVGA.
   */
   
-  /*
+  long frame_write_start = millis();
   // Записываем первый или единственный блок кадра размером fbs*1024 байт
   int block_num = 0;
   fb_block_start = fb_buf;
@@ -814,7 +808,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   if (err != fb_block_length) 
   {
     start_record = 0;
-    //jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
+    jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
     return;
   }
   if (block_num < 10) block_delay[block_num++] = millis() - bw;
@@ -836,7 +830,7 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
     size_t err = avifile.write(fb_record_static,  fb_block_length);
     if (err != fb_block_length) 
     {
-      //jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
+      jprln("Ошибка при записи в avi: %d, длина блока = %d", err, fb_block_length);
       return;
     }
     if (block_num < 10) block_delay[block_num++] = millis() - bw;
@@ -871,20 +865,20 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   if ((millis() - bw) > totalw / frame_cnt * 10) 
   {
     unsigned long x = avifile.position();
-    //jprln("Кадр:  %6d, время записи велико к среднему %4d > %4d, позиция в файле %X, ",  frame_cnt, millis() - bw, (totalw / frame_cnt), x );
+    jprln("Кадр:  %6d, время записи велико к среднему %4d > %4d, позиция в файле %X, ",  frame_cnt, millis() - bw, (totalw / frame_cnt), x );
     very_high++;
-    / *
+    /*
     for (int i = 1; i < block_num; i++) 
     {
       jpr("Блок %d, время %5d; ", i, block_delay[i] - block_delay[i - 1]);
     }
-    * /
+    */
   }
   // Освобождаем буферы
   avifile.flush();
   idxfile.flush();
 } 
-
+/*
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // the_camera_loop()  - цикл фотографирования и записи avi-имеет наибольший приоритет = 4;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

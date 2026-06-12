@@ -3,164 +3,341 @@ support@arduino.cc
 Здравствуйте! Я, tve58, попытался авторизоваться, но вышло сообщение: "Sorry, you have been blocked
 You are unable to access arduino.cc". Что делать далее?
 
-void delete_old_stuff()
+In file included from C:\FrameStream\FrameStream\fs_camera.h:14,
+                 from C:\FrameStream\FrameStream\FrameStream.ino:37:
+C:\FrameStream\FrameStream\fs_sd.h: In function 'void start_avi()':
+fs_sd.h:306:22: error: 'frameSizeData' was not declared in this scope; did you mean 'framesize_t'?
+  306 |   memcpy(buf + 0x40, frameSizeData[framesize].frameWidth, 2);
+      |                      ^~~~~~~~~~~~~
+      |                      framesize_t
+C:\FrameStream\FrameStream\fs_camera.h: In function 'camera_fb_t* get_good_jpeg()':
+fs_camera.h:587:17: error: 'gframe_cnt' was not declared in this scope; did you mean 'frame_cnt'?
+  587 |                 gframe_cnt = frame_cnt;
+      |                 ^~~~~~~~~~
+      |                 frame_cnt
+fs_camera.h:588:17: error: 'gfblen' was not declared in this scope; did you mean 'fblen'?
+  588 |                 gfblen = fblen;
+      |                 ^~~~~~
+      |                 fblen
+fs_camera.h:589:17: error: 'gj' was not declared in this scope; did you mean 'j'?
+  589 |                 gj = j;
+      |                 ^~
+      |                 j
+fs_camera.h:590:17: error: 'gmdelay' was not declared in this scope; did you mean 'mdelay'?
+  590 |                 gmdelay = mdelay;
+      |                 ^~~~~~~
+      |                 mdelay
+fs_camera.h:593:17: error: 'do_it_now' was not declared in this scope
+  593 |                 do_it_now = 1;
+      |                 ^~~~~~~~~
+C:\FrameStream\FrameStream\fs_camera.h: In function 'void end_avi()':
+fs_camera.h:760:5: error: 'reboot_now' was not declared in this scope
+  760 |     reboot_now = true;
+      |     ^~~~~~~~~~
+C:\FrameStream\FrameStream\fs_camera.h: In function 'void another_save_avi(uint8_t*, int)':
+fs_camera.h:783:3: error: 'fb_record_static' was not declared in this scope; did you mean 'fb_record_time'?
+  783 |   fb_record_static[0] = 0x30;       // "00dc"
+      |   ^~~~~~~~~~~~~~~~
+      |   fb_record_time
+fs_camera.h:829:15: error: 'fbs' was not declared in this scope
+  829 |   if (fblen > fbs * 1024 - 8 )  // fbs=1, это размер статического буфера кадров в Кб
+      |               ^~~
+C:\FrameStream\FrameStream\fs_camera.h:829:15: note: the macro 'fbs' had not yet been defined
+C:\FrameStream\FrameStream\FrameStream.ino:1211:9: note: it was later defined here
+ 1211 | #define fbs 4 //  how many kb of static ram for psram -> sram buffer for sd write
+      |         ^~~
+fs_camera.h:855:17: error: 'fbs' was not declared in this scope
+  855 |     if (fblen > fbs * 1024)
+      |                 ^~~
+C:\FrameStream\FrameStream\fs_camera.h:855:17: note: the macro 'fbs' had not yet been defined
+C:\FrameStream\FrameStream\FrameStream.ino:1211:9: note: it was later defined here
+ 1211 | #define fbs 4 //  how many kb of static ram for psram -> sram buffer for sd write
+      |         ^~~
+fs_camera.h:889:7: error: 'do_it_now' was not declared in this scope
+  889 |   if (do_it_now == 1 )
+      |       ^~~~~~~~~
+Несколько библиотек найдено для "WiFi.h"
+ Используется: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi
+Не используется: C:\Program Files (x86)\Arduino\libraries\WiFi
+
+
+//
+// Make the avi functions
+//
+//   start_avi() - open the file and write headers
+//   another_pic_avi() - write one more frame of movie
+//   end_avi() - write the final parameters and close the file
+
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+//  another_save_avi saves another frame to the avi file, uodates index
+//           -- pass in a fb pointer to the frame to add
+//
+
+static void another_save_avi(uint8_t* fb_buf, int fblen ) 
 {
-  using namespace std;
+  long start = millis();
+
+  int fb_block_length;
+  uint8_t* fb_block_start;
+  long bw = millis();
+  int block_delay[10];
+
+  jpeg_size = fblen;
+
+  remnant = (4 - (jpeg_size & 0x00000003)) & 0x00000003;
+  int jpeg_size_rem = jpeg_size + remnant;
+
+  long frame_write_start = millis();
+
+  int block_num = 0;
+
+  fb_record_static[0] = 0x30;       // "00dc"
+  fb_record_static[1] = 0x30;
+  fb_record_static[2] = 0x64;
+  fb_record_static[3] = 0x63;
 
 
+  fb_record_static[4] = jpeg_size_rem % 0x100;
+  fb_record_static[5] = (jpeg_size_rem >> 8) % 0x100;
+  fb_record_static[6] = (jpeg_size_rem >> 16) % 0x100;
+  fb_record_static[7] = (jpeg_size_rem >> 24) % 0x100;
 
-  using records = tuple<String, String, size_t, time_t>;
-  list<records> dirList;
-
-  int card = SD_MMC.cardSize()  / (1024 * 1024);
-  int total = SD_MMC.totalBytes()  / (1024 * 1024);
-  int used = SD_MMC.usedBytes()  / (1024 * 1024);
-
-  jpr("Card  space: %5dMB\n", card);  // %llu
-  jpr("Total space: %5dMB\n", total);
-  jpr("Used  space: %5dMB\n", used);
-
-  float full = 1.0 * used / total;
-  if (full  <  0.8) {
-    jpr("Nothing deleted, %.1f%% disk full\n", 100.0 * full);
-  } else {
-    jpr("Disk is %.1f%% full ... deleting ...\n", 100.0 * full);
-
-    int x = millis();
-    File xdir = SD_MMC.open("/");
-    File xf = xdir.openNextFile();
-
-    while (xf) 
-    {
-      if (xf.isDirectory()) {
-        String the_dir = xf.name();
-        if (SD_MMC.rmdir("/" + the_dir )) {                      // remove empty dir
-          jpr("Dir removed\n"); Serial.println("/" + the_dir);
-        } else {
-          String log_name = "/" + the_dir + "/" + the_dir + ".999.txt";
-          //Serial.println(log_name);
-          File the_log = SD_MMC.open(log_name, "r");
-          time_t the_fold = xf.getLastWrite();
-          time_t the_logfile = the_log.getLastWrite();
-          the_log.close();
-
-          if ( the_fold > the_logfile) 
-          {
-            dirList.emplace_back("", the_dir, 0, the_fold);
-          } else {
-            dirList.emplace_back("", the_dir, 0, the_logfile);
-            //Serial.printf("Log is newer than dir by %d -- ", the_logfile - the_fold);
-          }
-        }
-      } 
-      else 
-      {
-        // skip files
-        //dirList.emplace_back("", xf.name(), xf.size(), xf.getLastWrite());
-        //Serial.printf("Added: "); Serial.println(xf.name());
-      }
-      xf = xdir.openNextFile();
-    }
-    xdir.close();
-
-    dirList.sort([](const records & f, const records & l) 
-    {                                 // sort by date
-      return get<3>(f) < get<3>(l);
-      return false;
-    });
-
-    jpr("Sort files took %d ms\n", millis() - x);
-
-    for ( auto& iter : dirList) {
-      String fn =  get<1>(iter);
-
-      //jpr("Oldest file is "); Serial.print(fn);
-      deleteFolderOrFile(fn.c_str());
-
-      total = SD_MMC.totalBytes()  / (1024 * 1024);
-      used = SD_MMC.usedBytes()  / (1024 * 1024);
-
-      full = 1.0 * used / total;
-
-      Serial.println(full);
-      if (full < 0.7) break;
-    }
-  }
-}
-
-------------------------------------------------------------------------------
-
-
-void deleteFolderOrFile(const char * val) 
-{
-  Serial.printf("Deleting : %s\n", val);
-  File f = SD_MMC.open("/" + String(val));
-  if (!f) 
-  {
-    jpr("Failed to open %s\n", val);
-    return;
-  }
-
-  if (f.isDirectory()) 
-  {
-    File file = f.openNextFile();
-    while (file) 
-    {
-      if (file.isDirectory()) 
-      {
-        Serial.print("  DIR : ");
-        Serial.println(file.name());
-      } 
-      else 
-      {
-        Serial.print("  FILE: ");
-        Serial.print(file.name());
-        Serial.print("  SIZE: ");
-        Serial.print(file.size());
-        if (SD_MMC.remove("/" + String(val) + "/" + file.name())) 
-        {
-          Serial.println(" deleted.");
-        } 
-        else 
-        {
-          Serial.println(" FAILED.");
-        }
-      }
-      int total = SD_MMC.totalBytes()  / (1024 * 1024);
-      int used = SD_MMC.usedBytes()  / (1024 * 1024);
-
-      float full = 1.0 * used / total;
-
-      Serial.println(full);
-      if (full < 0.7) break;
-      file = f.openNextFile();
-    }
-    f.close();
-    //Remove the dir
-    if (SD_MMC.rmdir("/" + String(val))) 
-    {
-      Serial.printf("Dir %s removed\n", val);
-    } 
-    else 
-    {
-      Serial.println("Remove dir failed");
-    }
+  fb_block_start = fb_buf;
+  if (fblen > fbs * 1024 - 8 ) 
+  {                     // fbs is the size of frame buffer static
+    fb_block_length = fbs * 1024;
+    fblen = fblen - (fbs * 1024 - 8);
+    memcpy(fb_record_static + 8, fb_block_start, fb_block_length - 8);
+    fb_block_start = fb_block_start + fb_block_length - 8;
 
   } 
   else 
   {
-    //Remove the file
-    if (SD_MMC.remove("/" + String(val))) 
+    fb_block_length = fblen + 8  + remnant;
+    memcpy(fb_record_static + 8, fb_block_start,  fblen);
+    fblen = 0;
+  }
+
+  size_t err = avifile.write(fb_record_static, fb_block_length);
+
+  if (err != fb_block_length) 
+  {
+    start_record = 0;
+    jpr("Giving up - Error on avi write: err = %d, len = %d \n", err, fb_block_length);
+    return;
+  }
+
+  if (block_num < 10) block_delay[block_num++] = millis() - bw;
+
+  while (fblen > 0) 
+  {
+
+    if (fblen > fbs * 1024) 
     {
-      Serial.printf("File %s deleted\n", val);
+      fb_block_length = fbs * 1024;
+      fblen = fblen - fb_block_length;
     } 
     else 
     {
-      Serial.println("Delete failed");
+      fb_block_length = fblen  + remnant;
+      fblen = 0;
     }
+
+    memcpy(fb_record_static, fb_block_start, fb_block_length);
+
+    size_t err = avifile.write(fb_record_static,  fb_block_length);
+
+    if (err != fb_block_length) 
+    {
+      jpr("Giving up - Error on avi write: err = %d, len = %d \n", err, fb_block_length);
+      return;
+    }
+
+    if (block_num < 10) block_delay[block_num++] = millis() - bw;
+
+    fb_block_start = fb_block_start + fb_block_length;
+    delay(0);
+  }
+
+
+  movi_size += jpeg_size;
+  uVideoLen += jpeg_size;
+  long frame_write_end = millis();
+
+  print_2quartet(idx_offset, jpeg_size, idxfile);
+
+  idx_offset = idx_offset + jpeg_size + remnant + 8;
+
+  movi_size = movi_size + remnant;
+
+  if ( do_it_now == 1 ) 
+  {  // && frame_cnt < 1011
+    do_it_now = 0;
+    //jpr("Frame %6d, len %6d, extra  %4d, cam time %7d,  sd time %4d -- \n", gframe_cnt, gfblen, gj - 1, gmdelay / 1000, millis() - bw);
+    jpr("Frame %6d, len %6d, cam time %7d,  sd time %4d -- \n", gframe_cnt, gfblen, gmdelay / 1000, millis() - bw);
+    logfile.flush();
+  }
+
+  totalw = totalw + millis() - bw;
+  time_in_sd += (millis() - start);
+
+
+  if ( (millis() - bw) > totalw / frame_cnt * 10) 
+  {
+    unsigned long x = avifile.position();
+    jpr ("Frame %6d, sd time very high %4d >>> %4d -- pos %X, ",  frame_cnt, millis() - bw, (totalw / frame_cnt), x );
+
+    very_high++;
+    jpr("Block %d, delay %5d ... \n", 0, block_delay[0]);
+    //for (int i = 1; i < block_num; i++) {
+    //  jpr("Block %d, delay %5d ..., ", i, block_delay[i] - block_delay[i - 1]);
+    //}
+    //Serial.println(" ");
+    //logfile.println(" ");
+  }
+  avifile.flush();
+  idxfile.flush();
+
+} // end of another_pic_avi
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+//  end_avi writes the index, and closes the files
+//
+
+static void end_avi() 
+{
+
+  long start = millis();
+
+  unsigned long current_end = avifile.position();
+
+  jpr("End of avi - closing the files");
+
+  if (frame_cnt <  5 ) {
+    jpr("Recording screwed up, less than 5 frames, forget index\n");
+    idxfile.close();
+    avifile.close();
+    int xx = remove("/idx.tmp");
+    int yy = remove(avi_file_name);
+
+  } 
+  else 
+  {
+
+    elapsedms = millis() - startms;
+
+    float fRealFPS = (1000.0f * (float)frame_cnt) / ((float)elapsedms) * speed_up_factor;
+
+    float fmicroseconds_per_frame = 1000000.0f / fRealFPS;
+    uint8_t iAttainedFPS = round(fRealFPS) ;
+    uint32_t us_per_frame = round(fmicroseconds_per_frame);
+
+    //Modify the MJPEG header from the beginning of the file, overwriting various placeholders
+
+    avifile.seek( 4 , SeekSet);
+    print_quartet(movi_size + 240 + 16 * frame_cnt + 8 * frame_cnt, avifile);
+
+    avifile.seek( 0x20 , SeekSet);
+    print_quartet(us_per_frame, avifile);
+
+    unsigned long max_bytes_per_sec = (1.0f * movi_size * iAttainedFPS) / frame_cnt;
+
+    avifile.seek( 0x24 , SeekSet);
+    print_quartet(max_bytes_per_sec, avifile);
+
+    avifile.seek( 0x30 , SeekSet);
+    print_quartet(frame_cnt, avifile);
+
+    avifile.seek( 0x8c , SeekSet);
+    print_quartet(frame_cnt, avifile);
+
+    avifile.seek( 0x84 , SeekSet);
+    print_quartet((int)iAttainedFPS, avifile);
+
+    avifile.seek( 0xe8 , SeekSet);
+    print_quartet(movi_size + frame_cnt * 8 + 4, avifile);
+
+    jpr("\n*** Video recorded and saved ***\n");
+
+    jpr("Recorded %5d frames in %5d seconds\n", frame_cnt, elapsedms / 1000);
+    jpr("File size is %u bytes\n", movi_size + 12 * frame_cnt + 4);
+    jpr("Adjusted FPS is %5.2f\n", fRealFPS);
+    jpr("Max data rate is %lu bytes/s\n", max_bytes_per_sec);
+    jpr("Frame duration is %d us\n", us_per_frame);
+    jpr("Average frame length is %d bytes\n", uVideoLen / frame_cnt);
+    jpr("Average picture time (ms) %f\n", 1.0 * totalp / frame_cnt);
+    jpr("Average write time (ms)  %f\n", 1.0 * totalw / frame_cnt );
+    jpr("Normal jpg % %3.1f\n", 100.0 * normal_jpg / frame_cnt );
+    jpr("Extend jpg % %3.1f\n", 100.0 * extend_jpg / frame_cnt );
+    jpr("Bad    jpg % %6.5f\n", 100.0 * bad_jpg / frame_cnt);
+    jpr("Slow sd writes %d, %5.3f %% \n", very_high, 100.0 * very_high / frame_cnt, 5 );
+
+    jpr("Writng the index, %d frames\n", frame_cnt);
+
+    avifile.seek( current_end , SeekSet);
+
+    idxfile.close();
+
+    size_t i1_err = avifile.write(idx1_buf, 4);
+
+    print_quartet(frame_cnt * 16, avifile);
+
+    idxfile = SD_MMC.open("/idx.tmp", "r");
+
+    if (idxfile)  {
+      //Serial.printf("File open: %s\n", "//idx.tmp");
+      //logfile.printf("File open: %s\n", "/idx.tmp");
+    }  else  {
+      jpr("Could not open index file");
+      major_fail();
+    }
+
+    char * AteBytes;
+    AteBytes = (char*) malloc (8);
+
+    for (int i = 0; i < frame_cnt; i++) 
+    {
+      size_t res = idxfile.readBytes( AteBytes, 8);
+      size_t i1_err = avifile.write(dc_buf, 4);
+      size_t i2_err = avifile.write(zero_buf, 4);
+      size_t i3_err = avifile.write((uint8_t *)AteBytes, 8);
+    }
+
+    free(AteBytes);
+
+    idxfile.close();
+    avifile.close();
+
+    //    int resss = SD_MMC.mkdir(the_directory);
+    //    Serial.printf("remake the foler ?? %d\n",resss);
+    int xx = SD_MMC.remove("/idx.tmp");
+  }
+
+  jpr("---\n");
+
+  time_in_sd += (millis() - start);
+
+  //Serial.println("");
+  time_total = millis() - startms;
+  jpr("waiting for cam %10dms, %4.1f%%\n", wait_for_cam , 100.0 * wait_for_cam  / time_total);
+  jpr("Time in camera  %10dms, %4.1f%%\n", time_in_camera, 100.0 * time_in_camera / time_total);
+  jpr("waiting for sd  %10dms, %4.1f%%\n", delay_wait_for_sd , 100.0 * delay_wait_for_sd  / time_total);
+  jpr("Time in sd      %10dms, %4.1f%%\n", time_in_sd    , 100.0 * time_in_sd     / time_total);
+  jpr("web (core 1)    %10dms, %4.1f%%\n", time_in_web1  , 100.0 * time_in_web1   / time_total);
+  jpr("web (core 0)    %10dms, %4.1f%%\n", time_in_web2  , 100.0 * time_in_web2   / time_total);
+  jpr("time total      %10dms, %4.1f%%\n", time_total    , 100.0 * time_total     / time_total);
+
+  logfile.flush();
+
+  if (file_number == 100) {
+    reboot_now = true;
   }
 }
-
 
 
 

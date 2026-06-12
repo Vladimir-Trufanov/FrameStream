@@ -5,7 +5,7 @@
 // видео через сокеты на сайт KwinFlat 
 
 // Copyright © 2026 tve                               Труфанов В.Е., 11.01.2026
-static const char vernum[]="v2.2.1, 09.06.2026";  
+static const char vernum[]="v2.2.2, 12.06.2026";  
 /** 
  * Modify by James Zahary Sep 12, 2020 - jamzah.plc@gmail.com
  * 
@@ -19,12 +19,13 @@ static const char vernum[]="v2.2.1, 09.06.2026";
  * 001 - это число, сохраненное в eprom, которое будет увеличиваться при каждой загрузке устройства
  * 003 - это третий файл, созданный во время текущей загрузки
  * 
- * Arduino IDE 2.3.7 - 1.1.18
- * Esp32 от Espressif Systems версии 3.3.0
+ * Arduino IDE 2.3.7 - 1.8.18
+ * Esp32 от Espressif Systems версии 3.3.8
  * Payment:           "Al Thinker ESP32-CAM"
  * CPU Frequency:     "240MHz (WiFi/BT)"
  * Flash Frequency:   "80MHz"
  * Flash Mode:        "QIO"
+ * Partition Scheme:  "Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)
 **/
 
 //#include "esp_log.h"
@@ -45,8 +46,6 @@ static const char vernum[]="v2.2.1, 09.06.2026";
 #define blinking 0
 
 bool InternetOff = true;
-bool reboot_now = false;
-bool restart_now = false;
 
 String czone;
 //char apssid[30];
@@ -62,11 +61,6 @@ SemaphoreHandle_t baton;
 
 long current_frame_time;
 long last_frame_time;
-bool web_stop = false;
-
-// https://github.com/espressif/esp32-camera/issues/182
-#define fbs  1 // was 64 -- how many kb of static ram for psram -> sram buffer for sd write
-uint8_t fb_record_static[fbs * 1024 + 20];
 
 camera_fb_t * fb_curr = NULL;
 camera_fb_t * fb_next = NULL;
@@ -110,369 +104,6 @@ int start_record_1st_opinion = -1;
 long total_delay = 0;
 
 bool do_the_ota = false;
-
-int do_it_now = 0;
-int gframe_cnt;
-int gfblen;
-int gj;
-int  gmdelay;
-
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-//  get_good_jpeg()  - take a picture and make sure it has a good jpeg
-//
-camera_fb_t *  get_good_jpeg() {
-
-  camera_fb_t * fb;
-
-  long start;
-  int failures = 0;
-
-  do {
-    int fblen = 0;
-    int foundffd9 = 0;
-    long bp = millis();
-    long mstart = micros();
-
-    fb = esp_camera_fb_get();
-    if (!fb) {
-      Serial.println("Camera Capture Failed");
-      failures++;
-    } else {
-      long mdelay = micros() - mstart;
-
-      int get_fail = 0;
-
-      totalp = totalp + millis() - bp;
-      time_in_camera = totalp;
-
-      fblen = fb->len;
-
-      for (int j = 1; j <= 1025; j++) {
-        if (fb->buf[fblen - j] != 0xD9) {
-          // no d9, try next for
-        } else {                                     //Serial.println("Found a D9");
-          if (fb->buf[fblen - j - 1] == 0xFF ) {     //Serial.print("Found the FFD9, junk is "); Serial.println(j);
-            if (j == 1) {
-              normal_jpg++;
-            } else {
-              extend_jpg++;
-            }
-            foundffd9 = 1;
-            if (Lots_of_Stats) {
-              if (j > 9000) {                // was 900             //  rarely happens - sometimes on 2640
-                jpr("Frame %d, Len %d, Extra %d ", frame_cnt, fblen, j - 1 );
-                logfile.flush();
-              }
-
-              if ( (frame_cnt % 1000 == 50) || (frame_cnt < 1000 && frame_cnt % 100 == 50)) {
-                gframe_cnt = frame_cnt;
-                gfblen = fblen;
-                gj = j;
-                gmdelay = mdelay;
-                //Serial.printf("Frame %6d, len %6d, extra  %4d, cam time %7d ", frame_cnt, fblen, j - 1, mdelay / 1000);
-                //logfile.printf("Frame %6d, len %6d, extra  %4d, cam time %7d ", frame_cnt, fblen, j - 1, mdelay / 1000);
-                do_it_now = 1;
-              }
-            }
-            break;
-          }
-        }
-      }
-
-      if (!foundffd9) {
-        bad_jpg++;
-        jpr("Bad jpeg, Frame %d, Len = %d \n", frame_cnt, fblen);
-        esp_camera_fb_return(fb);
-        failures++;
-
-      } else {
-        break;
-        // count up the useless bytes
-      }
-    }
-
-  } while (failures < 10);   // normally leave the loop with a break()
-
-  // if we get 10 bad frames in a row, then quality parameters are too high - set them lower (+5), and start new movie
-  if (failures == 10) {
-    jpr("10 failures");
-
-    sensor_t * ss = esp_camera_sensor_get();
-    int qual = ss->status.quality ;
-    ss->set_quality(ss, qual + 5);
-    quality = qual + 5;
-    jpr("\n\nDecreasing quality due to frame failures %d -> %d\n\n", qual, qual + 5);
-    delay(1000);
-
-    start_record = 0;
-    //reboot_now = true;
-  }
-  return fb;
-}
-
-//
-// Make the avi functions
-//
-//   start_avi() - open the file and write headers
-//   another_pic_avi() - write one more frame of movie
-//   end_avi() - write the final parameters and close the file
-
-
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-//  another_save_avi saves another frame to the avi file, uodates index
-//           -- pass in a fb pointer to the frame to add
-//
-
-static void another_save_avi(uint8_t* fb_buf, int fblen ) {
-  long start = millis();
-
-  int fb_block_length;
-  uint8_t* fb_block_start;
-
-  jpeg_size = fblen;
-
-  remnant = (4 - (jpeg_size & 0x00000003)) & 0x00000003;
-
-  long bw = millis();
-  long frame_write_start = millis();
-
-  int block_delay[10];
-  int block_num = 0;
-
-  fb_record_static[0] = 0x30;       // "00dc"
-  fb_record_static[1] = 0x30;
-  fb_record_static[2] = 0x64;
-  fb_record_static[3] = 0x63;
-
-  int jpeg_size_rem = jpeg_size + remnant;
-
-  fb_record_static[4] = jpeg_size_rem % 0x100;
-  fb_record_static[5] = (jpeg_size_rem >> 8) % 0x100;
-  fb_record_static[6] = (jpeg_size_rem >> 16) % 0x100;
-  fb_record_static[7] = (jpeg_size_rem >> 24) % 0x100;
-
-  fb_block_start = fb_buf;
-
-  if (fblen > fbs * 1024 - 8 ) {                     // fbs is the size of frame buffer static
-    fb_block_length = fbs * 1024;
-    fblen = fblen - (fbs * 1024 - 8);
-    memcpy(fb_record_static + 8, fb_block_start, fb_block_length - 8);
-    fb_block_start = fb_block_start + fb_block_length - 8;
-
-  } else {
-    fb_block_length = fblen + 8  + remnant;
-    memcpy(fb_record_static + 8, fb_block_start,  fblen);
-    fblen = 0;
-  }
-
-  size_t err = avifile.write(fb_record_static, fb_block_length);
-
-  if (err != fb_block_length) {
-    start_record = 0;
-    jpr("Giving up - Error on avi write: err = %d, len = %d \n", err, fb_block_length);
-    return;
-  }
-
-  if (block_num < 10) block_delay[block_num++] = millis() - bw;
-
-  while (fblen > 0) {
-
-    if (fblen > fbs * 1024) {
-      fb_block_length = fbs * 1024;
-      fblen = fblen - fb_block_length;
-    } else {
-      fb_block_length = fblen  + remnant;
-      fblen = 0;
-    }
-
-    memcpy(fb_record_static, fb_block_start, fb_block_length);
-
-    size_t err = avifile.write(fb_record_static,  fb_block_length);
-
-    if (err != fb_block_length) {
-      jpr("Giving up - Error on avi write: err = %d, len = %d \n", err, fb_block_length);
-      return;
-    }
-
-    if (block_num < 10) block_delay[block_num++] = millis() - bw;
-
-    fb_block_start = fb_block_start + fb_block_length;
-    delay(0);
-  }
-
-
-  movi_size += jpeg_size;
-  uVideoLen += jpeg_size;
-  long frame_write_end = millis();
-
-  print_2quartet(idx_offset, jpeg_size, idxfile);
-
-  idx_offset = idx_offset + jpeg_size + remnant + 8;
-
-  movi_size = movi_size + remnant;
-
-  if ( do_it_now == 1 ) {  // && frame_cnt < 1011
-    do_it_now = 0;
-    //jpr("Frame %6d, len %6d, extra  %4d, cam time %7d,  sd time %4d -- \n", gframe_cnt, gfblen, gj - 1, gmdelay / 1000, millis() - bw);
-    jpr("Frame %6d, len %6d, cam time %7d,  sd time %4d -- \n", gframe_cnt, gfblen, gmdelay / 1000, millis() - bw);
-    logfile.flush();
-  }
-
-  totalw = totalw + millis() - bw;
-  time_in_sd += (millis() - start);
-
-
-  if ( (millis() - bw) > totalw / frame_cnt * 10) {
-    unsigned long x = avifile.position();
-    jpr ("Frame %6d, sd time very high %4d >>> %4d -- pos %X, ",  frame_cnt, millis() - bw, (totalw / frame_cnt), x );
-
-    very_high++;
-    jpr("Block %d, delay %5d ... \n", 0, block_delay[0]);
-    //for (int i = 1; i < block_num; i++) {
-    //  jpr("Block %d, delay %5d ..., ", i, block_delay[i] - block_delay[i - 1]);
-    //}
-    //Serial.println(" ");
-    //logfile.println(" ");
-  }
-  avifile.flush();
-  idxfile.flush();
-
-} // end of another_pic_avi
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-//  end_avi writes the index, and closes the files
-//
-
-static void end_avi() {
-
-  long start = millis();
-
-  unsigned long current_end = avifile.position();
-
-  jpr("End of avi - closing the files");
-
-  if (frame_cnt <  5 ) {
-    jpr("Recording screwed up, less than 5 frames, forget index\n");
-    idxfile.close();
-    avifile.close();
-    int xx = remove("/idx.tmp");
-    int yy = remove(avi_file_name);
-
-  } else {
-
-    elapsedms = millis() - startms;
-
-    float fRealFPS = (1000.0f * (float)frame_cnt) / ((float)elapsedms) * speed_up_factor;
-
-    float fmicroseconds_per_frame = 1000000.0f / fRealFPS;
-    uint8_t iAttainedFPS = round(fRealFPS) ;
-    uint32_t us_per_frame = round(fmicroseconds_per_frame);
-
-    //Modify the MJPEG header from the beginning of the file, overwriting various placeholders
-
-    avifile.seek( 4 , SeekSet);
-    print_quartet(movi_size + 240 + 16 * frame_cnt + 8 * frame_cnt, avifile);
-
-    avifile.seek( 0x20 , SeekSet);
-    print_quartet(us_per_frame, avifile);
-
-    unsigned long max_bytes_per_sec = (1.0f * movi_size * iAttainedFPS) / frame_cnt;
-
-    avifile.seek( 0x24 , SeekSet);
-    print_quartet(max_bytes_per_sec, avifile);
-
-    avifile.seek( 0x30 , SeekSet);
-    print_quartet(frame_cnt, avifile);
-
-    avifile.seek( 0x8c , SeekSet);
-    print_quartet(frame_cnt, avifile);
-
-    avifile.seek( 0x84 , SeekSet);
-    print_quartet((int)iAttainedFPS, avifile);
-
-    avifile.seek( 0xe8 , SeekSet);
-    print_quartet(movi_size + frame_cnt * 8 + 4, avifile);
-
-    jpr("\n*** Video recorded and saved ***\n");
-
-    jpr("Recorded %5d frames in %5d seconds\n", frame_cnt, elapsedms / 1000);
-    jpr("File size is %u bytes\n", movi_size + 12 * frame_cnt + 4);
-    jpr("Adjusted FPS is %5.2f\n", fRealFPS);
-    jpr("Max data rate is %lu bytes/s\n", max_bytes_per_sec);
-    jpr("Frame duration is %d us\n", us_per_frame);
-    jpr("Average frame length is %d bytes\n", uVideoLen / frame_cnt);
-    jpr("Average picture time (ms) %f\n", 1.0 * totalp / frame_cnt);
-    jpr("Average write time (ms)  %f\n", 1.0 * totalw / frame_cnt );
-    jpr("Normal jpg % %3.1f\n", 100.0 * normal_jpg / frame_cnt );
-    jpr("Extend jpg % %3.1f\n", 100.0 * extend_jpg / frame_cnt );
-    jpr("Bad    jpg % %6.5f\n", 100.0 * bad_jpg / frame_cnt);
-    jpr("Slow sd writes %d, %5.3f %% \n", very_high, 100.0 * very_high / frame_cnt, 5 );
-
-    jpr("Writng the index, %d frames\n", frame_cnt);
-
-    avifile.seek( current_end , SeekSet);
-
-    idxfile.close();
-
-    size_t i1_err = avifile.write(idx1_buf, 4);
-
-    print_quartet(frame_cnt * 16, avifile);
-
-    idxfile = SD_MMC.open("/idx.tmp", "r");
-
-    if (idxfile)  {
-      //Serial.printf("File open: %s\n", "//idx.tmp");
-      //logfile.printf("File open: %s\n", "/idx.tmp");
-    }  else  {
-      jpr("Could not open index file");
-      major_fail();
-    }
-
-    char * AteBytes;
-    AteBytes = (char*) malloc (8);
-
-    for (int i = 0; i < frame_cnt; i++) {
-      size_t res = idxfile.readBytes( AteBytes, 8);
-      size_t i1_err = avifile.write(dc_buf, 4);
-      size_t i2_err = avifile.write(zero_buf, 4);
-      size_t i3_err = avifile.write((uint8_t *)AteBytes, 8);
-    }
-
-    free(AteBytes);
-
-    idxfile.close();
-    avifile.close();
-
-    //    int resss = SD_MMC.mkdir(the_directory);
-    //    Serial.printf("remake the foler ?? %d\n",resss);
-    int xx = SD_MMC.remove("/idx.tmp");
-  }
-
-  jpr("---\n");
-
-  time_in_sd += (millis() - start);
-
-  //Serial.println("");
-  time_total = millis() - startms;
-  jpr("waiting for cam %10dms, %4.1f%%\n", wait_for_cam , 100.0 * wait_for_cam  / time_total);
-  jpr("Time in camera  %10dms, %4.1f%%\n", time_in_camera, 100.0 * time_in_camera / time_total);
-  jpr("waiting for sd  %10dms, %4.1f%%\n", delay_wait_for_sd , 100.0 * delay_wait_for_sd  / time_total);
-  jpr("Time in sd      %10dms, %4.1f%%\n", time_in_sd    , 100.0 * time_in_sd     / time_total);
-  jpr("web (core 1)    %10dms, %4.1f%%\n", time_in_web1  , 100.0 * time_in_web1   / time_total);
-  jpr("web (core 0)    %10dms, %4.1f%%\n", time_in_web2  , 100.0 * time_in_web2   / time_total);
-  jpr("time total      %10dms, %4.1f%%\n", time_total    , 100.0 * time_total     / time_total);
-
-  logfile.flush();
-
-  if (file_number == 100) {
-    reboot_now = true;
-  }
-}
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1563,7 +1194,6 @@ void re_index( char * avi_file_name, char * out_file_name) {
   const char * idx_file_name = "/re_idx.tmp"; // "/JamCam0190.0001.idx";
   //const char * out_file_name = "/JamCam0090.0001new.avi";
 
-#define fbs 4 //  how many kb of static ram for psram -> sram buffer for sd write
   uint8_t fb_faf_static[fbs * 1024 + 20];
 
   File avifile = SD_MMC.open(avi_file_name, "r"); // avifile = SD_MMC.open(avi_file_name, "w");

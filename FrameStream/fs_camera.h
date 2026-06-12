@@ -388,12 +388,16 @@ static esp_err_t cam_err;
 
 
 uint8_t* fb_streaming;
-uint8_t* fb_capture;
 
 int fb_streaming_len;
+*/
+
+uint8_t* fb_capture;
 int fb_capture_len;
-long fb_streaming_time = 0;
 long fb_capture_time = 0;
+
+/*
+long fb_streaming_time = 0;
 
 int first = 1;
 long frame_start = 0;

@@ -13,24 +13,19 @@
   #include <ESP8266WiFi.h>
   #include <ESP8266WebServer.h>
 #endif
-
 #ifdef ESP32
   #include <WiFi.h>
   #include <WebServer.h>
 #endif
-
+#include <HTTPClient.h>
+#include <ArduinoOTA.h>
+#include "esp_http_server.h"
 #include "lwip/sockets.h"
 #include <lwip/netdb.h>
 
 #include "inimem.h"
 
 /*
-
-#include <HTTPClient.h>
-#include <ArduinoOTA.h>
-#include "esp_http_server.h"
-
-#include "inimem.h"
 #include "sd.h"
 */
 
@@ -39,52 +34,60 @@
 //void stopCameraServer();
 void print_sock(int sock); 
 
-char the_page[4200];
-int previous_capture = 0;
+static esp_err_t index_handler(httpd_req_t *req); 
+static esp_err_t capture_handler(httpd_req_t *req); 
+static esp_err_t sphotos_handler(httpd_req_t *req); 
+static esp_err_t fphotos_handler(httpd_req_t *req); 
+static esp_err_t photos_handler(httpd_req_t *req); 
+static esp_err_t restart_handler(httpd_req_t *req); // обработчик запроса на запись нового avi-файла: restart_handler
+static esp_err_t reboot_handler(httpd_req_t *req); 
+static esp_err_t start_handler(httpd_req_t *req); 
+static esp_err_t stop_handler(httpd_req_t *req);    // обработчик запроса на остановку записи avi-файла: stop_handler
+static esp_err_t time_handler(httpd_req_t *req); 
+static esp_err_t status_handler(httpd_req_t *req); 
+static esp_err_t find_handler(httpd_req_t *req); 
+static esp_err_t edit_handler(httpd_req_t *req); 
+static esp_err_t ota_handler(httpd_req_t *req);
+static esp_err_t delete_handler(httpd_req_t *req); 
+static esp_err_t reindex_handler(httpd_req_t *req); 
+
 int capture_timer = 0;
-int captures = 0;
 int total_captures = 0;
 int skips = 0;
 int extras = 0;
+int captures = 0;
+int previous_capture = 0;
 
 /*
-char ssidota[20];
-bool do_the_ota = false;
-
 // Определяем экземпляры HTTP-серверов. 
 // Тип httpd_handle_t используется для создания и управления веб-серверами и
 // возвращается функцией httpd_start(). Она создаёт экземпляр HTTP-сервера, 
 // выделяет память и ресурсы в зависимости от указанной конфигурации и 
 // возвращает указатель на экземпляр. 
 httpd_handle_t camera_httpd = NULL;
-
-
-char file_to_read[50];
-char file_to_write[50];
 */
 
-static esp_err_t index_handler(httpd_req_t *req); 
+char the_page[4200];
+char file_to_read[50];
+char file_to_write[50];
+bool do_the_reindex = false;
+bool done_the_reindex = false;
 
+// ----------------------------------------------------------------------------
+static esp_err_t delete_handler(httpd_req_t *req) 
+{
+  esp_err_t res = ESP_OK;
+
+  Serial.print("delete_handler, core ");  Serial.print(xPortGetCoreID());
+  Serial.print(", priority = "); Serial.println(uxTaskPriorityGet(NULL));
+
+
+  //httpd_resp_send(req, page_html, strlen(page_html));
+  delay(100);
+  //delete_all_files = 1;
+  return res;;
+}
 /*
-//static esp_err_t delete_handler(httpd_req_t *req); 
-//static esp_err_t reindex_handler(httpd_req_t *req); 
-//static esp_err_t edit_handler(httpd_req_t *req); 
-//static esp_err_t ota_handler(httpd_req_t *req);
-
-static esp_err_t status_handler(httpd_req_t *req); 
-static esp_err_t find_handler(httpd_req_t *req); 
-static esp_err_t start_handler(httpd_req_t *req); 
-static esp_err_t stop_handler(httpd_req_t *req);    // обработчик запроса на остановку записи avi-файла: stop_handler
-static esp_err_t time_handler(httpd_req_t *req); 
-static esp_err_t restart_handler(httpd_req_t *req); // обработчик запроса на запись нового avi-файла: restart_handler
-static esp_err_t reboot_handler(httpd_req_t *req); 
-static esp_err_t sphotos_handler(httpd_req_t *req); 
-static esp_err_t fphotos_handler(httpd_req_t *req); 
-static esp_err_t photos_handler(httpd_req_t *req); 
-static esp_err_t capture_handler(httpd_req_t *req); 
-
-
-/ *
 static esp_err_t delete_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -98,18 +101,14 @@ static esp_err_t delete_handler(httpd_req_t *req)
   delete_all_files = 1;
   return res;;
   }
-* /
-
-
 */
 
-void print_sock(int sock) {
-
+// ----------------------------------------------------------------------------
+void print_sock(int sock) 
+{
   sockaddr_in6 clientAddr;
   socklen_t addrLen = sizeof(clientAddr);
-
   int clientFd = sock; //client.getSocket();
-
   char ip[INET6_ADDRSTRLEN] = {0};
 
   if (getpeername(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
@@ -125,13 +124,11 @@ void print_sock(int sock) {
     uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
     jpr(", Client Port: ");
     jprln("%d", clientPort);
-
   } 
   else 
   {
     Serial.println("Failed to get client address.");
   }
-
   if (getsockname(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
   {
     //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
@@ -150,8 +147,6 @@ void print_sock(int sock) {
     Serial.println("Failed to get client address.");
   }
 }
-
-//
 /*
 void print_sock(int sock) 
 {
@@ -201,7 +196,42 @@ void print_sock(int sock)
   }
 }
 */
+// ----------------------------------------------------------------------------
+static esp_err_t reindex_handler(httpd_req_t *req) 
+{
+  esp_err_t res = ESP_OK;
 
+  print_mem("reindex_handler");
+
+  char  buf[150];
+  size_t buf_len;
+
+  buf_len = httpd_req_get_url_query_len(req) + 1;
+
+  if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+    //Serial.printf("Query => %s\n", buf);
+    if (httpd_query_key_value(buf, "o", file_to_read, sizeof(file_to_read)) == ESP_OK) {
+      //Serial.printf( "Found URL query parameter => file_to_read=>%s<\n", file_to_read);
+    }
+    if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+      //Serial.printf("Query => %s\n", buf);
+      if (httpd_query_key_value(buf, "n", file_to_write, sizeof(file_to_write)) == ESP_OK) {
+        //Serial.printf( "Found URL query parameter => file_to_write=>%s<\n", file_to_write);
+      }
+    }
+  }
+
+  do_the_reindex = true;
+
+  while (!done_the_reindex) {
+    delay(1000);
+  }
+  String x = " {\"status\":\"!!!DONE!!!\" }";
+  const char* str = x.c_str();
+  httpd_resp_send(req, str,  strlen(str));
+
+  return res;
+}
 /*
 static esp_err_t reindex_handler(httpd_req_t *req) 
 {
@@ -238,9 +268,34 @@ static esp_err_t reindex_handler(httpd_req_t *req)
 
   return res;
 }
-* /
+*/
 
-/ *
+// ----------------------------------------------------------------------------
+static esp_err_t edit_handler(httpd_req_t *req) 
+{
+  esp_err_t res = ESP_OK;
+  char  buf[120];
+  size_t buf_len;
+  char  new_res[20];
+
+  print_mem("edit_handler");
+
+  buf_len = httpd_req_get_url_query_len(req) + 1;
+  if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+    Serial.printf("Query => %s\n", buf);
+    char param[32];
+
+    if (httpd_query_key_value(buf, "f", file_to_edit, sizeof(file_to_edit)) == ESP_OK) {
+      Serial.printf( "Found URL query parameter => f=>%s<\n", file_to_edit);
+
+    }
+  }
+
+  httpd_resp_send(req, edit_html, strlen(edit_html));
+
+  return res;
+}
+/*
 static esp_err_t edit_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -265,9 +320,91 @@ static esp_err_t edit_handler(httpd_req_t *req)
 
   return res;;
 }
-* /
+*/
 
-/ *
+// ----------------------------------------------------------------------------
+static esp_err_t ota_handler(httpd_req_t *req) 
+{
+  esp_err_t res = ESP_OK;
+
+  print_mem("ota_handler");
+
+  delay(100);
+
+  start_record = 0;
+  web_stop = true;
+
+  ///  ota updates always enabled without password at either softap ip or router ip
+  ArduinoOTA.setHostname(ssidota);
+  ArduinoOTA.setPassword("mrpeanut");
+  ArduinoOTA
+  .onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+
+    Serial.println("\n\nStop Recording due to OTA ! \n\n" );
+    start_record = 0;
+    web_stop = true;
+    delay(500);
+    Serial.println("Start updating " + type);
+  })
+  .onEnd([]() {
+    Serial.println("\nEnd");
+  })
+  .onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  })
+  .onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+
+  ArduinoOTA.begin();
+
+  do_the_ota = true;
+
+  long start = millis();
+
+  Serial.printf("Do the ota %d\n");
+
+  const char the_message[] = "Status";
+
+  time(&now);
+  const char *strdate = ctime(&now);
+
+  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>%s ESP32-CAM Video Recorder Junior</title>
+</head>
+<body>
+<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
+ <br>
+Do the ota, or reboot ...
+ <br>
+<br>
+</body>
+</html>)rawliteral";
+
+  sprintf(the_page, msg, devname, devname, vernum, strdate );
+
+  httpd_resp_send(req, the_page, strlen(the_page));
+  time_in_web1 += (millis() - start);
+
+  return ESP_OK;
+}
+/*
 static esp_err_t ota_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -355,10 +492,62 @@ Do the ota, or reboot ...
 
   return ESP_OK;
 }
-* /
+*/
 
+// ----------------------------------------------------------------------------
+static esp_err_t status_handler(httpd_req_t *req) 
+{
+  esp_err_t res = ESP_OK;
+  print_mem("status_handler");
+  delay(101);
+  int remain = (-millis() + (avi_start_time + avi_length * 1000) ) / 1000;
+  //Serial.printf("remain %d\n", remain);
+  String x = " {\"OnOff\":\"";
 
-//61.3up
+  if (start_record == 1) {
+    if (frame_interval == 1000) {
+      x = x + "TL";
+    } else {
+      x = x + "On";
+    }
+  } else {
+    x = x + "Off";
+  }
+  x = x + "\",\"File\":\"";
+
+  int fnl = strlen(avi_file_name);
+  //Serial.printf("fnl %d \n", fnl);
+
+  String fn(avi_file_name);
+  //Serial.println(fn);
+
+  x = x + fn + "\", \"Remain\": ";
+  x = x + String(remain) ;
+
+  int total =  SD_MMC.totalBytes() / (1024 * 1024);
+  int used =  SD_MMC.usedBytes() / (1024 * 1024) ;
+  int freesp = total - used;
+
+  x = x + ",\"Size\":" + String(total);
+  x = x + ",\"Free\":" + String(freesp);
+  if (0) { //                                     if (no_wifi) {
+    x = x + ",\"rssi\":" + String(0);
+  } else {
+    x = x + ",\"rssi\":" + String(WiFi.RSSI());
+  }
+
+  x = x + ",\"IP\":" + "\"" + String(localip) + "\"" ;
+
+  x = x + ",\"file_to_edit\":" + "\"" + String(file_to_edit) + "\"" ;
+
+  x = x + ",\"Power\":" + String(99) + "}";  // x = x + ",\"Power\":" + String(power) + "}";
+
+  const char* str = x.c_str();
+
+  httpd_resp_send(req, str,  strlen(str));
+  return res;
+}
+/*
 static esp_err_t status_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -414,8 +603,91 @@ static esp_err_t status_handler(httpd_req_t *req)
   httpd_resp_send(req, str,  strlen(str));
   return res;
 }
+*/
+
+// ----------------------------------------------------------------------------
+static esp_err_t find_handler(httpd_req_t *req) 
+{
+  esp_err_t res = ESP_OK;
+  char  buf[120];
+  size_t buf_len;
+  char  new_res[20];
+
+  oneframe x;
+
+  size_t _jpg_buf_len = 0;
+  uint8_t * _jpg_buf = NULL;
+  char * part_buf[64];
+  int frame_pct;
+  char filename[50];
+
+  print_mem("find_handler");
+
+  buf_len = httpd_req_get_url_query_len(req) + 1;
+  if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+    //Serial.printf("Query => %s\n", buf);
+    char param[32];
+    if (httpd_query_key_value(buf, "f", filename, sizeof(filename)) == ESP_OK) {
+      //Serial.printf( "Found URL query parameter => f=>%s<\n", filename);
+    }
+    if (httpd_query_key_value(buf, "n", param, sizeof(param)) == ESP_OK) {
+      int nn = atoi(param);
+      if (nn >= 0 && nn <= 30000 ) {
+        frame_pct = nn;
+        //Serial.printf( "Found URL query parameter => n=%d\n", frame_pct);
+      }
+    }
+  }
+
+  //uint8_t* the_frame = find_a_frame ( "/JamCam0090.0001.avi", 12);
+
+  x = find_a_frame ( filename, frame_pct);
+  //the_frame = x.the_frame;
+
+  _jpg_buf_len = x.the_frame_length;
+  _jpg_buf = x.the_frame;
 
 
+  if (x.the_frame == NULL) {
+    Serial.printf("no frame\n");
+    res = httpd_resp_send_408(req);
+    //61.3 httpd_resp_send(req, page_html, strlen(page_html));
+  } else {
+
+    res = httpd_resp_set_type(req, "image/jpeg");
+    if (res != ESP_OK) {
+      return res;
+    }
+
+    if (res == ESP_OK) {
+      char fname[50];
+      char frame_num_char[8];
+      char frame_pct_char[8];
+      char frame_total_char[8];
+
+      sprintf(fname, "inline; filename=frame_%d.jpg", frame_pct);
+      sprintf(frame_num_char, "%d", x.the_frame_number);
+      sprintf(frame_total_char, "%d", x.the_frame_total - 1); //61.4
+
+      sprintf(frame_pct_char, "%d", frame_pct);
+
+      httpd_resp_set_hdr(req, "Content-Disposition", fname);
+      httpd_resp_set_hdr(req, "FrameNum", frame_num_char);
+      httpd_resp_set_hdr(req, "Total", frame_total_char);
+      httpd_resp_set_hdr(req, "FramePct", frame_pct_char);
+      httpd_resp_set_hdr(req, "File", filename);
+
+
+    }
+    if (res == ESP_OK) {
+      res = httpd_resp_send(req, (const char *)_jpg_buf, _jpg_buf_len);
+    }
+
+    free (x.the_frame);
+  }
+  return res;;
+}
+/*
 static esp_err_t find_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -497,6 +769,8 @@ static esp_err_t find_handler(httpd_req_t *req)
   }
   return res;
 }
+*/
+
 // ****************************************************************************
 // *  Обработать запрос запуска остановленной записи avi-файла: start_handler *    
 // ****************************************************************************
@@ -504,7 +778,7 @@ static esp_err_t start_handler(httpd_req_t *req)
 {
   // Сбрасываем флаг остановленной записи avi-файла
   web_stop = false;
-  Serial.println("Отмена остановки записи avi-файла (из браузера)");
+  Serial.printf("Старт (отмена остановки) записи avi-файла (из браузера) %d\n", web_stop);
   delay(500);
   esp_err_t xx = index_handler(req); // возврат на главную страницу, 2026-02-05 не срабатывает!
   return ESP_OK;
@@ -516,13 +790,85 @@ static esp_err_t stop_handler(httpd_req_t *req)
 {
   // Устанавливаем флаг команды из браузера на остановку записи avi-файла
   web_stop = true;
-  Serial.println("Команда из браузера на остановку записи avi-файла");
+  Serial.printf("Команда из браузера на остановку записи avi-файла %d\n", web_stop);
   delay(500);
   esp_err_t xx = index_handler(req); // возврат на главную страницу, 2026-02-05 не срабатывает!
   return ESP_OK;
 }
+// ----------------------------------------------------------------------------
+static esp_err_t time_handler(httpd_req_t *req) 
+{
+  esp_err_t res = ESP_OK;
+
+  char  buf[120];
+  size_t buf_len;
+  char  new_res[20];
+  struct tm timeinfo;
+  time_t now;
+
+  buf_len = httpd_req_get_url_query_len(req) + 1;
+  if (buf_len > 1) {
+    if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+      //Serial.printf("Found URL query => %s", buf);
+      char param[32];
+
+      if (httpd_query_key_value(buf, "time", param, sizeof(param)) == ESP_OK) {
+
+        now = (time_t)atol(param);
+        //Serial.print("new time: "); Serial.println(ctime(&now));
+        //Serial.printf(">%i<", now);
+
+        char tzchar[60];
+        TIMEZONE.toCharArray(tzchar, TIMEZONE.length() + 1);        // name of your camera for mDNS, Router, and filenames
+        setenv("TZ", tzchar, 1);  // mountain time zone from #define at top
+        tzset();
+
+        struct timeval tv;
+        tv.tv_sec = now;
+        tv.tv_usec = 0;
+        settimeofday(&tv, NULL);
+
+        //time(&now);
+        //Serial.print("\nLocal time: "); Serial.println(ctime(&now));
+        /*
+                time_t rawtime;
+                struct tm * ptm;
+                time ( &rawtime );
+                ptm = gmtime ( &rawtime );
+                Serial.printf ("GMT: %2d:%02d\n", (ptm->tm_hour) % 24, ptm->tm_min);
+        */
+      }
+    }
+  }
+  const char the_message[] = "Status";
+
+  time(&now);
+  const char *strdate = ctime(&now);
+
+  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>%s ESP32-CAM Video Recorder Junior</title>
+</head>
+<body>
+<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
+ <br>
+ got a time sync ...
+ <br>
 
 
+</body>
+</html>)rawliteral";
+
+  sprintf(the_page, msg, devname, devname, vernum, strdate );
+
+  httpd_resp_send(req, the_page, strlen(the_page));
+
+  return ESP_OK;
+}
+/*
 static esp_err_t time_handler(httpd_req_t *req) 
 {
   esp_err_t res = ESP_OK;
@@ -596,9 +942,41 @@ static esp_err_t time_handler(httpd_req_t *req)
 
   return ESP_OK;
 }
+*/
+
 // ****************************************************************************
 // *      Обработать запрос на запись нового avi-файла: restart_handler       *
 // ****************************************************************************
+static esp_err_t restart_handler(httpd_req_t *req) 
+{
+  long start = millis();
+  print_mem("restart_handler");
+  restart_now = true;
+  const char the_message[] = "Status";
+  time(&now);
+  const char *strdate = ctime(&now);
+  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>%s ESP32-CAM Video Recorder Junior</title>
+</head>
+<body>
+<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
+ <br>
+ Ending current recording, and starting next video ...
+ <br>
+<br>
+</body>
+</html>)rawliteral";
+
+  sprintf(the_page, msg, devname, devname, vernum, strdate );
+  httpd_resp_send(req, the_page, strlen(the_page));
+  time_in_web1 += (millis() - start);
+  return ESP_OK;
+}
+/*
 static esp_err_t restart_handler(httpd_req_t *req) 
 {
   long start = millis();
@@ -634,8 +1012,44 @@ static esp_err_t restart_handler(httpd_req_t *req)
   time_in_web1 += (millis() - start);
   return ESP_OK;
 }
+*/
 
+// ----------------------------------------------------------------------------
+static esp_err_t reboot_handler(httpd_req_t *req) 
+{
+  long start = millis();
+  print_mem("reboot_handler");
+  start_record = 0;
+  web_stop = true;
+  reboot_now = true;
+  const char the_message[] = "Status";
+  time(&now);
+  const char *strdate = ctime(&now);
+  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>%s ESP32-CAM Video Recorder Junior</title>
+</head>
+<body>
+<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
+ <br>
+ Ending current recording, and rebooting ...
+ <br>
 
+<br>
+</body>
+</html>)rawliteral";
+
+  sprintf(the_page, msg, devname, devname, vernum, strdate );
+
+  httpd_resp_send(req, the_page, strlen(the_page));
+  time_in_web1 += (millis() - start);
+
+  return ESP_OK;
+}
+/*
 static esp_err_t reboot_handler(httpd_req_t *req) 
 {
 
@@ -677,8 +1091,63 @@ static esp_err_t reboot_handler(httpd_req_t *req)
 
   return ESP_OK;
 }
+*/
 
+// ----------------------------------------------------------------------------
+static esp_err_t sphotos_handler(httpd_req_t *req) 
+{
+  long start = millis();
+  print_mem("sphotos_handler");
+  const char the_message[] = "Status";
+  time(&now);
+  const char *strdate = ctime(&now);
+  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>%s ESP32-CAM Video Recorder Junior</title>
+</head>
+<body>
+<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
+ <br>
+ One photo every 15 seconds for 30 minutes - roll forward or back - refresh for more live photos
+ <br>
 
+<br><div id="image-container"></div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var c = document.location.origin;
+  const ic = document.getElementById('image-container');  
+  var i = 1;
+  
+  var timing = 15000; // time between snapshots for multiple shots
+
+  function loop() {
+    ic.insertAdjacentHTML('beforeend','<img src="'+`${c}/capture?_cb=${Date.now()}`+'">')
+    ic.insertAdjacentHTML('beforeend','<br>')
+    ic.insertAdjacentHTML('beforeend',Date())
+    ic.insertAdjacentHTML('beforeend','<br>')
+
+    i = i + 1;
+    if ( i <= 120 ) {             
+      window.setTimeout(loop, timing);
+    }
+  }
+  loop();
+  
+})
+</script><br>
+</body>
+</html>)rawliteral";
+
+  sprintf(the_page, msg, devname, devname, vernum, strdate );
+
+  httpd_resp_send(req, the_page, strlen(the_page));
+  time_in_web1 += (millis() - start);
+  return ESP_OK;
+}
+/*
 static esp_err_t sphotos_handler(httpd_req_t *req) 
 {
 
@@ -737,8 +1206,63 @@ document.addEventListener('DOMContentLoaded', function() {
   time_in_web1 += (millis() - start);
   return ESP_OK;
 }
+*/
 
+// ----------------------------------------------------------------------------
+static esp_err_t fphotos_handler(httpd_req_t *req) 
+{
+  long start = millis();
+  print_mem("fphotos_handler");
+  const char the_message[] = "Status";
+  time(&now);
+  const char *strdate = ctime(&now);
+  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>%s ESP32-CAM Video Recorder Junior</title>
+</head>
+<body>
+<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
+ <br>
+ One photo every 1 seconds for 10 seconds - roll forward or back - refresh for more live photos
+ <br>
 
+<br><div id="image-container"></div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var c = document.location.origin;
+  const ic = document.getElementById('image-container');  
+  var i = 1;
+  
+  var timing = 1000; // time between snapshots for multiple shots
+
+  function loop() {
+    ic.insertAdjacentHTML('beforeend','<img src="'+`${c}/capture?_cb=${Date.now()}`+'">')
+    ic.insertAdjacentHTML('beforeend','<br>')
+    ic.insertAdjacentHTML('beforeend',Date())
+    ic.insertAdjacentHTML('beforeend','<br>')
+
+    i = i + 1;
+    if ( i <= 10 ) {             // 10 frames
+      window.setTimeout(loop, timing);
+    }
+  }
+  loop();
+  
+})
+</script><br>
+</body>
+</html>)rawliteral";
+
+  sprintf(the_page, msg, devname, devname, vernum, strdate );
+
+  httpd_resp_send(req, the_page, strlen(the_page));
+  time_in_web1 += (millis() - start);
+  return ESP_OK;
+}
+/*
 static esp_err_t fphotos_handler(httpd_req_t *req) 
 {
 
@@ -797,8 +1321,68 @@ document.addEventListener('DOMContentLoaded', function() {
   time_in_web1 += (millis() - start);
   return ESP_OK;
 }
+*/
 
+// ----------------------------------------------------------------------------
+static esp_err_t photos_handler(httpd_req_t *req) 
+{
 
+  long start = millis();
+
+  print_mem("photos_handler");
+
+  const char the_message[] = "Status";
+
+  time(&now);
+  const char *strdate = ctime(&now);
+
+  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>%s ESP32-CAM Video Recorder Junior</title>
+</head>
+<body>
+<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
+ <br>
+ One photo every 3 seconds for 30 seconds - roll forward or back - refresh for more live photos
+ <br>
+
+<br><div id="image-container"></div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var c = document.location.origin;
+  const ic = document.getElementById('image-container');  
+  var i = 1;
+  
+  var timing = 3000; // time between snapshots for multiple shots
+
+  function loop() {
+    ic.insertAdjacentHTML('beforeend','<img src="'+`${c}/capture?_cb=${Date.now()}`+'">')
+    ic.insertAdjacentHTML('beforeend','<br>')
+    ic.insertAdjacentHTML('beforeend',Date())
+    ic.insertAdjacentHTML('beforeend','<br>')
+
+    i = i + 1;
+    if ( i <= 10 ) {             // 10 frames
+      window.setTimeout(loop, timing);
+    }
+  }
+  loop();
+  
+})
+</script><br>
+</body>
+</html>)rawliteral";
+
+  sprintf(the_page, msg, devname, devname, vernum, strdate );
+
+  httpd_resp_send(req, the_page, strlen(the_page));
+  time_in_web1 += (millis() - start);
+  return ESP_OK;
+}
+/*
 static esp_err_t photos_handler(httpd_req_t *req) 
 {
 
@@ -857,8 +1441,90 @@ document.addEventListener('DOMContentLoaded', function() {
   time_in_web1 += (millis() - start);
   return ESP_OK;
 }
+*/
+// ----------------------------------------------------------------------------
+static esp_err_t capture_handler(httpd_req_t *req) 
+{
+  long start = millis();
+  camera_fb_t * fb = NULL;
+  esp_err_t res = ESP_OK;
+  char fname[100];
+  int file_number = 0;
 
+  char  buf[120];
+  size_t buf_len;
 
+  if (capture_timer + 30000 <  millis() ) {
+    if  (frame_cnt < 1000 ) {
+      jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+
+      print_mem("capture");
+
+      int sock = httpd_req_to_sockfd(req);
+      jpr("Socket: %d\n", httpd_req_to_sockfd(req));
+      print_sock(sock);
+    }
+    
+    captures = 1;
+    total_captures++;
+    skips = 0;
+    extras = 0;
+    capture_timer = millis();
+  } else {
+    captures++;
+    total_captures++;
+  }
+
+  if (millis() - previous_capture < 50) { // limit captures to 20 per second (50) ... make that 13 per second (75)
+    //Serial.printf("s");
+    skips++;
+    res = httpd_resp_send_408(req); // just let the requests be missed rather than rejecting it //61
+  } else {
+    previous_capture = millis();
+    file_number++;
+    sprintf(fname, "inline; filename=capture_%d.jpg", file_number);
+
+    xSemaphoreTake( baton, portMAX_DELAY );
+
+    if (fb_record_time > (millis() - 500)) {
+      //Serial.printf("-");
+      fb_capture_len = fb_record_len;
+      fb_capture_time = fb_record_time;
+      memcpy(fb_capture, fb_record,  fb_record_len);  // v59.5
+      xSemaphoreGive( baton );
+      httpd_resp_set_type(req, "image/jpeg");
+      httpd_resp_set_hdr(req, "Content-Disposition", fname);
+      res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
+    } else {
+      xSemaphoreGive( baton );
+      fb = esp_camera_fb_get(); //get_good_jpeg();
+      extras++;
+      //Serial.print("N");
+      //Serial.printf("millis %d, fb1 %d, fb2 %d\n", millis(), fb_record_time, fb_streaming_time);
+      if (!fb) {
+        Serial.println("Photos - Camera Capture Failed");
+        res = httpd_resp_send_408(req);
+        //res = ESP_FAIL;
+        //start_streaming = false;
+      } else {
+        xSemaphoreTake( baton, portMAX_DELAY );
+        fb_capture_len = fb->len;
+        fb_capture_time = millis();
+        memcpy(fb_capture, fb->buf, fb->len);
+        xSemaphoreGive( baton );
+        esp_camera_fb_return(fb);
+        httpd_resp_set_type(req, "image/jpeg");
+        httpd_resp_set_hdr(req, "Content-Disposition", fname);
+        res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
+      }
+    }
+  }
+
+  time_in_web1 += (millis() - start);
+
+  return res;
+}
+/*
 static esp_err_t capture_handler(httpd_req_t *req) 
 {
 
@@ -942,13 +1608,10 @@ static esp_err_t capture_handler(httpd_req_t *req)
 
   return res;
 }
-
 */
-
-
+// ----------------------------------------------------------------------------
 static esp_err_t index_handler(httpd_req_t *req) 
 {
-
   long start = millis();
 
   int buf_len;
@@ -1064,7 +1727,6 @@ function initialize() {
   time_in_web1 += (millis() - start);
   return ESP_OK;
 }
-
 /*
 // ****************************************************************************
 // *              Сформировать главную страницу CameraServer                  *

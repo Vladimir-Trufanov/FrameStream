@@ -19,6 +19,7 @@
 // библиотекой ядра ESP32 по умолчанию и не требуют установки
 #include "esp_sntp.h"
 
+#include "inimem.h"
 #include "fs_trass.h"
 
 // Создаем структуру времени timeinfo в которую будем вкладывать
@@ -27,9 +28,6 @@ struct tm timeinfo;
 
 WiFiMulti jMulti;
 WiFiEventId_t eventID;
-// long total_delay = 0;
-bool do_the_ota = false;
-char ssidota[20];
 
 // Вводим имя и пароль точки доступа
 //const char* tssid = "OPPO A9 2020";  // "TP-Link_B394" "tve-DESKTOP" "linksystve"

@@ -88,12 +88,17 @@ bool found_router = false;             // true - определена локал
 /*
 TaskHandle_t the_camera_loop_task;
 TaskHandle_t the_streaming_loop_task;
-SemaphoreHandle_t baton;
 */
+
+SemaphoreHandle_t baton;
 
 bool restart_now = false;   // true - начать запись нового avi-видео
 bool reboot_now = false;    // true - завершить запись и перезагрузить контроллер
 bool web_stop = false;      // true - завершить запись для OTA или по команде Stop из браузера
+
+// long total_delay = 0;
+bool do_the_ota = false;
+char ssidota[20];
 
 // Настройки для работы камеры, которые в дальнейшем будут управляться через сайт
 /*
@@ -128,9 +133,6 @@ https://esp32tutorials.com/esp32-cam-esp-idf-take-photos-save-sd-card/
 */
 
 /*
-bool do_the_reindex = false;
-//bool done_the_reparse = false;
-bool done_the_reindex = false;
 
 #define BUFFSIZE 512
 uint8_t buf[BUFFSIZE];

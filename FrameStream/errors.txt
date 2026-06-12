@@ -3,7 +3,181 @@ support@arduino.cc
 Здравствуйте! Я, tve58, попытался авторизоваться, но вышло сообщение: "Sorry, you have been blocked
 You are unable to access arduino.cc". Что делать далее?
 
-
+In file included from C:\FrameStream\FrameStream\FrameStream.ino:40:
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t delete_handler(httpd_req_t*)':
+fs_server.h:86:24: error: 'page_html' was not declared in this scope
+   86 |   httpd_resp_send(req, page_html, strlen(page_html));
+      |                        ^~~~~~~~~
+fs_server.h:88:3: error: 'delete_all_files' was not declared in this scope
+   88 |   delete_all_files = 1;
+      |   ^~~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t reindex_handler(httpd_req_t*)':
+fs_server.h:214:41: error: 'file_to_read' was not declared in this scope; did you mean 'file_to_edit'?
+  214 |     if (httpd_query_key_value(buf, "o", file_to_read, sizeof(file_to_read)) == ESP_OK) {
+      |                                         ^~~~~~~~~~~~
+      |                                         file_to_edit
+fs_server.h:219:43: error: 'file_to_write' was not declared in this scope; did you mean 'file_to_edit'?
+  219 |       if (httpd_query_key_value(buf, "n", file_to_write, sizeof(file_to_write)) == ESP_OK) {
+      |                                           ^~~~~~~~~~~~~
+      |                                           file_to_edit
+fs_server.h:225:3: error: 'do_the_reindex' was not declared in this scope
+  225 |   do_the_reindex = true;
+      |   ^~~~~~~~~~~~~~
+fs_server.h:227:11: error: 'done_the_reindex' was not declared in this scope
+  227 |   while (!done_the_reindex) {
+      |           ^~~~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t ota_handler(httpd_req_t*)':
+fs_server.h:339:26: error: 'ssidota' was not declared in this scope; did you mean 'ssid'?
+  339 |   ArduinoOTA.setHostname(ssidota);
+      |                          ^~~~~~~
+      |                          ssid
+fs_server.h:374:3: error: 'do_the_ota' was not declared in this scope
+  374 |   do_the_ota = true;
+      |   ^~~~~~~~~~
+fs_server.h:401:11: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
+  401 |   sprintf(the_page, msg, devname, devname, vernum, strdate );
+      |           ^~~~~~~~
+      |           the_message
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t find_handler(httpd_req_t*)':
+fs_server.h:645:7: error: 'find_a_frame' was not declared in this scope
+  645 |   x = find_a_frame ( filename, frame_pct);
+      |       ^~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t time_handler(httpd_req_t*)':
+fs_server.h:866:11: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
+  866 |   sprintf(the_page, msg, devname, devname, vernum, strdate );
+      |           ^~~~~~~~
+      |           the_message
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t restart_handler(httpd_req_t*)':
+fs_server.h:975:11: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
+  975 |   sprintf(the_page, msg, devname, devname, vernum, strdate );
+      |           ^~~~~~~~
+      |           the_message
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t reboot_handler(httpd_req_t*)':
+fs_server.h:1046:11: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
+ 1046 |   sprintf(the_page, msg, devname, devname, vernum, strdate );
+      |           ^~~~~~~~
+      |           the_message
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t sphotos_handler(httpd_req_t*)':
+fs_server.h:1145:11: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
+ 1145 |   sprintf(the_page, msg, devname, devname, vernum, strdate );
+      |           ^~~~~~~~
+      |           the_message
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t fphotos_handler(httpd_req_t*)':
+fs_server.h:1260:11: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
+ 1260 |   sprintf(the_page, msg, devname, devname, vernum, strdate );
+      |           ^~~~~~~~
+      |           the_message
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t photos_handler(httpd_req_t*)':
+fs_server.h:1380:11: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
+ 1380 |   sprintf(the_page, msg, devname, devname, vernum, strdate );
+      |           ^~~~~~~~
+      |           the_message
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t capture_handler(httpd_req_t*)':
+fs_server.h:1458:7: error: 'capture_timer' was not declared in this scope; did you mean 'capture_handler'?
+ 1458 |   if (capture_timer + 30000 <  millis() ) {
+      |       ^~~~~~~~~~~~~
+      |       capture_handler
+In file included from C:\FrameStream\FrameStream\fs_camera.h:13,
+                 from C:\FrameStream\FrameStream\FrameStream.ino:37:
+fs_server.h:1460:100: error: 'total_captures' was not declared in this scope
+ 1460 |       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+      |                                                                                                    ^~~~~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:24:48: note: in definition of macro 'say'
+   24 |     snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+      |                                                ^~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_server.h:1460:7: note: in expansion of macro 'jpr'
+ 1460 |       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+      |       ^~~
+fs_server.h:1460:116: error: 'captures' was not declared in this scope
+ 1460 |       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+      |                                                                                                                    ^~~~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:24:48: note: in definition of macro 'say'
+   24 |     snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+      |                                                ^~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_server.h:1460:7: note: in expansion of macro 'jpr'
+ 1460 |       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+      |       ^~~
+fs_server.h:1460:174: error: 'skips' was not declared in this scope
+ 1460 |       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+      |                                                                                                                                                                              ^~~~~
+C:\FrameStream\FrameStream\fs_trass.h:24:48: note: in definition of macro 'say'
+   24 |     snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+      |                                                ^~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_server.h:1460:7: note: in expansion of macro 'jpr'
+ 1460 |       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+      |       ^~~
+fs_server.h:1460:181: error: 'extras' was not declared in this scope
+ 1460 |       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+      |                                                                                                                                                                                     ^~~~~~
+C:\FrameStream\FrameStream\fs_trass.h:24:48: note: in definition of macro 'say'
+   24 |     snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+      |                                                ^~~~~~~~~~~
+C:\FrameStream\FrameStream\fs_server.h:1460:7: note: in expansion of macro 'jpr'
+ 1460 |       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
+      |       ^~~
+fs_server.h:1469:5: error: 'captures' was not declared in this scope
+ 1469 |     captures = 1;
+      |     ^~~~~~~~
+fs_server.h:1470:5: error: 'total_captures' was not declared in this scope
+ 1470 |     total_captures++;
+      |     ^~~~~~~~~~~~~~
+fs_server.h:1471:5: error: 'skips' was not declared in this scope
+ 1471 |     skips = 0;
+      |     ^~~~~
+fs_server.h:1472:5: error: 'extras' was not declared in this scope
+ 1472 |     extras = 0;
+      |     ^~~~~~
+fs_server.h:1475:5: error: 'captures' was not declared in this scope
+ 1475 |     captures++;
+      |     ^~~~~~~~
+fs_server.h:1476:5: error: 'total_captures' was not declared in this scope
+ 1476 |     total_captures++;
+      |     ^~~~~~~~~~~~~~
+fs_server.h:1479:18: error: 'previous_capture' was not declared in this scope
+ 1479 |   if (millis() - previous_capture < 50) { // limit captures to 20 per second (50) ... make that 13 per second (75)
+      |                  ^~~~~~~~~~~~~~~~
+fs_server.h:1481:5: error: 'skips' was not declared in this scope
+ 1481 |     skips++;
+      |     ^~~~~
+In file included from C:\Users\����������\AppData\Local\Arduino15\packages\esp32\tools\esp32-libs\3.3.8/include/freertos/esp_additions/include/freertos/idf_additions.h:22,
+                 from C:\Users\����������\AppData\Local\Arduino15\packages\esp32\tools\esp32-libs\3.3.8/include/freertos/FreeRTOS-Kernel/include/freertos/FreeRTOS.h:1533,
+                 from C:\Users\����������\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Arduino.h:33,
+                 from C:\Users\615A~1\AppData\Local\Temp\arduino_build_61079\sketch\FrameStream.ino.cpp:1:
+fs_server.h:1488:21: error: 'baton' was not declared in this scope
+ 1488 |     xSemaphoreTake( baton, portMAX_DELAY );
+      |                     ^~~~~
+C:\Users\����������\AppData\Local\Arduino15\packages\esp32\tools\esp32-libs\3.3.8/include/freertos/FreeRTOS-Kernel/include/freertos/semphr.h:279:76: note: in definition of macro 'xSemaphoreTake'
+  279 | #define xSemaphoreTake( xSemaphore, xBlockTime )    xQueueSemaphoreTake( ( xSemaphore ), ( xBlockTime ) )
+      |                                                                            ^~~~~~~~~~
+fs_server.h:1492:7: error: 'fb_capture_len' was not declared in this scope
+ 1492 |       fb_capture_len = fb_record_len;
+      |       ^~~~~~~~~~~~~~
+fs_server.h:1493:7: error: 'fb_capture_time' was not declared in this scope
+ 1493 |       fb_capture_time = fb_record_time;
+      |       ^~~~~~~~~~~~~~~
+fs_server.h:1494:14: error: 'fb_capture' was not declared in this scope
+ 1494 |       memcpy(fb_capture, fb_record,  fb_record_len);  // v59.5
+      |              ^~~~~~~~~~
+fs_server.h:1502:7: error: 'extras' was not declared in this scope
+ 1502 |       extras++;
+      |       ^~~~~~
+fs_server.h:1512:9: error: 'fb_capture_len' was not declared in this scope
+ 1512 |         fb_capture_len = fb->len;
+      |         ^~~~~~~~~~~~~~
+fs_server.h:1513:9: error: 'fb_capture_time' was not declared in this scope
+ 1513 |         fb_capture_time = millis();
+      |         ^~~~~~~~~~~~~~~
+fs_server.h:1514:16: error: 'fb_capture' was not declared in this scope
+ 1514 |         memcpy(fb_capture, fb->buf, fb->len);
+      |                ^~~~~~~~~~
+C:\FrameStream\FrameStream\fs_server.h: In function 'esp_err_t index_handler(httpd_req_t*)':
+fs_server.h:1720:11: error: 'the_page' was not declared in this scope; did you mean 'the_message'?
+ 1720 |   sprintf(the_page, msg, devname, devname, vernum, strdate, use, tot, rssi, avi_file_name,
+      |           ^~~~~~~~
+      |           the_message
+Несколько библиотек найдено для "WiFi.h"
+ Используется: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi
+Не используется: C:\Program Files (x86)\Arduino\libraries\WiFi
 
 
 

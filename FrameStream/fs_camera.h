@@ -13,6 +13,12 @@
 #include "fs_trass.h"
 #include "fs_sd.h"
 
+// Выделяем переменную по ошибкам: esp_err_t — тип, который в ESP-IDF представляет коды ошибок. 
+// Это целое число со знаком. Успешный возврат (отсутствие ошибки) обозначается кодом ESP_OK, 
+// который определён как 0. Общие коды ошибок для традиционных отказов (out of memory, timeout, invalid argument и т. п.) 
+// определены в файле esp_err.h. Различные компоненты в ESP-IDF могут определять дополнительные коды ошибок для отдельных ситуаций. 
+static esp_err_t cam_err;
+
 // Cделать снимок и убедиться, что он имеет хороший формат jpeg
 camera_fb_t *get_good_jpeg(); 
 // Cохранить очередной кадр в avi-файл, обновить индекс-указатель для fb на добавляемый кадр 
@@ -379,17 +385,6 @@ static void config_camera()
 
 #include "inimem.h"
 #include "trass.h"
-
-// Выделяем переменную по ошибкам: esp_err_t — тип, который в ESP-IDF представляет коды ошибок. 
-// Это целое число со знаком. Успешный возврат (отсутствие ошибки) обозначается кодом ESP_OK, 
-// который определён как 0. Общие коды ошибок для традиционных отказов (out of memory, timeout, invalid argument и т. п.) 
-// определены в файле esp_err.h. Различные компоненты в ESP-IDF могут определять дополнительные коды ошибок для отдельных ситуаций. 
-static esp_err_t cam_err;
-
-
-uint8_t* fb_streaming;
-
-int fb_streaming_len;
 */
 
 uint8_t* fb_capture;
@@ -397,8 +392,6 @@ int fb_capture_len;
 long fb_capture_time = 0;
 
 /*
-long fb_streaming_time = 0;
-
 int first = 1;
 long frame_start = 0;
 long frame_end = 0;

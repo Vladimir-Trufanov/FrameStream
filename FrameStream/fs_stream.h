@@ -8,8 +8,6 @@
 **/
 
 #pragma once   
-
-/*
 #include "esp_http_server.h"
 
 #define PART_BOUNDARY "123456789000000000000987654321"
@@ -19,6 +17,11 @@ static const char* _STREAM_BOUNDARY = "\r\n--" PART_BOUNDARY "\r\n";
 static const char* _STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n";
 
 void the_streaming_loop (void* pvParameter);
+static esp_err_t stream_81_handler(httpd_req_t *req); 
+static esp_err_t stream_82_handler(httpd_req_t *req); 
+void start_Stream_81_server(); 
+void start_Stream_82_server(); 
+
 int stream_81_frames;
 long stream_81_start;
 int stream_82_frames;
@@ -30,18 +33,53 @@ bool stream_81 = false;         // true - из браузера заказано
 
 httpd_req_t *req_82;
 httpd_req_t *req_81;
+uint8_t* fb_streaming;
+int fb_streaming_len;
+long fb_streaming_time = 0;
 
-// Определяем экземпляры HTTP-серверов. 
-// Тип httpd_handle_t используется для создания и управления веб-серверами и
-// возвращается функцией httpd_start(). Она создаёт экземпляр HTTP-сервера, 
-// выделяет память и ресурсы в зависимости от указанной конфигурации и 
-// возвращает указатель на экземпляр. 
+// Определяем экземпляры HTTP-серверов (тип httpd_handle_t используется для создания 
+// и управления веб-серверами и возвращается функцией httpd_start(). Она создаёт 
+// экземпляр HTTP-сервера, выделяет память и ресурсы в зависимости от указанной 
+// конфигурации и возвращает указатель на экземпляр. 
 httpd_handle_t stream81_httpd = NULL;
 httpd_handle_t stream82_httpd = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
 //                            stream_81_handler()                            //
 ///////////////////////////////////////////////////////////////////////////////
+static esp_err_t stream_81_handler(httpd_req_t *req) 
+{
+
+  esp_err_t res;
+  long start = millis();
+
+  print_mem("stream_81_handler");
+
+  stream_81 = true;
+  req_81 = req;
+  stream_81_frames = 0;
+  stream_81_start = millis();
+
+  time_in_web1 += (millis() - start);
+
+  if (stream_81) {
+    res = httpd_resp_set_type(req_81, _STREAM_CONTENT_TYPE);
+    if (res != ESP_OK) {
+      stream_81 = false;
+    }
+  }
+
+  while (stream_81 == true) {          // we have to keep the *req alive
+    delay(1000);
+    //Serial.print("<81>");
+  }
+  Serial.println(" stream_81 done");
+  delay(500);
+  httpd_resp_send_408(req_81);
+  req_81 = NULL;
+  return ESP_OK;
+}
+/*
 static esp_err_t stream_81_handler(httpd_req_t *req) 
 {
   esp_err_t res;
@@ -81,9 +119,43 @@ static esp_err_t stream_81_handler(httpd_req_t *req)
   req_81 = NULL;
   return ESP_OK;
 }
+*/
 ///////////////////////////////////////////////////////////////////////////////
 //                            stream_82_handler()                            //
 ///////////////////////////////////////////////////////////////////////////////
+static esp_err_t stream_82_handler(httpd_req_t *req) 
+{
+  esp_err_t res;
+  long start = millis();
+
+  print_mem("stream_82_handler");
+
+  stream_82 = true;
+  req_82 = req;
+  stream_82_frames = 0;
+  stream_82_start = millis();
+
+  if (stream_82) {
+    res = httpd_resp_set_type(req_82, _STREAM_CONTENT_TYPE);
+    if (res != ESP_OK) {
+      stream_82 = false;
+    }
+  }
+
+  time_in_web1 += (millis() - start);
+
+  while (stream_82 == true) {          // we have to keep the *req alive
+    delay(1000);
+    //Serial.print("<82>");
+  }
+  Serial.println(" stream_82 done");
+  delay(500);
+  httpd_resp_send_408(req_82);
+  req_82 = NULL;
+
+  return ESP_OK;
+}
+/*
 static esp_err_t stream_82_handler(httpd_req_t *req) 
 {
   esp_err_t res;
@@ -116,9 +188,33 @@ static esp_err_t stream_82_handler(httpd_req_t *req)
   req_82 = NULL;
   return ESP_OK;
 }
+*/
 ///////////////////////////////////////////////////////////////////////////////
 //                         start_Stream_81_server()                          //
 ///////////////////////////////////////////////////////////////////////////////
+void start_Stream_81_server() 
+{
+  httpd_config_t config2 = HTTPD_DEFAULT_CONFIG();
+  config2.server_port = 81;
+  config2.ctrl_port = 32123; //         = 32768,
+  Serial.print("http Stream task prio: "); Serial.println(config2.task_priority);
+
+  httpd_uri_t stream_uri = {
+    .uri       = "/stream",
+    .method    = HTTP_GET,
+    .handler   = stream_81_handler,
+    .user_ctx  = NULL
+  };
+
+  if (httpd_start(&stream81_httpd, &config2) == ESP_OK) {
+    httpd_register_uri_handler(stream81_httpd, &stream_uri);
+  } else {
+    Serial.println("Error with stream start 81");
+  }
+
+  Serial.println("Stream 81 http started");
+}
+/*
 void start_Stream_81_server() 
 {
   httpd_config_t config2 = HTTPD_DEFAULT_CONFIG();
@@ -145,9 +241,33 @@ void start_Stream_81_server()
   }
   Serial.println("Поток 81 http стартовал");
 }
+*/
 ///////////////////////////////////////////////////////////////////////////////
 //                         start_Stream_82_server()                          //
 ///////////////////////////////////////////////////////////////////////////////
+void start_Stream_82_server() 
+{
+  httpd_config_t config2 = HTTPD_DEFAULT_CONFIG();
+  config2.server_port = 82;
+  config2.ctrl_port = 32124; //         = 32768,
+  Serial.print("http Stream task prio: "); Serial.println(config2.task_priority);
+
+  httpd_uri_t stream_uri = {
+    .uri       = "/stream",
+    .method    = HTTP_GET,
+    .handler   = stream_82_handler,
+    .user_ctx  = NULL
+  };
+
+  if (httpd_start(&stream82_httpd, &config2) == ESP_OK) {
+    httpd_register_uri_handler(stream82_httpd, &stream_uri);
+  } else {
+    Serial.println("Error with stream start 82");
+  }
+
+  Serial.println("Stream 82 http started");
+}
+/*
 void start_Stream_82_server() 
 {
   httpd_config_t config2 = HTTPD_DEFAULT_CONFIG();
@@ -174,11 +294,146 @@ void start_Stream_82_server()
   }
   Serial.println("Поток 82 http стартовал");
 }
-
+*/
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // the_streaming_loop - видео-поток отправки изображений (имеет приоритет 2)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+void the_streaming_loop (void* pvParameter) 
+{
+  camera_fb_t * fb = NULL;
+  esp_err_t res = ESP_OK;
+  size_t _jpg_buf_len = 0;
+  uint8_t * _jpg_buf = NULL;
+  char * part_buf[64];
 
+  long start = millis();
+
+  print_mem("the_streaming_loop");
+
+  jprln("Starting the streaming");
+
+  while (true) {
+
+    if (!stream_81 && !stream_82) {
+      delay(5);
+    } else {
+      if (stream_81) stream_81_frames++;
+      if (stream_82) stream_82_frames++;
+
+      xSemaphoreTake( baton, portMAX_DELAY );
+
+      if (fb_record_time > (millis() - 500)) {
+        //Serial.printf("*");
+        fb_streaming_len = fb_record_len;
+        fb_streaming_time = fb_record_time;
+        memcpy(fb_streaming, fb_record,  fb_record_len);  // v59.5
+        xSemaphoreGive( baton );
+      } else {
+        xSemaphoreGive( baton );
+        fb = esp_camera_fb_get(); //get_good_jpeg();
+        //Serial.println("loop take");
+        //Serial.printf("millis %d, fb1 %d, fb2 %d\n", millis(), fb_record_time, fb_streaming_time);
+        if (!fb) {
+          Serial.println("Photos - Camera Capture Failed");  // i guess we stream the previous contents of fb_streaming //34
+          //start_streaming = false;
+        } else {
+          //34 xSemaphoreTake( baton, portMAX_DELAY );
+          fb_streaming_len = fb->len;
+          fb_streaming_time = millis();
+          memcpy(fb_streaming, fb->buf, fb->len);
+          //34 xSemaphoreGive( baton );
+          esp_camera_fb_return(fb);
+        }
+      }
+
+      _jpg_buf_len = fb_streaming_len;
+      _jpg_buf = fb_streaming;
+
+      size_t hlen = snprintf((char *)part_buf, 64, _STREAM_PART, _jpg_buf_len);
+
+      long send_time = millis();
+      long xx;
+      xx = millis();
+
+      if (stream_82) {
+        res = httpd_resp_send_chunk(req_82, (const char *)part_buf, hlen);
+        if (res != ESP_OK) {
+          stream_82 = false;
+          Serial.printf("Stream error - 82/1st %d\n", res);
+        }
+      }
+      if (stream_81) {
+        res = httpd_resp_send_chunk(req_81, (const char *)part_buf, hlen);
+        if (res != ESP_OK) {
+          stream_81 = false;
+          Serial.printf("Stream error - 81/1st %d\n", res);
+        }
+      }
+
+      xx = millis();
+
+      if (stream_82) {
+        res = httpd_resp_send_chunk(req_82, (const char *)_jpg_buf, _jpg_buf_len);
+        if (res != ESP_OK) {
+          stream_82 = false;
+          Serial.printf("Stream error - 82/2nd %d\n", res);
+        }
+      }
+      if (stream_81) {
+        res = httpd_resp_send_chunk(req_81, (const char *)_jpg_buf, _jpg_buf_len);
+        if (res != ESP_OK) {
+          stream_81 = false;
+          Serial.printf("Stream error - 81/2nd %d\n", res);
+        }
+      }
+
+      xx = millis();
+
+      if (stream_82) {
+        res = httpd_resp_send_chunk(req_82, _STREAM_BOUNDARY, strlen(_STREAM_BOUNDARY));
+        if (res != ESP_OK) {
+          stream_82 = false;
+          Serial.printf("Stream error - 82/3rd %d\n", res);
+        }
+      }
+      if (stream_81) {
+        res = httpd_resp_send_chunk(req_81, _STREAM_BOUNDARY, strlen(_STREAM_BOUNDARY));
+        if (res != ESP_OK) {
+          stream_81 = false;
+          Serial.printf("Stream error - 81/3rd %d\n", res);
+        }
+      }
+
+      if (stream_81_frames % 100 == 10) {
+        if (Lots_of_Stats) {
+          jpr("Stream 81 at %3.3f fps\n", (float)1000 * stream_81_frames / (millis() - stream_81_start));
+        }
+      }
+      if (stream_82_frames % 100 == 10) {
+        if (Lots_of_Stats) {
+          jpr("Stream 82 at %3.3f fps\n", (float)1000 * stream_82_frames / (millis() - stream_82_start));
+        }
+      }
+
+      int new_delay = stream_delay - (millis() - send_time);
+      //Serial.printf(", streamdelay %5d, send_time %5d, newdelay %5d\n", stream_delay, millis() - send_time, new_delay);
+      if (millis() - send_time > 5000) {
+        new_delay = 1000;
+        Serial.printf("wifi slow %d - take a 1s break\n", millis() - send_time);
+      }
+
+      if (new_delay < 10) {
+        new_delay = 10;
+      }
+
+      delay(new_delay) ; //delay(stream_delay);
+
+      start = millis();
+
+    }
+  }  // stream forever
+}
+/*
 void the_streaming_loop (void* pvParameter) 
 {
   camera_fb_t * fb = NULL;

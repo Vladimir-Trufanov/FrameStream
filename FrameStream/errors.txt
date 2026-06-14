@@ -3,23 +3,6 @@ support@arduino.cc
 Здравствуйте! Я, tve58, попытался авторизоваться, но вышло сообщение: "Sorry, you have been blocked
 You are unable to access arduino.cc". Что делать далее?
 
-In file included from C:\FrameStream\FrameStream\FrameStream.ino:41:
-C:\FrameStream\FrameStream\fs_stream.h: In function 'void the_streaming_loop(void*)':
-fs_stream.h:327:9: error: 'fb_streaming_time' was not declared in this scope; did you mean 'fb_streaming_len'?
-  327 |         fb_streaming_time = fb_record_time;
-      |         ^~~~~~~~~~~~~~~~~
-      |         fb_streaming_len
-fs_stream.h:341:11: error: 'fb_streaming_time' was not declared in this scope; did you mean 'fb_streaming_len'?
-  341 |           fb_streaming_time = millis();
-      |           ^~~~~~~~~~~~~~~~~
-      |           fb_streaming_len
-Несколько библиотек найдено для "WiFi.h"
- Используется: C:\Users\Евгеньевич\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi
-Не используется: C:\Program Files (x86)\Arduino\libraries\WiFi
-
-
-
-
 
 
 

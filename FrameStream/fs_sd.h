@@ -2,7 +2,7 @@
  * 
  *                                                 Обслужить работу с SD-картой
  *                                                     
- * v1.0.4, 24.02.2026                                 Автор:      Труфанов В.Е.
+ * v2.2.1, 14.06.2026                                 Автор:      Труфанов В.Е.
  * Copyright © 2026 tve                               Дата создания: 24.01.2026
 **/
 
@@ -42,8 +42,6 @@ void deleteFolderOrFile(const char * val);
 
 File avifile;
 File idxfile;
-String cssid1, cssid2, cssid3;
-String cpass1, cpass2, cpass3;
 
 bool configfile = false;
 

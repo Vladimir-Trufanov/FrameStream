@@ -29,6 +29,7 @@ FrameStream
 		FlMgrWpF.h
 		FrameStream.ino
 		FrameStream.ppr
+		fs_avi.h
 		fs_camera.h
 		fs_eprom.h
 		fs_sd.h
@@ -41,19 +42,23 @@ FrameStream
 0=FrameStream.ino
 1=old\FrameStream.ino
 2=errors.txt
-3=fs_stream.h
+3=fs_avi.h
+4=fs_camera.h
 [Selected Project Files]
 Main=
-Selected=errors.txt
+Selected=FrameStream.ino
 [FrameStream.ino]
-TopLine=66
-Caret=1,78
+TopLine=711
+Caret=44,748
 [old\FrameStream.ino]
-TopLine=194
-Caret=3,206
+TopLine=210
+Caret=5,210
 [errors.txt]
 TopLine=1
-Caret=34,9
-[fs_stream.h]
-TopLine=24
-Caret=1,39
+Caret=1,6
+[fs_avi.h]
+TopLine=273
+Caret=6,285
+[fs_camera.h]
+TopLine=829
+Caret=1,1

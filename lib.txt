@@ -1,0 +1,39 @@
+ Том в устройстве C имеет метку Windows
+ Серийный номер тома: 281E-00A5
+
+ Содержимое папки C:\Users\Евгеньевич\Documents\Arduino\libraries
+
+15.06.2026  17:45    <DIR>          .
+03.06.2026  19:19    <DIR>          ..
+12.01.2026  06:59    <DIR>          Adafruit_BusIO
+19.04.2026  11:25    <DIR>          Adafruit_GFX_Library
+09.03.2026  12:45    <DIR>          Adafruit_Unified_Sensor
+10.03.2026  11:52    <DIR>          ArduinoJson
+30.03.2026  09:13    <DIR>          ArduinoNvs
+06.03.2026  14:59    <DIR>          Async_TCP
+06.05.2026  20:27    <DIR>          BluetoothSerial
+05.05.2026  11:36    <DIR>          BTLE
+09.03.2026  12:45    <DIR>          DHT_sensor_library
+20.04.2026  21:12    <DIR>          DS3231
+05.03.2026  15:55    <DIR>          ElegantOTA
+12.01.2026  08:42    <DIR>          ESP8266_and_ESP32_OLED_driver_for_SSD1306_displays
+10.01.2026  11:14    <DIR>          ESPping-main
+06.03.2026  12:57    <DIR>          ESP_Async_TCP
+09.05.2026  18:03    <DIR>          ESP_Async_WebServer
+06.04.2026  14:26    <DIR>          GyverWDT
+06.04.2026  14:28    <DIR>          iarduino_VCC
+06.04.2026  14:38    <DIR>          LCD_1602_RUS
+15.06.2026  17:45                 0 lib.txt
+06.04.2026  14:40    <DIR>          LiquidCrystal_I2C
+06.04.2026  14:36    <DIR>          MemoryFree-master
+27.12.2025  12:56               106 readme.txt
+06.04.2026  14:50    <DIR>          Regexp
+14.05.2026  11:41    <DIR>          RF24
+09.01.2026  08:40    <DIR>          Rlog
+19.04.2026  11:13    <DIR>          SD
+26.05.2026  21:15    <DIR>          SdFat
+26.03.2026  18:54    <DIR>          TEsparTools
+06.04.2026  14:42    <DIR>          TinyGPSPlus
+22.02.2026  13:03    <DIR>          WebSockets
+               2 файлов            106 байт
+              30 папок  284 685 037 568 байт свободно

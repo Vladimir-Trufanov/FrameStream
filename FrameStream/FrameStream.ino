@@ -5,7 +5,7 @@
 // видео через сокеты на сайт 
 
 // Copyright © 2026 tve                               Труфанов В.Е., 11.01.2026
-static const char vernum[]="v2.2.4, 14.06.2026";  
+static const char vernum[]="v2.2.5, 15.06.2026";  
 /** 
  * Modify by James Zahary Sep 12, 2020 - jamzah.plc@gmail.com
  * 
@@ -28,7 +28,6 @@ static const char vernum[]="v2.2.4, 14.06.2026";
  * Partition Scheme:  "Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)
 **/
 
-//#include "esp_log.h"
 #include "esp_http_server.h"
 #include "esp_camera.h"
 #include "sensor.h"
@@ -40,7 +39,7 @@ static const char vernum[]="v2.2.4, 14.06.2026";
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "soc/soc.h"
-#include "esp_cpu.h" //#include "soc/cpu.h"
+#include "esp_cpu.h" 
 #include "soc/rtc_cntl_reg.h"
 #include <ESPping.h>
 
@@ -67,28 +66,17 @@ void startCameraServer();
 void stopCameraServer(); 
 void the_camera_loop (void* pvParameter); 
 
-bool InternetOff = true;
-long wakeup;
-long last_wakeup = 0;
-int loops = 0;
-
-String czone;
-//char apssid[30];
-//char appass[14];
+bool isWiFi = false;   // false - WiFi отсутствует
+long last_wakeup = 0;  // временная метка начала отсчета до проверки интернета
+long wakeup;           // текущая метка для отсчета 10 минут работы до проверки интернета
+int loops = 0;         // текущий номер фонового цикла 
 
 TaskHandle_t the_camera_loop_task;
 TaskHandle_t the_sd_loop_task;
 TaskHandle_t the_streaming_loop_task;
 
-static SemaphoreHandle_t wait_for_sd;
-static SemaphoreHandle_t sd_go;
-
-long current_frame_time;
-long last_frame_time;
-
-camera_fb_t * fb_curr = NULL;
-camera_fb_t * fb_next = NULL;
-
+//camera_fb_t* fb_curr = NULL;
+//camera_fb_t* fb_next = NULL;
 
 uint8_t* fb_curr_record_buf;
 
@@ -205,8 +193,9 @@ void setup()
     Serial.printf("do_the_steaming_task failed to start! %d\n", the_streaming_loop_task);
   }
 
-
-  if (InternetOff) {
+  // Подключаемся к WiFi если еще нет подключения
+  if (!isWiFi) 
+  {
     print_mem("Starting the wifi ...");
     init_wifi();
     print_mem("Starting the fileman ...");
@@ -226,7 +215,7 @@ void setup()
     start_Stream_81_server();
     start_Stream_82_server();
 
-    InternetOff = false;
+    isWiFi = true;
     print_mem("After the WiFi");
   }
 
@@ -294,13 +283,15 @@ void loop()
   }
 
   wakeup = millis();
-  if (wakeup - last_wakeup > (10  * 60 * 1000) ) {
+  if (wakeup - last_wakeup > (10  * 60 * 1000) ) 
+  {
     last_wakeup = millis();
     print_mem("---------- 10 Minute Internet Check -----------\n");
     time(&now);
     jpr("Local time: "); jpr(ctime(&now));
-    if (!InternetOff ) {
-
+    
+    if (!isWiFi ) 
+    {
       esp_err_t client_err;
       struct sockaddr_in *client_list;
       size_t clients = 10;
@@ -566,23 +557,16 @@ void stopCameraServer()
   httpd_stop(camera_httpd);
 }
 
-/*
-void the_sd_loop (void* pvParameter) 
-{
-  Serial.print("the_sd_loop, core ");  Serial.print(xPortGetCoreID());
-  Serial.print(", priority = "); Serial.println(uxTaskPriorityGet(NULL));
-  while (1) 
-  {
-    xSemaphoreTake( sd_go, portMAX_DELAY );            // we wait for camera loop to tell us to go
-    another_save_avi( fb_curr);                        // do the actual sd wrte
-    xSemaphoreGive( wait_for_sd );                     // tell camera loop we are done
-  }
-}
-*/
-
+// ****************************************************************************
+// *               Выполнить циклы фотографирования и записи avi              *
+// *                     (имеет наибольший приоритет = 4)                     *
+// ****************************************************************************
 void the_camera_loop (void* pvParameter) 
 {
-  print_mem("the_camera_loop");
+  // Объявляем указатель на структуру camera_fb_t*, которая содержит данные кадра изображения 
+  camera_fb_t* fb_curr=NULL;   // структура с буфером снятого кадра
+  
+  // print_mem("the_camera_loop");
 
   frame_cnt = 0;
   start_record_2nd_opinion = digitalRead(12);
@@ -687,7 +671,8 @@ void the_camera_loop (void* pvParameter)
       //Serial.println("Another frame");
 
       current_frame_time = millis();
-      if (current_frame_time - last_frame_time < frame_interval) {
+      if (current_frame_time - last_frame_time < frame_interval) 
+      {
         delay(frame_interval - (current_frame_time - last_frame_time));             // delay for timelapse
       }
       last_frame_time = millis();
@@ -744,5 +729,176 @@ void the_camera_loop (void* pvParameter)
     }
   }
 }
+/*
+void the_camera_loop (void* pvParameter) 
+{
+  long wait_for_cam_start;       // Промежуточная точка начала ожидания камеры
+  long delay_wait_for_sd_start;  // Промежуточная точка начала ожидания работы с SD
+
+  //print_mem("MEM - стартовала задача the_camera_loop        ");
+  // Инициируем счетчик кадров в файле
+  frame_cnt = 0;
+  // Считываем состояние 12 контакта (начинать запись видео или нет)
+  start_record_2nd_opinion = digitalRead(12);
+  start_record_1st_opinion = digitalRead(12);
+  // Сбрасываем флаг записи видео (пока не начинать)
+  start_record = 0;
+  delay(1000);
+
+  while (1) 
+  {
+    delay(1);
+
+    // if (frame_cnt == 0 && start_record == 0)  // do nothing
+    // if (frame_cnt == 0 && start_record == 1)  // start a movie
+    // if (frame_cnt > 0 && start_record == 0)   // stop the movie
+    // if (frame_cnt > 0 && start_record != 0)   // another frame
+
+    ///////////////////  NOTHING TO DO //////////////////
+    if ( (frame_cnt == 0 && start_record == 0)) 
+    {
+      // Serial.println("Do nothing");
+      if (we_are_already_stopped == 0) 
+      {
+        //jpr("\nОтсоедините Pin12 от GND для того, чтобы начать запись или http://192.168.1.100/start \n");
+      }
+      we_are_already_stopped = 1;
+      delay(100);
+    } 
+    ///////////////////  START A MOVIE  //////////////////
+    else if (frame_cnt == 0 && start_record == 1) 
+    {
+      // Сбрасываем флаг "видео-запись уже остановлена"
+      we_are_already_stopped = 0;
+      // Отмечаем время начала видео-записи
+      avi_start_time = millis();
+      // Отмечаем точку начала ожидания камеры
+      wait_for_cam_start = millis();
+      
+      //jprln("Началась видеозапись на %d мс. ", avi_start_time);
+      //jprln("Размер кадра %d, качество %d, время %d секунд\n", framesize, quality, avi_length);
+      logfile.flush();
+
+      // Открываем avi-файл и записываем заголовки
+      start_avi();
+      // Отмечаем точку начала ожидания работы с SD
+      delay_wait_for_sd_start = millis();
+      // Пересчитываем время ожидания камеры
+      wait_for_cam += millis() - wait_for_cam_start;
+      // Меняем счетчик и делаем кадр
+      frame_cnt++;
+      fb_curr = get_good_jpeg();    
+      // Копируем изображение в буфер текущего кадра
+      fb_curr_record_len = fb_curr->len;
+      memcpy(fb_curr_record_buf, fb_curr->buf, fb_curr->len);
+      fb_curr_record_time = millis();
+      
+      // В мьютексе выбираем в буфер снятый кадр и отмечаем время
+      xSemaphoreTake(baton, portMAX_DELAY);
+      fb_record_len = fb_curr_record_len;
+      memcpy(fb_record, fb_curr_record_buf, fb_curr_record_len);   // v59.5
+      fb_record_time = fb_curr_record_time;
+      xSemaphoreGive(baton);
+      
+      // Освобождаем буфер камеры и отмечаем новую точку начала ожидания камеры
+      esp_camera_fb_return(fb_curr);  //7
+      wait_for_cam_start = millis();
+      // Пересчитываем время ожидания работы с SD и заносим кадр в видео-файл
+      delay_wait_for_sd += millis() - delay_wait_for_sd_start;
+      another_save_avi(fb_curr_record_buf, fb_curr_record_len);
+      // Пересчитываем время ожидания камеры
+      wait_for_cam += millis() - wait_for_cam_start;
+      if (blinking) digitalWrite(33, frame_cnt % 2); // blink
+    } 
+    ///////////////////  END THE MOVIE //////////////////
+    else if (restart_now || reboot_now || (frame_cnt > 0 && start_record == 0) ||  millis() > (avi_start_time + avi_length * 1000)) 
+    { 
+      //jprln("Завершается запись avi-файла");
+      restart_now = false;
+      if (blinking)  digitalWrite(33, frame_cnt % 2);
+
+      end_avi();                                
+
+      if (blinking) digitalWrite(33, HIGH);          // light off
+
+      // Устанавливаем флаг "удалить старые файлы по завершению записи текущего файла avi"
+      delete_old_stuff_flag = 1;
+      delay(50);
+
+      avi_end_time = millis();
+
+      float fps = 1.0 * frame_cnt / ((avi_end_time - avi_start_time) / 1000) ;
+
+      //jpr("End the avi at %d.  It was %d frames, %d ms at %.2f fps...\n", millis(), frame_cnt, avi_end_time, avi_end_time - avi_start_time, fps);
+
+      if (!reboot_now) frame_cnt = 0;             // start recording again on the next loop
+
+    } 
+    ///////////////////  ANOTHER FRAME AVI  //////////////////
+    else if (frame_cnt > 0 && start_record != 0) 
+    { 
+      // Если интервал между кадрами не истек, делаем паузу (timelapse)
+      current_frame_time = millis();
+      if (current_frame_time - last_frame_time < frame_interval) 
+      {
+        delay(frame_interval - (current_frame_time - last_frame_time));     
+      }
+      last_frame_time = millis();
+      // Отмечаем точку начала ожидания работы с SD
+      delay_wait_for_sd_start = millis();
+      // Меняем счетчик и делаем кадр
+      frame_cnt++;
+      fb_curr = get_good_jpeg();   
+      // Копируем изображение в буфер текущего кадра
+      fb_curr_record_len = fb_curr->len;
+      memcpy(fb_curr_record_buf, fb_curr->buf, fb_curr->len);
+      fb_curr_record_time = millis();
+      
+      // В мьютексе выбираем в буфер снятый кадр и отмечаем время
+      xSemaphoreTake(baton, portMAX_DELAY);
+      fb_record_len = fb_curr_record_len;
+      memcpy(fb_record, fb_curr_record_buf, fb_curr_record_len);   // v59.5
+      fb_record_time = fb_curr_record_time;
+      xSemaphoreGive(baton);
+      
+      // Освобождаем буфер камеры и отмечаем новую точку начала ожидания камеры
+      esp_camera_fb_return(fb_curr);  //7
+      wait_for_cam_start = millis();
+
+      // Пересчитываем время ожидания работы с SD и заносим кадр в видео-файл
+      delay_wait_for_sd += millis() - delay_wait_for_sd_start;
+      another_save_avi(fb_curr_record_buf, fb_curr_record_len);
+      // Пересчитываем время ожидания камеры
+      wait_for_cam += millis() - wait_for_cam_start;
+      if (blinking) digitalWrite(33, frame_cnt % 2);
+      
+      // Выводим усредненные статистические данные через каждые 100 кадров,
+      // начиная с 10-ого (среди первых 1011 кадров)
+      if (frame_cnt % 100 == 10 ) 
+      {    
+        if (frame_cnt == 10) 
+        {
+          bytes_before_last_100_frames = movi_size;
+          time_before_last_100_frames = millis();
+          most_recent_fps = 0;            // количество недавних кадров в секунду
+          most_recent_avg_framesize = 0;  // средний размер недавних кадров
+        } 
+        else 
+        {
+          most_recent_fps = 100.0 / ((millis() - time_before_last_100_frames) / 1000.0) ;
+          most_recent_avg_framesize = (movi_size - bytes_before_last_100_frames) / 100;
+
+          //if ( (Lots_of_Stats && frame_cnt < 1011) || (Lots_of_Stats && frame_cnt % 1000 == 10)) 
+          //{
+            //jprln("Всего: %5d кадров за %6.1f секунд, среднее недавних 100 кадров: размер и частота %6.1f kb, %.2f fps", frame_cnt, 0.001 * (millis() - avi_start_time), 1.0 / 1024  * most_recent_avg_framesize, most_recent_fps);
+          //}
+          bytes_before_last_100_frames = movi_size;
+          time_before_last_100_frames = millis();
+        }
+      }
+    }
+  }
+}
+*/
 
 // ******************************************************** FrameStream.ino ***

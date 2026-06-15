@@ -430,10 +430,6 @@ uint16_t remnant = 0;
 uint32_t startms;             // время начала работы с камерой и файлом avi    
 uint32_t elapsedms;           // общее время работы с камерой и файлом avi 
 
-long current_frame_time=0;    // 
-long last_frame_time=0;
-
-camera_fb_t * fb_curr=NULL;   // структура с буфером снятого кадра
 uint8_t* fb_curr_record_buf;  // копия буфера снятого кадра
 int fb_curr_record_len;       // длина буфера снятого кадра
 long fb_curr_record_time=0;   // время записи снятого кадра с начала запуска программы (мс)
@@ -443,30 +439,9 @@ long fb_curr_record_time=0;   // время записи снятого кадр
 // *       Cделать снимок и убедиться, что он имеет хороший формат jpeg       *
 // *            (take a picture and make sure it has a good jpeg)             *
 // ****************************************************************************
-camera_fb_t *  get_good_jpeg() 
+camera_fb_t* get_good_jpeg() 
 {
-  //   Объявляем fb типа camera_fb_t — структура в ESP32, которая содержит указатель 
-  // на данные кадра изображения, полученного с камеры и некоторые метаданные: ширину и 
-  // высоту изображения, а также длину буфера, в котором оно находится.
-  //   Для получения изображения с камеры используется функция esp_camera_fb_get,
-  // которая не принимает аргументов и возвращает указатель на структуру типа camera_fb_t. 
-  //   Структура camera_fb_t включает следующие поля:
-  // uint8_t * buf      — указатель на пиксельные данные;
-  // size_t len         — длина буфера в байтах;
-  // size_t width       — ширина изображения в пикселях;
-  // size_t height      — высота изображения в пикселях;
-  // pixformat_t format — формат структуры пиксельных данных;
-  // timeval timestamp  — отметка времени.
-  //   Функция esp_camera_fb_get() выделяет память для поля buf. После использования буфера 
-  // память освобождается с помощью функции esp_camera_fb_return(). 
-  //   Структура camera_fb_t используется для получения кадра из камеры. Например, 
-  // в коде может быть объявлена переменная, которая содержит указатель на структуру camera_fb_t, 
-  // и вызывается функция esp_camera_fb_get(). Эта функция не принимает аргументов 
-  // и возвращает указатель на структуру camera_fb_t.
-  //   Важно: при работе с камерой рекомендуется освобождать память, выделенную 
-  // функцией esp_camera_fb_get(). Это позволяет использовать буфер изображения 
-  // повторно, что полезно, например, при непрерывном захвате новых снимков. 
-  
+ 
   // Как устроен jpg-файл? 
   //   Файл поделен на секторы, предваряемые маркерами. Маркеры имеют длину 2 байта, 
   // причем первый байт [FF]. Почти все секторы хранят свою длину в следующих 2 байта после маркера.
@@ -484,7 +459,9 @@ camera_fb_t *  get_good_jpeg()
   // изображения никогда не содержат маркер [FF D9] (байты FF всегда следуют за байтом 00). 
   // Однако некоторые поля могут содержать этот маркер.
   
-  camera_fb_t * fb;
+  // Объявляем fb типа camera_fb_t* 
+  camera_fb_t* fb;
+  
   long start;
   // Инициируем нулевую попытку захвата изображения камеры
   int failures = 0;
@@ -877,180 +854,5 @@ static void another_save_avi(uint8_t* fb_buf, int fblen )
   avifile.flush();
   idxfile.flush();
 } 
-/*
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// the_camera_loop()  - цикл фотографирования и записи avi-имеет наибольший приоритет = 4;
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-void the_camera_loop (void* pvParameter) 
-{
-  long wait_for_cam_start;       // Промежуточная точка начала ожидания камеры
-  long delay_wait_for_sd_start;  // Промежуточная точка начала ожидания работы с SD
-
-  //print_mem("MEM - стартовала задача the_camera_loop        ");
-  // Инициируем счетчик кадров в файле
-  frame_cnt = 0;
-  // Считываем состояние 12 контакта (начинать запись видео или нет)
-  start_record_2nd_opinion = digitalRead(12);
-  start_record_1st_opinion = digitalRead(12);
-  // Сбрасываем флаг записи видео (пока не начинать)
-  start_record = 0;
-  delay(1000);
-
-  while (1) 
-  {
-    delay(1);
-
-    // if (frame_cnt == 0 && start_record == 0)  // do nothing
-    // if (frame_cnt == 0 && start_record == 1)  // start a movie
-    // if (frame_cnt > 0 && start_record == 0)   // stop the movie
-    // if (frame_cnt > 0 && start_record != 0)   // another frame
-
-    ///////////////////  NOTHING TO DO //////////////////
-    if ( (frame_cnt == 0 && start_record == 0)) 
-    {
-      // Serial.println("Do nothing");
-      if (we_are_already_stopped == 0) 
-      {
-        //jpr("\nОтсоедините Pin12 от GND для того, чтобы начать запись или http://192.168.1.100/start \n");
-      }
-      we_are_already_stopped = 1;
-      delay(100);
-    } 
-    ///////////////////  START A MOVIE  //////////////////
-    else if (frame_cnt == 0 && start_record == 1) 
-    {
-      // Сбрасываем флаг "видео-запись уже остановлена"
-      we_are_already_stopped = 0;
-      // Отмечаем время начала видео-записи
-      avi_start_time = millis();
-      // Отмечаем точку начала ожидания камеры
-      wait_for_cam_start = millis();
-      
-      //jprln("Началась видеозапись на %d мс. ", avi_start_time);
-      //jprln("Размер кадра %d, качество %d, время %d секунд\n", framesize, quality, avi_length);
-      logfile.flush();
-
-      // Открываем avi-файл и записываем заголовки
-      start_avi();
-      // Отмечаем точку начала ожидания работы с SD
-      delay_wait_for_sd_start = millis();
-      // Пересчитываем время ожидания камеры
-      wait_for_cam += millis() - wait_for_cam_start;
-      // Меняем счетчик и делаем кадр
-      frame_cnt++;
-      fb_curr = get_good_jpeg();    
-      // Копируем изображение в буфер текущего кадра
-      fb_curr_record_len = fb_curr->len;
-      memcpy(fb_curr_record_buf, fb_curr->buf, fb_curr->len);
-      fb_curr_record_time = millis();
-      
-      // В мьютексе выбираем в буфер снятый кадр и отмечаем время
-      xSemaphoreTake(baton, portMAX_DELAY);
-      fb_record_len = fb_curr_record_len;
-      memcpy(fb_record, fb_curr_record_buf, fb_curr_record_len);   // v59.5
-      fb_record_time = fb_curr_record_time;
-      xSemaphoreGive(baton);
-      
-      // Освобождаем буфер камеры и отмечаем новую точку начала ожидания камеры
-      esp_camera_fb_return(fb_curr);  //7
-      wait_for_cam_start = millis();
-      // Пересчитываем время ожидания работы с SD и заносим кадр в видео-файл
-      delay_wait_for_sd += millis() - delay_wait_for_sd_start;
-      another_save_avi(fb_curr_record_buf, fb_curr_record_len);
-      // Пересчитываем время ожидания камеры
-      wait_for_cam += millis() - wait_for_cam_start;
-      if (blinking) digitalWrite(33, frame_cnt % 2); // blink
-    } 
-    ///////////////////  END THE MOVIE //////////////////
-    else if (restart_now || reboot_now || (frame_cnt > 0 && start_record == 0) ||  millis() > (avi_start_time + avi_length * 1000)) 
-    { 
-      //jprln("Завершается запись avi-файла");
-      restart_now = false;
-      if (blinking)  digitalWrite(33, frame_cnt % 2);
-
-      end_avi();                                
-
-      if (blinking) digitalWrite(33, HIGH);          // light off
-
-      // Устанавливаем флаг "удалить старые файлы по завершению записи текущего файла avi"
-      delete_old_stuff_flag = 1;
-      delay(50);
-
-      avi_end_time = millis();
-
-      float fps = 1.0 * frame_cnt / ((avi_end_time - avi_start_time) / 1000) ;
-
-      //jpr("End the avi at %d.  It was %d frames, %d ms at %.2f fps...\n", millis(), frame_cnt, avi_end_time, avi_end_time - avi_start_time, fps);
-
-      if (!reboot_now) frame_cnt = 0;             // start recording again on the next loop
-
-    } 
-    ///////////////////  ANOTHER FRAME AVI  //////////////////
-    else if (frame_cnt > 0 && start_record != 0) 
-    { 
-      // Если интервал между кадрами не истек, делаем паузу (timelapse)
-      current_frame_time = millis();
-      if (current_frame_time - last_frame_time < frame_interval) 
-      {
-        delay(frame_interval - (current_frame_time - last_frame_time));     
-      }
-      last_frame_time = millis();
-      // Отмечаем точку начала ожидания работы с SD
-      delay_wait_for_sd_start = millis();
-      // Меняем счетчик и делаем кадр
-      frame_cnt++;
-      fb_curr = get_good_jpeg();   
-      // Копируем изображение в буфер текущего кадра
-      fb_curr_record_len = fb_curr->len;
-      memcpy(fb_curr_record_buf, fb_curr->buf, fb_curr->len);
-      fb_curr_record_time = millis();
-      
-      // В мьютексе выбираем в буфер снятый кадр и отмечаем время
-      xSemaphoreTake(baton, portMAX_DELAY);
-      fb_record_len = fb_curr_record_len;
-      memcpy(fb_record, fb_curr_record_buf, fb_curr_record_len);   // v59.5
-      fb_record_time = fb_curr_record_time;
-      xSemaphoreGive(baton);
-      
-      // Освобождаем буфер камеры и отмечаем новую точку начала ожидания камеры
-      esp_camera_fb_return(fb_curr);  //7
-      wait_for_cam_start = millis();
-
-      // Пересчитываем время ожидания работы с SD и заносим кадр в видео-файл
-      delay_wait_for_sd += millis() - delay_wait_for_sd_start;
-      another_save_avi(fb_curr_record_buf, fb_curr_record_len);
-      // Пересчитываем время ожидания камеры
-      wait_for_cam += millis() - wait_for_cam_start;
-      if (blinking) digitalWrite(33, frame_cnt % 2);
-      
-      // Выводим усредненные статистические данные через каждые 100 кадров,
-      // начиная с 10-ого (среди первых 1011 кадров)
-      if (frame_cnt % 100 == 10 ) 
-      {    
-        if (frame_cnt == 10) 
-        {
-          bytes_before_last_100_frames = movi_size;
-          time_before_last_100_frames = millis();
-          most_recent_fps = 0;            // количество недавних кадров в секунду
-          most_recent_avg_framesize = 0;  // средний размер недавних кадров
-        } 
-        else 
-        {
-          most_recent_fps = 100.0 / ((millis() - time_before_last_100_frames) / 1000.0) ;
-          most_recent_avg_framesize = (movi_size - bytes_before_last_100_frames) / 100;
-
-          //if ( (Lots_of_Stats && frame_cnt < 1011) || (Lots_of_Stats && frame_cnt % 1000 == 10)) 
-          //{
-            //jprln("Всего: %5d кадров за %6.1f секунд, среднее недавних 100 кадров: размер и частота %6.1f kb, %.2f fps", frame_cnt, 0.001 * (millis() - avi_start_time), 1.0 / 1024  * most_recent_avg_framesize, most_recent_fps);
-          //}
-          bytes_before_last_100_frames = movi_size;
-          time_before_last_100_frames = millis();
-        }
-      }
-    }
-  }
-}
-*/
 
 // ************************************************************ fs_camera.h ***

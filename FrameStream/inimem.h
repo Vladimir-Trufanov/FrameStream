@@ -85,14 +85,10 @@ File idxfile;  // файл указателей кадров
 //static const char _hsoftIP[] ="IP-адрес своей сети контроллера - http://";
 //static const char _hlocalIP[]="IP-адрес в локальной сети       - http://";
 
-// char softip[20];                       // IP-адрес собственной сети контроллера
+// char softip[20];                    // IP-адрес собственной сети контроллера
 bool found_router = false;             // true - определена локальная сеть
 
-/*
-TaskHandle_t the_camera_loop_task;
-TaskHandle_t the_streaming_loop_task;
-*/
-
+// Объявляем мьютекс между задачами, который будет держать и передавать кадры камеры
 SemaphoreHandle_t baton;
 
 bool restart_now = false;   // true - начать запись нового avi-видео
@@ -148,12 +144,22 @@ uint16_t frame_cnt = 0;    // общее количество кадров в ф
 // округляется до 16 Кбайт для 4 кадров, в соответствии с buffersconfig = 4)
 int buffersconfig=4;         // количество отдельных буферов для кадров (переопределяется из файла конфигурации на SD-карте)
 int frame_buffer_size;       // размер буфера 
+
 int fb_record_len;           // длина буфера снятого кадра (=frame_buffer_size)
-int fb_streaming_len;
 uint8_t* fb_record;          // копия буфера снятого кадра
+long fb_record_time = 0;     // время записи снятого кадра с начала запуска программы (мс)
+
+int fb_curr_record_len;      // длина буфера снятого кадра
 uint8_t* fb_curr_record_buf; // копия буфера снятого кадра в цикле фотографирования
+long fb_curr_record_time=0;  // время записи снятого кадра с начала запуска программы (мс)
+
+int fb_streaming_len;
 uint8_t* fb_streaming;
+long fb_streaming_time = 0;
+
+int fb_capture_len;
 uint8_t* fb_capture;
+long fb_capture_time = 0;
 
 // Комментарий по особым типам переменных
 

@@ -70,15 +70,6 @@ WiFiMulti jMulti;
 
 void setup() 
 {
-  Serial.begin(115200);
-  delay(3000);
-  Serial.println("\n\n");
-  Serial.println("---------------------------------------");
-  Serial.println("Arduino IDE 2.3.7 - Espressif ESP32 3.3.5");
-  String idfver = esp_get_idf_version();
-  Serial.println("ESP IDF: "+idfver);
-  Serial.print("FrameStream "); Serial.println(vernum);
-  Serial.println("---------------------------------------");
 
   pinMode(33, OUTPUT);              // little red led on back of chip
   digitalWrite(33, LOW);            // turn on the red LED on the back of chip

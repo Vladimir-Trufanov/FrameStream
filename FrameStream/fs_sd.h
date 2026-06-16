@@ -43,6 +43,7 @@ void deleteFolderOrFile(const char * val);
 File avifile;
 File idxfile;
 
+long frame_total = 0;
 bool configfile = false;
 
 char file_to_edit[50] = "/JamCam0481.0007.avi"; //61.3
@@ -134,8 +135,6 @@ uint8_t avi1_buf[4] = {0x41, 0x56, 0x49, 0x31};    // "AVI1"
 uint8_t idx1_buf[4] = {0x69, 0x64, 0x78, 0x31};    // "idx1"
 
 // Окончательные данные по кадрам, защищенные мьютексом
-long fb_record_time = 0;      // время записи снятого кадра с начала запуска программы (мс)
-
 long totalp;                  // общее время съемки всех кадров записанного файла avi
 long totalw;                  // общее время записи всех кадров файла avi
 long time_in_loop=0;

@@ -388,22 +388,6 @@ static void config_camera()
 #include "trass.h"
 */
 
-int fb_capture_len;
-long fb_capture_time = 0;
-
-/*
-int first = 1;
-long frame_start = 0;
-long frame_end = 0;
-long frame_total = 0;
-long frame_average = 0;
-long loop_average = 0;
-long loop_total = 0;
-long total_frame_data = 0;
-long last_frame_length = 0;
-int done = 0;
-*/
-
 // Переменные отлова каждого 50 кадра до 1000
 int gframe_cnt;
 int gfblen;
@@ -429,8 +413,6 @@ uint16_t remnant = 0;
 uint32_t startms;             // время начала работы с камерой и файлом avi    
 uint32_t elapsedms;           // общее время работы с камерой и файлом avi 
 
-int fb_curr_record_len;       // длина буфера снятого кадра
-long fb_curr_record_time=0;   // время записи снятого кадра с начала запуска программы (мс)
 */
 
 // ****************************************************************************

@@ -7,7 +7,11 @@
  * 
 **/
 
-#pragma once   
+#pragma once  
+
+long frame_start = 0;
+long frame_end = 0;
+ 
 
 void re_index( char * avi_file_name, char * out_file_name); 
 void re_index_bad( char * avi_file_name); 

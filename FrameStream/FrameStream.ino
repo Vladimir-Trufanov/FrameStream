@@ -42,6 +42,10 @@ static const char vernum[]="v2.2.5, 15.06.2026";
 #include "esp_cpu.h" 
 #include "soc/rtc_cntl_reg.h"
 #include <ESPping.h>
+#include "lwip/sockets.h"
+
+#include <HTTPClient.h>
+httpd_handle_t camera_httpd = NULL;
 
 // Объявить/проинициализировать переменные, общие для всех модулей
 #include "inimem.h"
@@ -62,6 +66,9 @@ static const char vernum[]="v2.2.5, 15.06.2026";
 // Управлять контроллером ESP32-CAM через браузер по локальной сети и собственной сети контроллера 
 #include "fs_server.h"
 
+#include "FlMgr.h"          
+ESPxWebFlMgr filemgr(filemanagerport); // we want a different port than the webserver
+
 void startCameraServer(); 
 void stopCameraServer(); 
 void the_camera_loop (void* pvParameter); 
@@ -72,41 +79,19 @@ long wakeup;                   // текущая метка для отсчет�
 int loops = 0;                 // текущий номер фонового цикла 
 
 TaskHandle_t the_camera_loop_task;
-TaskHandle_t the_sd_loop_task;
 TaskHandle_t the_streaming_loop_task;
-
-int fb_curr_record_len;
-long fb_curr_record_time = 0;
-
-int first = 1;
-long frame_start = 0;
-long frame_end = 0;
-long frame_total = 0;
-long frame_average = 0;
-long loop_average = 0;
-long loop_total = 0;
-long total_frame_data = 0;
-long last_frame_length = 0;
-int done = 0;
-
-#include "FlMgr.h"          
-ESPxWebFlMgr filemgr(filemanagerport); // we want a different port than the webserver
-
-#include <HTTPClient.h>
-httpd_handle_t camera_httpd = NULL;
-
-#include "lwip/sockets.h"
-
-void the_camera_loop (void* pvParameter);
-void the_sd_loop (void* pvParameter);
-void delete_old_stuff();
 
 void setup() 
 {
   Serial.begin(115200);
-  Serial.println("\n\n---");
-  Serial.println("Arduino IDE 2.3.7 - Espressif ESP32 3.3.5");
-  delay(10000);
+  delay(3000);
+  Serial.println("\n\n");
+  Serial.println("---------------------------------------");
+  Serial.println("Arduino IDE 1.8.18 - Espressif ESP32 3.3.8");
+  String idfver = esp_get_idf_version();
+  Serial.println("ESP IDF: "+idfver);
+  Serial.print("FrameStream "); Serial.println(vernum);
+  Serial.println("---------------------------------------");
 
   pinMode(33, OUTPUT);             // little red led on back of chip
   digitalWrite(33, LOW);           // turn on the red LED on the back of chip
@@ -172,7 +157,7 @@ void setup()
   fb_capture =         (uint8_t*)ps_malloc(frame_buffer_size); 
   saymem("setup - после выделения памяти под кадры");
 
-  // Объявляем мьютекс между задачами, который будет держать и передавать кадры камеры
+  // Инициируем мьютекс между задачами, который будет держать и передавать кадры камеры
   baton = xSemaphoreCreateMutex();
 
   /*

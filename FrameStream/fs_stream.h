@@ -36,7 +36,6 @@ bool stream_81 = false;         // true - из браузера заказано
 
 httpd_req_t *req_82;
 httpd_req_t *req_81;
-long fb_streaming_time = 0;
 
 // Определяем экземпляры HTTP-серверов (тип httpd_handle_t используется для создания 
 // и управления веб-серверами и возвращается функцией httpd_start(). Она создаёт 

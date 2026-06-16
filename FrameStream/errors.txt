@@ -3,6 +3,32 @@ support@arduino.cc
 Здравствуйте! Я, tve58, попытался авторизоваться, но вышло сообщение: "Sorry, you have been blocked
 You are unable to access arduino.cc". Что делать далее?
 
+In file included from C:\FrameStream\FrameStream\fs_wifi.h:23,
+                 from C:\FrameStream\FrameStream\FrameStream.ino:56:
+C:\FrameStream\FrameStream\fs_trass.h: In function 'void sayconfig()':
+fs_trass.h:141:57: error: 'cname' was not declared in this scope; did you mean 'rename'?
+  141 |   say("Название камеры                      %s\n",      cname);
+      |                                                         ^~~~~
+C:\FrameStream\FrameStream\fs_trass.h:25:48: note: in definition of macro 'say'
+   25 |     snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+      |                                                ^~~~~~~~~~~
+fs_trass.h:153:3: error: 'else' without a previous 'if'
+  153 |   else if (ncardType == 2)                  sayln("SDSC");
+      |   ^~~~
+fs_trass.h:154:3: error: 'else' without a previous 'if'
+  154 |   else if (ncardType == 3)                  sayln("SDHC");
+      |   ^~~~
+fs_trass.h:155:3: error: 'else' without a previous 'if'
+  155 |   else if (ncardType == 4)                  sayln("неопределён");
+      |   ^~~~
+fs_trass.h:156:3: error: 'else' without a previous 'if'
+  156 |   else                                      sayln("карта не подключена");
+      |   ^~~~
+C:\FrameStream\FrameStream\FrameStream.ino: In function 'void setup()':
+FrameStream:128:3: error: 'else' without a previous 'if'
+  128 |   else sayln("ОТКЛЮЧЕНА или ОТСУТСТВУЕТ");
+      |   ^~~~
+Несколько библиотек найдено для "WiFi.h"
 
 
 

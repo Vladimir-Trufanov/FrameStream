@@ -91,10 +91,6 @@ void saymem(char* text)
     isSAY=oldSay;      
   }
 }
-//void print_mem(const char* text) 
-//{
-//  jpr("%s core: %d, Prio: %d, Internal Free Heap %6d of %6d, SPI Free %6d of %6d\n", text, xPortGetCoreID(), uxTaskPriorityGet(NULL), ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getFreePsram(), ESP.getPsramSize() );
-//}
 // ****************************************************************************
 // *      Отмигать аварийную ситуацию контрольным светодиодом в 10 циклов     *
 // *               в случае неудачной работы камеры или sd-карты              *
@@ -120,35 +116,6 @@ void blinkRestart()
   if (logfile) logfile.close();
   ESP.restart();
 }
-/*
-//
-// if we have no camera, or sd card, then flash rear led on and off to warn the human SOS - SOS
-//
-void major_fail() {
-
-  Serial.println(" ");
-  logfile.close();
-
-  for  (int i = 0;  i < 10; i++) {                 // 10 loops or about 100 seconds then reboot
-    for (int j = 0; j < 3; j++) {
-      digitalWrite(33, LOW);   delay(150);
-      digitalWrite(33, HIGH);  delay(150);
-    }
-    delay(1000);
-
-    for (int j = 0; j < 3; j++) {
-      digitalWrite(33, LOW);  delay(500);
-      digitalWrite(33, HIGH); delay(500);
-    }
-    delay(1000);
-    Serial.print("Major Fail  "); Serial.print(i); Serial.print(" / "); Serial.println(10);
-  }
-
-  ESP.restart();
-}
-*/
-
-
 // ****************************************************************************
 // *        Подсчитать число символов UTF-8 в последовательности char*        *
 // * https://stackoverflow.com/questions/4063146/getting-the-actual-length-of-a-utf-8-encoded-stdstring
@@ -165,123 +132,6 @@ size_t utf8len(const char* str)
   }
   return len;
 }
-
-
-/*
-
-// ****************************************************************************
-// *       Собственно вывести буфер в последовательный порт и лог-файл        *
-// ****************************************************************************
-void _say(char* buf) 
-{
-  if (isSAY)
-  {
-    Serial.print(buf); 
-    if (logfile && isSAYLOG) 
-    { 
-      logfile.print(buf);
-    }
-  } 
-}
-// ****************************************************************************
-// *      Начать новую строку вывода в последовательный порт и лог-файл       *
-// ****************************************************************************
-void addln() 
-{
-  if (isSAY)
-  {
-    Serial.println(""); 
-    if (logfile && isSAYLOG) 
-    { 
-      logfile.println(""); 
-    } 
-  }
-} 
-
-void say(char* format) 
-{
-  _say(format); 
-} 
-void sayln(char* format) {say(format); addln();}
-
-void say(char* format, const char* s) 
-{
-  snprintf(buffer, sizeof(buffer), format, s); 
-  _say(buffer); 
-} 
-void sayln(char* format, const char* s) {say(format,s); addln();}
-
-void say(char* format, char* s) 
-{
-  snprintf(buffer, sizeof(buffer), format, s); 
-  _say(buffer); 
-} 
-void sayln(char* format, char* s) {say(format,s); addln();}
-
-void say(char* format, const char* s, uint64_t n) 
-{
-  snprintf(buffer, sizeof(buffer), format,s,n);
-  _say(buffer); 
-} 
-void sayln(char* format, const char* s, uint64_t n) {say(format,s,n); addln();}
-
-void say(char* format, String s) 
-{
-  snprintf(buffer, sizeof(buffer), format, s); 
-  _say(buffer); 
-} 
-void sayln(char* format, String s) {say(format,s); addln();}
-
-void say(char* format, unsigned int n, const char* s) 
-{
-  snprintf(buffer, sizeof(buffer), format, n, s); 
-  _say(buffer); 
-} 
-void sayln(char* format, unsigned int n, const char* s) {say(format,n,s); addln();} 
-
-/ * Целочисленные типы
-Тип	               Синоним	Число байт    От                       До
------------------- -------- ---------- --------------------------- ------
-bool	             -	      1          0,false                     1,true
-signed char	       int8_t	1	           -128	                       127
-unsigned char	     uint8_t	1	         0                           255
-int	               -	      2 или 4		
-short	             int16_t	2	         -32 768                     32 767
-unsigned short     uint16_t	2	         0                           65 535
-long	             int32_t	4	         -2 147 483 648	             2 147 483 647
-unsigned long	     uint32_t	4	         0	                         4 294 967 295
-long long	         int64_t	8	         -9 223 372 036 854 775 808	 9 223 372 036 854 775 807
-unsigned long long uint64_t	8	         0	                         18 446 744 073 709 551 615
-* /
-// --- int = int = 2 или 4	 
-void say(char* format, int n) 
-{
-  snprintf(buffer, sizeof(buffer), format, n); 
-  _say(buffer); 
-} 
-void sayln(char* format, int n) {say(format,n); addln();}
-// --- long = int32_t = 4 
-void say(char* format, long n) // int32_t 
-{
-  snprintf(buffer, sizeof(buffer), format, n); 
-  _say(buffer); 
-} 
-void sayln(char* format, long n) {say(format,n); addln();}
-// --- unsigned long = uint32_t = 4 
-void say(char* format, uint32_t n) 
-{
-  snprintf(buffer, sizeof(buffer), format, n); 
-  _say(buffer); 
-} 
-void sayln(char* format, uint32_t n) {say(format,n); addln();}
-// --- unsigned long long = uint64_t = 8
-void say(char* format, uint64_t n) 
-{
-  snprintf(buffer, sizeof(buffer), format, n); 
-  _say(buffer); 
-} 
-void sayln(char* format, uint64_t n) {say(format,n); addln();}
-
 // ****************************************************************************
 // *           Показать установленные настройки камеры, видео и другие        *
 // ****************************************************************************
@@ -306,6 +156,5 @@ void sayconfig()
   else                                      sayln("карта не подключена");
   say("Ёмкость SD_MMC-карты                 %llu MB\n", cardSize);
 }
-*/
 
 // ************************************************************* fs_trass.h ***

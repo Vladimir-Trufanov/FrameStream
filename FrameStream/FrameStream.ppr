@@ -18,7 +18,7 @@ Extensions=*.*
 [Project tree]
 FrameStream
 	+FrameStream
-		-old
+		+old
 			old\FrameStream.ino
 		config.h
 		CRC32.h
@@ -43,12 +43,10 @@ FrameStream
 1=fs_avi.h
 2=FrameStream.ino
 3=fs_camera.h
-4=fs_stream.h
-5=fs_server.h
-6=inimem.h
+4=inimem.h
 [Selected Project Files]
 Main=
-Selected=FrameStream.ino
+Selected=inimem.h
 [errors.txt]
 TopLine=1
 Caret=1,6
@@ -56,17 +54,11 @@ Caret=1,6
 TopLine=273
 Caret=6,285
 [FrameStream.ino]
-TopLine=553
-Caret=1,564
+TopLine=159
+Caret=13,172
 [fs_camera.h]
-TopLine=432
-Caret=6,462
-[fs_stream.h]
-TopLine=322
-Caret=37,334
-[fs_server.h]
-TopLine=1425
-Caret=35,1501
+TopLine=1
+Caret=1,391
 [inimem.h]
-TopLine=149
-Caret=1,154
+TopLine=139
+Caret=1,157

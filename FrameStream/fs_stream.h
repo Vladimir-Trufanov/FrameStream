@@ -11,6 +11,8 @@
 #pragma once   
 #include "esp_http_server.h"
 
+#include "inimem.h"
+
 #define PART_BOUNDARY "123456789000000000000987654321"
 
 static const char* _STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
@@ -34,8 +36,6 @@ bool stream_81 = false;         // true - из браузера заказано
 
 httpd_req_t *req_82;
 httpd_req_t *req_81;
-uint8_t* fb_streaming;
-int fb_streaming_len;
 long fb_streaming_time = 0;
 
 // Определяем экземпляры HTTP-серверов (тип httpd_handle_t используется для создания 

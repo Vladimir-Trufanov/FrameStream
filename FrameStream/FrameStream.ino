@@ -66,19 +66,14 @@ void startCameraServer();
 void stopCameraServer(); 
 void the_camera_loop (void* pvParameter); 
 
-bool isWiFi = false;   // false - WiFi отсутствует
-long last_wakeup = 0;  // временная метка начала отсчета до проверки интернета
-long wakeup;           // текущая метка для отсчета 10 минут работы до проверки интернета
-int loops = 0;         // текущий номер фонового цикла 
+bool isWiFi = false;           // false - WiFi отсутствует
+long last_wakeup = 0;          // временная метка начала отсчета до проверки интернета
+long wakeup;                   // текущая метка для отсчета 10 минут работы до проверки интернета
+int loops = 0;                 // текущий номер фонового цикла 
 
 TaskHandle_t the_camera_loop_task;
 TaskHandle_t the_sd_loop_task;
 TaskHandle_t the_streaming_loop_task;
-
-//camera_fb_t* fb_curr = NULL;
-//camera_fb_t* fb_next = NULL;
-
-uint8_t* fb_curr_record_buf;
 
 int fb_curr_record_len;
 long fb_curr_record_time = 0;
@@ -163,36 +158,80 @@ void setup()
   do_eprom_read();
 
   jprln("Try to get parameters from config2.txt ...");
-
   read_config_file();
 
-  jprln("Setting up the camera ...");
+  // Конфигурируем камеру
+  sayln("Конфигурирование камеры ...");
   config_camera();
-
-  //fb_record = (uint8_t*)ps_malloc(512 * 1024); // buffer to store a jpg in motion // needs to be larger for big frames from ov5640
-
-  // frame_buffer_size set by config_camera
-  fb_record = (uint8_t*)ps_malloc(frame_buffer_size); // buffer to store a jpg in motion // needs to be larger for big frames from ov5640
+  // Выделяем память под рабочие буферы для снятых кадров 
+  // (должны быть больше больших кадров с ov2640,ov5640),
+  // размер устанавливаем от ранее сформированного и расчитанного config_camera
+  fb_record =          (uint8_t*)ps_malloc(frame_buffer_size); 
   fb_curr_record_buf = (uint8_t*)ps_malloc(frame_buffer_size);
-  fb_streaming = (uint8_t*)ps_malloc(frame_buffer_size); // buffer to store a jpg in motion // needs to be larger for big frames from ov5640
-  fb_capture = (uint8_t*)ps_malloc(frame_buffer_size); // buffer to store a jpg in motion // needs to be larger for big frames from ov5640
+  fb_streaming =       (uint8_t*)ps_malloc(frame_buffer_size); 
+  fb_capture =         (uint8_t*)ps_malloc(frame_buffer_size); 
+  saymem("setup - после выделения памяти под кадры");
 
-  print_mem("setup - after malloc");
-
-  jprln("Creating the_camera_loop_task");
-
+  // Объявляем мьютекс между задачами, который будет держать и передавать кадры камеры
   baton = xSemaphoreCreateMutex();
 
+  /*
+  Программное обеспечение в микропроцессоре ESP32 распределяется по ядрам (CPU0 и CPU1) 
+  с помощью встроенного программного обеспечения FreeRTOS — операционной системы реального времени. 
+  ESP32 — двухъядерный микроконтроллер, и задачи могут выполняться независимо на обоих ядрах. 
+    Пример распределения задач: 
+    Ядро 0 выполняет задачу loopCore0 — захват изображения и сетевое взаимодействие 
+  (кадры с камеры отправляются по HTTP, обмен данными — по WebSocket).
+    Ядро 1 занято задачей loopCore1 — навигацией и управлением (опрашивает датчики, 
+  фильтрует данные, вычисляет ошибки и корректирует движение).
+    Важно: по умолчанию код, загруженный в ESP32 с помощью Arduino IDE, выполняется только на ядре 1, 
+    поскольку ядро 0 уже запрограммировано для радиочастотной связи. 
+  При распределении задач по ядрам могут возникнуть, например:
+  - ошибка таймаута Watchdog — если код для задачи не содержит задержки (например, 
+  бесконечный цикл без задержки). Решение: добавить задержку (delay(1) или vTaskDelay(1));
+  - переполнение стека — если для задачи выделено мало стека. Решение: увеличить размер 
+  стека задачи или изменить большие массивы на динамическое выделение;
+  - конкуренция задач за таймер — если в обе задачи добавлены задержки (например, delay(1)), 
+  это может привести к перезапускам. Решение: использовать разные таймеры для каждой задачи;
+  - рекомендуется использовать неблокирующий подход, например, вместо функции delay() применять millis().
+  Она не останавливает программу, а возвращает количество миллисекунд, прошедших с момента запуска ESP32, 
+  что позволяет организовать выполнение задач по расписанию без блокировки основного цикла loop();
+  - нельзя блокировать задачу Idle. Она (приоритет 0) отвечает за очистку фона, поэтому не стоит блокировать 
+  её с помощью интенсивных циклов.  
+  https://www.teachmemicro.com/multitask-with-esp32-and-freertos/
+  https://www.iotsharing.com/2017/06/arduino-esp32-freertos-how-to-use-task-param-task-priority-task-handle.html
+  Задача Idle — это задача во FreeRTOS для ESP32, которая выполняется, когда другие задачи не готовы к выполнению. 
+  Idle создаются автоматически для каждого ядра процессора (называются «IDLE0» и «IDLE1»). 
+  Основная задача Idle - очистка памяти, выделенной ядром задачам, которые были удалены. 
+  */
 
-  xTaskCreatePinnedToCore( the_camera_loop, "the_camera_loop", 5000, NULL, 4, &the_camera_loop_task, 0); //soc14
+  // Создаем задачи на ядрах контроллера
+  jprln("Создание задач на ядрах контроллера ...");
+
+  xTaskCreatePinnedToCore(
+    the_camera_loop,       // TaskFunction_t pvTaskCode          - имя функции, которая содержит код
+    "the_camera_loop",     // const char * const pcName          - имя задачи
+    5000,                  // const uint32_t usStackDepth        - количество байт, выделенное для стека задачи
+    NULL,                  // void * const pvParameters          - указатель на параметры для задачи
+    4,                     // UBaseType_t uxPriority             - приоритет задачи
+    &the_camera_loop_task, // TaskHandle_t * const pxCreatedTask - указатель на задачу, который можно использовать для ссылки на задачу позже (например, для её завершения)
+    0                      // const BaseType_t xCoreID           - ядро процессора, на которое нужно назначить задачу (0 для ядра 0, 1 для 1 или tskNO_AFFINITY - на обоих ядрах
+  ); 
   delay(100);
-
-  xTaskCreate( the_streaming_loop, "the_streaming_loop", 8000, NULL, 2, &the_streaming_loop_task);
-  if ( the_streaming_loop_task == NULL ) {
+  xTaskCreate(
+    the_streaming_loop,    // TaskFunction_t pvTaskCode          - имя функции, которая содержит код
+    "the_streaming_loop",  // const char * const pcName          - имя задачи
+    8000,                  // const uint32_t usStackDepth        - количество байт, выделенное для стека задачи
+    NULL,                  // void * const pvParameters          - указатель на параметры для задачи 
+    2,                     // UBaseType_t uxPriority             - приоритет задачи
+    &the_streaming_loop_task
+  );
+  if (the_streaming_loop_task == NULL) 
+  {
     //vTaskDelete( xHandle );
-    Serial.printf("do_the_steaming_task failed to start! %d\n", the_streaming_loop_task);
+    Serial.printf("Не удалось запустить задачу do_the_steaming_task! %d\n", the_streaming_loop_task);
   }
-
+  
   // Подключаемся к WiFi если еще нет подключения
   if (!isWiFi) 
   {

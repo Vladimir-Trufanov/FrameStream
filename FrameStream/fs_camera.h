@@ -372,8 +372,8 @@ static void config_camera()
       delay(30);
     }
   }
+  // Определяем размер буферов для кадров и округляем до 16 Кбайт для 4 кадров, в соответствии с buffersconfig = 4
   frame_buffer_size  = (( (x * 4) / (16 * 1024) ) + 1) * 16 * 1024  ;
-  // 4 times buffer size, rounded up to 16kb
 
   jpr("Buffer size for %d is %d\n", x, frame_buffer_size);
   print_mem("End of camera setup");
@@ -388,7 +388,6 @@ static void config_camera()
 #include "trass.h"
 */
 
-uint8_t* fb_capture;
 int fb_capture_len;
 long fb_capture_time = 0;
 
@@ -430,7 +429,6 @@ uint16_t remnant = 0;
 uint32_t startms;             // время начала работы с камерой и файлом avi    
 uint32_t elapsedms;           // общее время работы с камерой и файлом avi 
 
-uint8_t* fb_curr_record_buf;  // копия буфера снятого кадра
 int fb_curr_record_len;       // длина буфера снятого кадра
 long fb_curr_record_time=0;   // время записи снятого кадра с начала запуска программы (мс)
 */

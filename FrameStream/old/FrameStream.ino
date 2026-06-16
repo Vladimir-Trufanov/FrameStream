@@ -70,31 +70,6 @@ WiFiMulti jMulti;
 
 void setup() 
 {
-
-  pinMode(33, OUTPUT);              // little red led on back of chip
-  digitalWrite(33, LOW);            // turn on the red LED on the back of chip
-  pinMode(4, OUTPUT);               // Blinding Disk-Avtive Light
-  digitalWrite(4, LOW);             // turn off
-  //pinMode(16, INPUT_PULLUP);      // контакт датчика движения
-
-  // Определяем и показываем причину последнего сброса (reset reason). 
-  esp_reset_reason_t reason = esp_reset_reason();
-  say("Причина перезагрузки: ");
-  switch (reason) 
-  {
-    case ESP_RST_UNKNOWN : sayln("ESP_RST_UNKNOWN");  break;
-    case ESP_RST_POWERON : sayln("ESP_RST_POWERON"); break;
-    case ESP_RST_EXT : sayln("ESP_RST_EXT");  break;
-    case ESP_RST_SW : sayln("ESP_RST_SW");  break;
-    case ESP_RST_PANIC : sayln("ESP_RST_PANIC");  break;
-    case ESP_RST_INT_WDT : sayln("ESP_RST_INT_WDT");  break;
-    case ESP_RST_TASK_WDT : sayln("ESP_RST_TASK_WDT");  break;
-    case ESP_RST_WDT : sayln("ESP_RST_WDT");  break;
-    case ESP_RST_DEEPSLEEP : sayln("ESP_RST_DEEPSLEEP");  break;
-    case ESP_RST_BROWNOUT : sayln("ESP_RST_BROWNOUT");  break;
-    case ESP_RST_SDIO : sayln("ESP_RST_SDIO");  break;
-    default  : sayln("не определена!"); break;
-  }
   // Показываем состояние памяти 
   say("PSRAM - псевдооперативная память ");
   if (psramFound()) sayln("доступна");
@@ -142,10 +117,6 @@ void setup()
   if (!config_camera()) blinkRestart();
   // По имени камеры назначаем имя устройства 
   cname.toCharArray(devname,cname.length()+1);
-
-  // Запускаем продолжение нумерации файлов avi 
-  // (или инициируем новую нумерацию)
-  do_eprom_read();
   
   /*
   */

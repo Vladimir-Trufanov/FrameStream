@@ -43,9 +43,10 @@ FrameStream
 1=fs_avi.h
 2=FrameStream.ino
 3=old\FrameStream.ino
+4=fs_trass.h
 [Selected Project Files]
 Main=
-Selected=FrameStream.ino
+Selected=old\FrameStream.ino
 [errors.txt]
 TopLine=1
 Caret=1,6
@@ -53,8 +54,11 @@ Caret=1,6
 TopLine=1
 Caret=15,13
 [FrameStream.ino]
-TopLine=81
-Caret=1,95
+TopLine=237
+Caret=22,265
 [old\FrameStream.ino]
-TopLine=53
-Caret=1,73
+TopLine=111
+Caret=1,120
+[fs_trass.h]
+TopLine=1
+Caret=27,19

@@ -85,6 +85,8 @@ void setup()
 {
   Serial.begin(115200);
   delay(3000);
+  saymem("Начало setup");
+
   Serial.println("\n\n");
   Serial.println("---------------------------------------");
   Serial.println("Arduino IDE 1.8.18 - Espressif ESP32 3.3.8");
@@ -95,56 +97,51 @@ void setup()
 
   pinMode(33, OUTPUT);             // little red led on back of chip
   digitalWrite(33, LOW);           // turn on the red LED on the back of chip
-
   pinMode(4, OUTPUT);               // Blinding Disk-Avtive Light
   digitalWrite(4, LOW);             // turn off
-
   pinMode(12, INPUT_PULLUP);        // pull this down to stop recording
   pinMode(13, INPUT_PULLUP);        // pull this down switch wifi
 
-  // SD camera init
-  Serial.println("Mounting the SD card ...");
-  esp_err_t card_err = init_sdcard();
-  if (card_err != ESP_OK) {
-    Serial.printf("SD Card init failed with error 0x%x", card_err);
-    major_fail();
-    return;
-  } else {
-    logfile = SD_MMC.open("/boot.txt", FILE_WRITE);
-  }
-
-  jprln("                                    ");
-  jprln("---------------------------------------");
-  jprln("FrameStream %s", vernum);
-  jprln("---------------------------------------");
-
-  print_mem("setup");
-
+  // Определяем и показываем причину последнего сброса (reset reason). 
   esp_reset_reason_t reason = esp_reset_reason();
+  say("Причина перезагрузки: ");
+  switch (reason) 
+  {
+    case ESP_RST_UNKNOWN : sayln("ESP_RST_UNKNOWN");  break;
+    case ESP_RST_POWERON : sayln("ESP_RST_POWERON"); break;
+    case ESP_RST_EXT : sayln("ESP_RST_EXT");  break;
+    case ESP_RST_SW : sayln("ESP_RST_SW");  break;
+    case ESP_RST_PANIC : sayln("ESP_RST_PANIC");  break;
+    case ESP_RST_INT_WDT : sayln("ESP_RST_INT_WDT");  break;
+    case ESP_RST_TASK_WDT : sayln("ESP_RST_TASK_WDT");  break;
+    case ESP_RST_WDT : sayln("ESP_RST_WDT");  break;
+    case ESP_RST_DEEPSLEEP : sayln("ESP_RST_DEEPSLEEP");  break;
+    case ESP_RST_BROWNOUT : sayln("ESP_RST_BROWNOUT");  break;
+    case ESP_RST_SDIO : sayln("ESP_RST_SDIO");  break;
+    default  : sayln("не определена!"); break;
+  }
+  sayln("");
 
-  //logfile.print("--- reboot ------ because: ");
-  jpr("--- reboot ------ because: ");
-
-  switch (reason) {
-    case ESP_RST_UNKNOWN : jprln("ESP_RST_UNKNOWN");  break;
-    case ESP_RST_POWERON : jprln("ESP_RST_POWERON"); break;
-    case ESP_RST_EXT : jprln("ESP_RST_EXT");  break;
-    case ESP_RST_SW : jprln("ESP_RST_SW");  break;
-    case ESP_RST_PANIC : jprln("ESP_RST_PANIC");  break;
-    case ESP_RST_INT_WDT : jprln("ESP_RST_INT_WDT");  break;
-    case ESP_RST_TASK_WDT : jprln("ESP_RST_TASK_WDT");  break;
-    case ESP_RST_WDT : jprln("ESP_RST_WDT");  break;
-    case ESP_RST_DEEPSLEEP : jprln("ESP_RST_DEEPSLEEP");  break;
-    case ESP_RST_BROWNOUT : jprln("ESP_RST_BROWNOUT");  break;
-    case ESP_RST_SDIO : jprln("ESP_RST_SDIO");  break;
-    default  : jprln("Reset resaon"); break;
+  // Инициируем SD-карту
+  sayln("Инициирование SD-карты ...");
+  esp_err_t card_err = init_sdcard();
+  if (card_err != ESP_OK) 
+  {
+    sayln("Ошибка инициирования SD-карты 0x%x", card_err);
+    blinkRestart();
+    return;
+  } 
+  else 
+  {
+    logfile = SD_MMC.open("/frstream.txt", FILE_WRITE);
   }
 
+  // Запускаем продолжение нумерации файлов avi 
+  // (или инициируем новую нумерацию)
   do_eprom_read();
-
-  jprln("Try to get parameters from config2.txt ...");
+  // Считываем файл конфигурации и настраиваем параметры
+  sayln("Считывание файла конфигурации и настройка параметров ...");
   read_config_file();
-
   // Конфигурируем камеру
   sayln("Конфигурирование камеры ...");
   config_camera();
@@ -155,8 +152,7 @@ void setup()
   fb_curr_record_buf = (uint8_t*)ps_malloc(frame_buffer_size);
   fb_streaming =       (uint8_t*)ps_malloc(frame_buffer_size); 
   fb_capture =         (uint8_t*)ps_malloc(frame_buffer_size); 
-  saymem("setup - после выделения памяти под кадры");
-
+  saymem("Выделена память под кадры");
   // Инициируем мьютекс между задачами, который будет держать и передавать кадры камеры
   baton = xSemaphoreCreateMutex();
 
@@ -191,7 +187,7 @@ void setup()
   */
 
   // Создаем задачи на ядрах контроллера
-  jprln("Создание задач на ядрах контроллера ...");
+  sayln("Создание задач на ядрах контроллера ...");
 
   xTaskCreatePinnedToCore(
     the_camera_loop,       // TaskFunction_t pvTaskCode          - имя функции, которая содержит код
@@ -214,64 +210,59 @@ void setup()
   if (the_streaming_loop_task == NULL) 
   {
     //vTaskDelete( xHandle );
-    Serial.printf("Не удалось запустить задачу do_the_steaming_task! %d\n", the_streaming_loop_task);
+    sayln("Не удалось запустить задачу do_the_steaming_task! %d\n", the_streaming_loop_task);
   }
   
   // Подключаемся к WiFi если еще нет подключения
   if (!isWiFi) 
   {
-    print_mem("Starting the wifi ...");
+    sayln("Подключение к WiFi ...");
     init_wifi();
-    print_mem("Starting the fileman ...");
-
-    jprln("");
+    saymem("После подключения к WiFi");
+    
+    sayln("Запуск файлового менеджера ...");
     filemgr.begin();
     filemgr.setBackGroundColor("Gray");
-    jpr("Open Filemanager with http://");
-    Serial.print(WiFi.softAPIP()); logfile.print(WiFi.softAPIP());
-    jprln(":%d/", filemanagerport);
-    jpr("Open Filemanager with http://");
-    Serial.print(WiFi.localIP()); logfile.print(WiFi.localIP());
-    jprln(":%d/", filemanagerport);
+    say("Filemanager по http://"); Serial.print(WiFi.softAPIP()); sayln(":%d/", filemanagerport);
+    logfile.print(WiFi.softAPIP());
+    say("Filemanager по http://"); Serial.print(WiFi.localIP());  sayln(":%d/", filemanagerport);
+    logfile.print(WiFi.localIP());
+    saymem("После загрузки FlMgr");
 
-    print_mem("Starting Web Services ...");
+    sayln("Запуск потоков задач ...");
     startCameraServer();
     start_Stream_81_server();
     start_Stream_82_server();
+    saymem("После запуска потоков");
 
     isWiFi = true;
-    print_mem("After the WiFi");
   }
 
-  jprln("Checking SD for available space ...");
+  sayln("Ревизия доступного пространства SD ...");
   delete_old_stuff();
 
+  // Начинаем запись нового лог-файла
   char logname[60];
   char the_directory[50];
-
   sprintf(the_directory, "/%s%03d",  devname, file_group);
   SD_MMC.mkdir(the_directory);
-
   sprintf(logname, "/%s%03d/%s%03d.999.txt",  devname, file_group, devname, file_group);
-  jprln("Creating logfile %s\n",  logname);
-  if (logfile) {
+  sayln("Создание лог-файла %s ...", logname);
+  if (logfile) 
+  {
     logfile.close();
   }
   logfile = SD_MMC.open(logname, FILE_WRITE);
-  if (!logfile) {
-    Serial.println("Failed to open logfile for writing");
+  if (!logfile) 
+  {
+    sayln("Ошибка открытия лог-файла для записи");
   }
 
   boot_time = millis();
-
   const char *strdate = ctime(&now);
-  //logfile.println(strdate);
-
+  logfile.println(strdate);
   digitalWrite(33, HIGH);         // red light turns off when setup is complete
-
-  print_mem("End of setup");
-  jpr("\n---  End of setup()  ---\n\n");
-
+  saymem("Завершение setup");
 }
 
 // loop() - loop runs at low prio, so I had to move it to the task the_camera_loop at higher priority

@@ -336,33 +336,40 @@ void loop()
   }
   // 
   wakeup = millis();
-  if (wakeup - last_wakeup > (10  * 60 * 1000) ) 
+  //if (wakeup - last_wakeup > (10  * 60 * 1000) ) 
+  if (wakeup - last_wakeup > (3  * 60 * 1000) ) 
   {
     last_wakeup = millis();
-    print_mem("---------- 10 Minute Internet Check -----------\n");
-    time(&now);
-    jpr("Local time: "); jpr(ctime(&now));
+    // print_mem("---------- 10 Minute Internet Check -----------");
+
+    print_mem("---------- 10 Minute Internet Check -----------");
+    time(&now); say("Local time: "); sayln(ctime(&now));
     
-    if (!isWiFi ) 
-    {
+    //if (!isWiFi) 
+    //{
+      //
+      InternetCheck10(camera_httpd, stream81_httpd, stream82_httpd);
       esp_err_t client_err;
       struct sockaddr_in *client_list;
       size_t clients = 10;
       size_t client_count = 10;
       int    client_fds[10];
-
       client_err = httpd_get_client_list(camera_httpd, &client_count, client_fds);
-      jpr("camera_httpd Sockets , Num = %d\n", client_count);
-      for (size_t i = 0; i < client_count; i++) {
+      jpr("1 camera_httpd Sockets , Num = %d\n", client_count);
+      for (size_t i = 0; i < client_count; i++) 
+      {
         int sock = client_fds[i];
         int x = httpd_ws_get_fd_info(camera_httpd, sock) ;
-        jpr("Socket %d, fd=%d, info=%d \n", i, sock, x);
+        jpr("1 Socket %d, fd=%d, info=%d \n", i, sock, x);
         print_sock(sock);
       }
+      InternetCheck10(camera_httpd, stream81_httpd, stream82_httpd);
+      /*
 
       client_err = httpd_get_client_list(stream81_httpd, &client_count, client_fds);
       jpr("stream81_httpd Sockets , Num = %d\n", client_count);
-      for (size_t i = 0; i < client_count; i++) {
+      for (size_t i = 0; i < client_count; i++) 
+      {
         int sock = client_fds[i];
         //Serial.printf("%d, sock %d\n", i, sock);
         int x = httpd_ws_get_fd_info(camera_httpd, sock) ;
@@ -409,7 +416,7 @@ void loop()
         delay(1000);
 
         // Ping Host
-        /*
+        / *
         const char* remote_host = "google.com";
         jpr(remote_host);
         if (Ping.ping(remote_host) > 0) {
@@ -418,7 +425,7 @@ void loop()
           jprln(" Ping Error !");
         }
         delay(1000);
-        */
+        * /
 
         if (WiFi.status() != WL_CONNECTED) {
 
@@ -441,7 +448,9 @@ void loop()
       } else {
         jpr("mDNS responder started '%s'\n", devname);
       }
-    }  // not internet off
+      */
+      //
+    //}  // not internet off
   }  // wakeup
 
   if (reboot_now == true) {

@@ -25,6 +25,7 @@
 #include <lwip/netdb.h>
 
 #include "inimem.h"
+#include "fs_wifi.h"
 
 /*
 #include "sd.h"
@@ -33,7 +34,6 @@
 // Объявляем функции модуля
 //void startCameraServer();
 //void stopCameraServer();
-void print_sock(int sock); 
 
 static esp_err_t index_handler(httpd_req_t *req); 
 static esp_err_t capture_handler(httpd_req_t *req); 
@@ -104,99 +104,6 @@ static esp_err_t delete_handler(httpd_req_t *req)
   }
 */
 
-// ----------------------------------------------------------------------------
-void print_sock(int sock) 
-{
-  sockaddr_in6 clientAddr;
-  socklen_t addrLen = sizeof(clientAddr);
-  int clientFd = sock; //client.getSocket();
-  char ip[INET6_ADDRSTRLEN] = {0};
-
-  if (getpeername(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
-  {
-    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    jpr("family %d ", clientAddr.sin6_family);
-    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr("Peer Client IP4: ");
-    jpr(ip);
-    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr(", Peer Client IP6: ");
-    jpr(ip);
-    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    jpr(", Client Port: ");
-    jprln("%d", clientPort);
-  } 
-  else 
-  {
-    Serial.println("Failed to get client address.");
-  }
-  if (getsockname(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
-  {
-    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    jpr("family %d ", clientAddr.sin6_family);
-    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr("Sock Client IP4: ");
-    jpr(ip);
-    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr(", Sock Client IP6: ");
-    jpr(ip);
-    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    jpr(", Client Port: ");
-    jprln("%d", clientPort);
-
-  } else {
-    Serial.println("Failed to get client address.");
-  }
-}
-/*
-void print_sock(int sock) 
-{
-  sockaddr_in6 clientAddr;
-  socklen_t addrLen = sizeof(clientAddr);
-
-  int clientFd = sock; //client.getSocket();
-
-  char ip[INET6_ADDRSTRLEN] = {0};
-
-  if (getpeername(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
-  {
-    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    //jpr("family %d ", clientAddr.sin6_family);
-    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    //jpr("Peer Client IP4: ");
-    //jpr(ip);
-    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    //jpr(", Peer Client IP6: ");
-    //jpr(ip);
-    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    //jpr(", Client Port: ");
-    //jprln("%d", clientPort);
-
-  } 
-  else 
-  {
-    Serial.println("Failed to get client address.");
-  }
-
-  if (getsockname(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
-  {
-    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    //jpr("family %d ", clientAddr.sin6_family);
-    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    //jpr("Sock Client IP4: ");
-    //jpr(ip);
-    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    //jpr(", Sock Client IP6: ");
-    //jpr(ip);
-    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    //jpr(", Client Port: ");
-    //jprln("%d", clientPort);
-
-  } else {
-    Serial.println("Failed to get client address.");
-  }
-}
-*/
 // ----------------------------------------------------------------------------
 static esp_err_t reindex_handler(httpd_req_t *req) 
 {

@@ -138,7 +138,8 @@ size_t utf8len(const char* str)
 void sayconfig() 
 {
   say("============ Установленные настройки камеры, видео и другие =========\n");
-  //say("Название камеры                      %s\n",      cname);
+  //say("Название камеры                      %s\n",      devname);
+  say("Название контроллера                 %s\n",      devname);
   say("Размер кадра                         %d\n",      framesize);
   say("Качество                             %d\n",      quality);
   say("Количество буферов для кадров        %d\n",      buffersconfig);

@@ -43,7 +43,6 @@ static const char vernum[]="v2.2.5, 15.06.2026";
 #include "soc/rtc_cntl_reg.h"
 #include <ESPping.h>
 #include "lwip/sockets.h"
-//#include <esp32-hal-psram.h>
 
 #include <HTTPClient.h>
 httpd_handle_t camera_httpd = NULL;
@@ -123,10 +122,10 @@ void setup()
   }
 
   // Показываем наличие PSRAM 
-  //say("PSRAM - псевдооперативная память ");
-  //if (psramFound()) sayln("доступна")
-  //else sayln("ОТКЛЮЧЕНА или ОТСУТСТВУЕТ");
-  //sayln("");
+  say("PSRAM - псевдооперативная память ");
+  if (psramFound()) sayln("доступна")
+  else sayln("ОТКЛЮЧЕНА или ОТСУТСТВУЕТ");
+  sayln("");
   
   /* 
   RTC_CNTL_BROWN_OUT_REG — регистр в микроконтроллере ESP32, который отключает защиту от пониженного напряжения (brownout). 
@@ -294,7 +293,7 @@ void setup()
   digitalWrite(33, HIGH);         // red light turns off when setup is complete
 
   // Показываем установленные настройки камеры и видео
-  // sayconfig(); 
+  sayconfig(); 
   saymem("Завершение setup");
 }
 
@@ -302,34 +301,40 @@ void setup()
 void loop() 
 {
   long run_time = millis() - boot_time;
+  // Трассируем 17-ые циклы
   loops++;
-  if (loops % 10000 == 17) {
+  if (loops % 10000 == 17) 
+  {
     //Serial.printf("loops %10d\n",loops);
   }
-
-  for (int x = 0; x < 1; x++) {
-    filemgr.handleClient();  //soc.6
+  // Взаимодействуем с файловым менеджером
+  for (int x = 0; x < 1; x++) 
+  {
+    filemgr.handleClient(); 
   }
-
-  if (do_the_ota) {
+  // Взаимодействуем с клиентом OTA
+  if (do_the_ota) 
+  {
     ArduinoOTA.handle();
   }
-
-  if (delete_old_stuff_flag == 1) {
+  // При необходимости делаем ревизию пространства SD
+  if (delete_old_stuff_flag == 1) 
+  {
     delete_old_stuff_flag = 0;
     delete_old_stuff();
   }
   start_record_2nd_opinion = start_record_1st_opinion;
   start_record_1st_opinion = digitalRead(12);
-
-  if (do_the_reindex) {
+  // Делаем реиндексирование avi-файла
+  if (do_the_reindex) 
+  {
     done_the_reindex = false;
     do_the_reindex = false;
     re_index ( file_to_read, file_to_write );
     //re_index_bad ( file_to_read );
     done_the_reindex = true;
   }
-
+  // 
   wakeup = millis();
   if (wakeup - last_wakeup > (10  * 60 * 1000) ) 
   {
@@ -374,23 +379,28 @@ void loop()
         print_sock(sock);
       }
 
-      if (found_router) {
+      if (found_router) 
+      {
         // Ping local IP
         Serial.println(WiFi.gatewayIP());
-        if (Ping.ping(WiFi.gatewayIP()) > 0) {
+        if (Ping.ping(WiFi.gatewayIP()) > 0) 
+        {
           jpr(" -- response time : %d/%.2f/%d ms\n", Ping.minTime(), Ping.averageTime(), Ping.maxTime());
-        } else {
-
+        } 
+        else 
+        {
           jprln("\n\nCannot Ping the gateway - REBOOT");
           jprln("***** WiFi reconnect *****");
           WiFi.reconnect();
           delay(8000);
-          if (WiFi.status() != WL_CONNECTED) {
+          if (WiFi.status() != WL_CONNECTED) 
+          {
             jprln("***** WiFi restart *****");
             init_wifi();
           }
           delay(15000);
-          if (WiFi.status() != WL_CONNECTED) {
+          if (WiFi.status() != WL_CONNECTED) 
+          {
             jprln("***** Reboot *****");
             reboot_now = true;
           }
@@ -399,6 +409,7 @@ void loop()
         delay(1000);
 
         // Ping Host
+        /*
         const char* remote_host = "google.com";
         jpr(remote_host);
         if (Ping.ping(remote_host) > 0) {
@@ -407,7 +418,7 @@ void loop()
           jprln(" Ping Error !");
         }
         delay(1000);
-
+        */
 
         if (WiFi.status() != WL_CONNECTED) {
 

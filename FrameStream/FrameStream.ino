@@ -122,11 +122,11 @@ void setup()
     default  : sayln("не определена!"); break;
   }
 
-  // Показываем надичие PSRAM 
-  say("PSRAM - псевдооперативная память ");
-  if (psramFound()) sayln("доступна");
-  else sayln("ОТКЛЮЧЕНА или ОТСУТСТВУЕТ");
-  sayln("");
+  // Показываем наличие PSRAM 
+  //say("PSRAM - псевдооперативная память ");
+  //if (psramFound()) sayln("доступна")
+  //else sayln("ОТКЛЮЧЕНА или ОТСУТСТВУЕТ");
+  //sayln("");
   
   /* 
   RTC_CNTL_BROWN_OUT_REG — регистр в микроконтроллере ESP32, который отключает защиту от пониженного напряжения (brownout). 
@@ -294,7 +294,7 @@ void setup()
   digitalWrite(33, HIGH);         // red light turns off when setup is complete
 
   // Показываем установленные настройки камеры и видео
-  sayconfig(); 
+  // sayconfig(); 
   saymem("Завершение setup");
 }
 

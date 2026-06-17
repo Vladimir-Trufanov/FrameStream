@@ -138,7 +138,7 @@ size_t utf8len(const char* str)
 void sayconfig() 
 {
   say("============ Установленные настройки камеры, видео и другие =========\n");
-  say("Название камеры                      %s\n",      cname);
+  //say("Название камеры                      %s\n",      cname);
   say("Размер кадра                         %d\n",      framesize);
   say("Качество                             %d\n",      quality);
   say("Количество буферов для кадров        %d\n",      buffersconfig);
@@ -149,10 +149,10 @@ void sayconfig()
   say("TIMEZONE                             %d, %s\n",  TIMEZONE.length(), TIMEZONE.c_str());
   say("Сеть WiFi                            %s\n",      ssid);
   say("Тип карты SD_MMC                     "); 
-  if (ncardType == 1)                       sayln("MMC");      
-  else if (ncardType == 2)                  sayln("SDSC"); 
-  else if (ncardType == 3)                  sayln("SDHC");
-  else if (ncardType == 4)                  sayln("неопределён");
+  if (ncardType == 1)                       sayln("MMC")      
+  else if (ncardType == 2)                  sayln("SDSC") 
+  else if (ncardType == 3)                  sayln("SDHC")
+  else if (ncardType == 4)                  sayln("неопределён")
   else                                      sayln("карта не подключена");
   say("Ёмкость SD_MMC-карты                 %llu MB\n", cardSize);
 }

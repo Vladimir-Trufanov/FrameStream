@@ -46,19 +46,19 @@ FrameStream
 4=fs_wifi.h
 [Selected Project Files]
 Main=
-Selected=errors.txt
+Selected=fs_wifi.h
 [errors.txt]
-TopLine=27
+TopLine=23
 Caret=101,66
 [fs_avi.h]
 TopLine=1
 Caret=15,13
 [FrameStream.ino]
-TopLine=344
-Caret=1,352
+TopLine=470
+Caret=20,508
 [fs_trass.h]
-TopLine=122
+TopLine=121
 Caret=58,155
 [fs_wifi.h]
-TopLine=432
-Caret=12,449
+TopLine=577
+Caret=53,606

@@ -435,18 +435,36 @@ bool init_wifi()
 // ****************************************************************************
 void InternetCheck10(httpd_handle_t camera_httpd, httpd_handle_t stream81_httpd, httpd_handle_t stream82_httpd) 
 {
+  // Выделяем переменную по ошибкам, это целое число со знаком. Отсутствие ошибки обозначается кодом ESP_OK 
   esp_err_t client_err;
-  struct sockaddr_in *client_list;
+  // Определяем структуру для представления адреса сокета (в функциях сокетного интерфейса - bind, connect, accept ...
+  // struct sockaddr_in {
+  //   short           sin_family;   // Семейство адресов (должно быть AF_INET)
+  //   u_short         sin_port;     // Номер порта
+  //   struct in_addr  sin_addr;     // IP-адрес
+  //   char            sin_zero; };  // Заполнение до 8 байт нулями
+  struct sockaddr_in* client_list;
   size_t clients = 10;
   size_t client_count = 10;
   int client_fds[10];
+  // Получаем список текущих дескрипторов сокетов активных клиентских сессий
+  // esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds);
+  // handle — дескриптор экземпляра сервера, который возвращается функцией httpd_start
+  // fds — указатель на переменную типа size_t. На входе это размер предоставленного массива client_fds, 
+  // а на выходе функция запишет в неё количество успешно заполненных дескрипторов
+  // client_fds — указатель на массив, куда будут записаны дескрипторы сокетов активных клиентов.
   client_err = httpd_get_client_list(camera_httpd, &client_count, client_fds);
-  say("2 camera_httpd Sockets, Num = %d\n", client_count);
+  sayln("Клиенты сервера камеры (сокеты): %d\n", client_count);
   for (size_t i = 0; i < client_count; i++) 
   {
+    // Выбираем дескриптор текущего сединения
     int sock = client_fds[i];
+    // Проверяем, является ли соединение сокетом, возвращаемые значения:
+    // HTTPD_WS_CLIENT_INVALID   = 0 — дескриптор sock не принадлежит ни одному активному клиенту этого сервера = camera_httpd
+    // HTTPD_WS_CLIENT_HTTP      = 1 — дескриптор sock принадлежит активному клиенту, но протокол для этого соединения не является WebSocket (например, это обычное HTTP-соединение).
+    // HTTPD_WS_CLIENT_WEBSOCKET = 2 — дескриптор sock принадлежит активному клиенту, и для этого соединения активно соединение по протоколу WebSocket.
     int x = httpd_ws_get_fd_info(camera_httpd, sock) ;
-    jpr("2 Socket %d, fd=%d, info=%d \n", i, sock, x);
+    sayln("сокет=%d, fd=%d, info=%d", i, sock, x);
     print_sock(sock);
   }
       /*
@@ -542,45 +560,50 @@ void InternetCheck10(httpd_handle_t camera_httpd, httpd_handle_t stream81_httpd,
 // ----------------------------------------------------------------------------
 void print_sock(int sock) 
 {
+  // Назначаем адрес сокета для протокола IPv6. Она используется функциями работы с сокетами 
+  // (например, bind(), connect()) для передачи информации о сетевом адресе 
   sockaddr_in6 clientAddr;
+  // Определяем длину адреса сокета
   socklen_t addrLen = sizeof(clientAddr);
   int clientFd = sock; //client.getSocket();
+  // Выделяем буфер текстового представления адреса по протоколу IPv6
+  // (INET6_ADDRSTRLEN равно 46)
   char ip[INET6_ADDRSTRLEN] = {0};
-
+  // Определяем адрес удаленного сокета, с которым установлено сетевое взаимодействие текущего сокета
+  // int getpeername(int s, struct sockaddr *name, socklen_t *namelen),
+  // где s — дескриптор сокета, name — указатель на структуру sockaddr, куда будет 
+  // записано значение адреса удалённого сокета, namelen — указатель на переменную,
+  // которая изначально содержит размер этой структуры (чтобы функция знала, сколько данных можно прочитать)
   if (getpeername(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
   {
-    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    jpr("family %d ", clientAddr.sin6_family);
+    // inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
+    if (clientAddr.sin6_family==10) say("Семейство AF_INET6. ");
     inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr("Peer Client IP4: ");
-    jpr(ip);
+    say("Удаленный сокет: IP4="); say(ip);
     inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr(", Peer Client IP6: ");
-    jpr(ip);
+    say(", IP6="); say(ip);
     uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    jpr(", Client Port: ");
-    jprln("%d", clientPort);
+    say(", порт="); sayln("%d", clientPort);
   } 
   else 
   {
-    Serial.println("Failed to get client address.");
+    Serial.println("Ошибка получения адреса удаленного сокета");
   }
+  // Определяем адрес текущего сокета
   if (getsockname(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
   {
     //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    jpr("family %d ", clientAddr.sin6_family);
+    if (clientAddr.sin6_family==10) say("Семейство AF_INET6. ");
     inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr("Sock Client IP4: ");
-    jpr(ip);
+    say("  Текущий сокет: IP4="); say(ip);
     inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    jpr(", Sock Client IP6: ");
-    jpr(ip);
+    say(", IP6="); say(ip);
     uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    jpr(", Client Port: ");
-    jprln("%d", clientPort);
-
-  } else {
-    Serial.println("Failed to get client address.");
+    say(", порт="); sayln("%d", clientPort);
+  } 
+  else 
+  {
+    Serial.println("Ошибка получения адреса текущего сокета");
   }
 }
 /*

@@ -330,7 +330,7 @@ void loop()
   {
     done_the_reindex = false;
     do_the_reindex = false;
-    re_index ( file_to_read, file_to_write );
+    re_index(file_to_read, file_to_write);
     //re_index_bad ( file_to_read );
     done_the_reindex = true;
   }
@@ -341,7 +341,6 @@ void loop()
   {
     last_wakeup = millis();
     // print_mem("---------- 10 Minute Internet Check -----------");
-
     print_mem("---------- 10 Minute Internet Check -----------");
     time(&now); say("Local time: "); sayln(ctime(&now));
     
@@ -349,130 +348,37 @@ void loop()
     //{
       //
       InternetCheck10(camera_httpd, stream81_httpd, stream82_httpd);
-      esp_err_t client_err;
-      struct sockaddr_in *client_list;
-      size_t clients = 10;
-      size_t client_count = 10;
-      int    client_fds[10];
-      client_err = httpd_get_client_list(camera_httpd, &client_count, client_fds);
-      jpr("1 camera_httpd Sockets , Num = %d\n", client_count);
-      for (size_t i = 0; i < client_count; i++) 
-      {
-        int sock = client_fds[i];
-        int x = httpd_ws_get_fd_info(camera_httpd, sock) ;
-        jpr("1 Socket %d, fd=%d, info=%d \n", i, sock, x);
-        print_sock(sock);
-      }
-      InternetCheck10(camera_httpd, stream81_httpd, stream82_httpd);
-      /*
-
-      client_err = httpd_get_client_list(stream81_httpd, &client_count, client_fds);
-      jpr("stream81_httpd Sockets , Num = %d\n", client_count);
-      for (size_t i = 0; i < client_count; i++) 
-      {
-        int sock = client_fds[i];
-        //Serial.printf("%d, sock %d\n", i, sock);
-        int x = httpd_ws_get_fd_info(camera_httpd, sock) ;
-        jpr("Socket %d, fd=%d, info=%d \n", i, sock, x);
-        print_sock(sock);
-      }
-      client_err = httpd_get_client_list(stream82_httpd, &client_count, client_fds);
-      jpr("stream82_httpd Sockets , Num = %d\n", client_count);
-      for (size_t i = 0; i < client_count; i++) {
-        int sock = client_fds[i];
-        //Serial.printf("%d, sock %d\n", i, sock);
-        int x = httpd_ws_get_fd_info(camera_httpd, sock) ;
-        jpr("Socket %d, fd=%d, info=%d \n", i, sock, x);
-        print_sock(sock);
-      }
-
-      if (found_router) 
-      {
-        // Ping local IP
-        Serial.println(WiFi.gatewayIP());
-        if (Ping.ping(WiFi.gatewayIP()) > 0) 
-        {
-          jpr(" -- response time : %d/%.2f/%d ms\n", Ping.minTime(), Ping.averageTime(), Ping.maxTime());
-        } 
-        else 
-        {
-          jprln("\n\nCannot Ping the gateway - REBOOT");
-          jprln("***** WiFi reconnect *****");
-          WiFi.reconnect();
-          delay(8000);
-          if (WiFi.status() != WL_CONNECTED) 
-          {
-            jprln("***** WiFi restart *****");
-            init_wifi();
-          }
-          delay(15000);
-          if (WiFi.status() != WL_CONNECTED) 
-          {
-            jprln("***** Reboot *****");
-            reboot_now = true;
-          }
-
-        }
-        delay(1000);
-
-        // Ping Host
-        / *
-        const char* remote_host = "google.com";
-        jpr(remote_host);
-        if (Ping.ping(remote_host) > 0) {
-          jpr(" -- response time : %d/%.2f/%d ms\n", Ping.minTime(), Ping.averageTime(), Ping.maxTime());
-        } else {
-          jprln(" Ping Error !");
-        }
-        delay(1000);
-        * /
-
-        if (WiFi.status() != WL_CONNECTED) {
-
-          jprln("***** WiFi reconnect *****");
-          WiFi.reconnect();
-          delay(8000);
-
-          if (WiFi.status() != WL_CONNECTED) {
-            jprln("***** WiFi restart *****");
-            init_wifi();
-          }
-        }
-      }
-
-      Serial.println(WiFi.softAPIP());  logfile.println(WiFi.softAPIP());
-      Serial.println(WiFi.localIP()); logfile.println(WiFi.localIP());
-
-      if (!MDNS.begin(devname)) {
-        jprln("Error setting up MDNS responder!");
-      } else {
-        jpr("mDNS responder started '%s'\n", devname);
-      }
-      */
-      //
-    //}  // not internet off
   }  // wakeup
 
-  if (reboot_now == true) {
+  if (reboot_now == true) 
+  {
     jprln(" \n\n\n Rebooting in 5 seconds... \n\n\n");
     delay(5000);
     ESP.restart();
   }
 
-  if (web_stop == true) {
-    if (start_record == 1) {
+  if (web_stop == true) 
+  {
+    if (start_record == 1) 
+    {
       start_record = 0;
       jprln("web_stop web_stop code");
     }
-  } else {
+  } 
+  else 
+  {
     //jpr("first %d, second %d, web %d\n", start_record_1st_opinion, start_record_2nd_opinion, web_stop);
     if (start_record == 1) {
-      if (start_record_1st_opinion == 0 && start_record_2nd_opinion == 0) {
+      if (start_record_1st_opinion == 0 && start_record_2nd_opinion == 0) 
+      {
         start_record = 0;
         jprln("stopping in web_stop code");
       }
-    } else {
-      if (start_record_1st_opinion == 1 && start_record_2nd_opinion == 1) {
+    } 
+    else 
+    {
+      if (start_record_1st_opinion == 1 && start_record_2nd_opinion == 1) 
+      {
         start_record = 1;
         jprln("starting in web_stop code");
       }

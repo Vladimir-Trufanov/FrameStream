@@ -2,7 +2,7 @@
  * 
  *                                          Обеспечить работу, связанную с wifi
  *                                                     
- * v2.2.2, 17.06.2026                                 Автор:      Труфанов В.Е.
+ * v2.2.3, 20.06.2026                                 Автор:      Труфанов В.Е.
  * Copyright © 2026 tve                               Дата создания: 24.01.2026
 **/
 
@@ -437,12 +437,86 @@ bool init_wifi()
 // ****************************************************************************
 void InternetCheck10(httpd_handle_t camera_httpd, httpd_handle_t stream81_httpd, httpd_handle_t stream82_httpd) 
 {
-  InternetCheckObj(camera_httpd,"camera_httpd");
-  InternetCheckObj(stream81_httpd,"stream81_httpd");
-  InternetCheckObj(stream82_httpd,"stream82_httpd");
-}
+  //InternetCheckObj(camera_httpd,"camera_httpd");
+  //InternetCheckObj(stream81_httpd,"stream81_httpd");
+  //InternetCheckObj(stream82_httpd,"stream82_httpd");
+  
+  if (found_router) 
+  {
+    // Получаем IP-адрес шлюза (роутера) той сети, к которой в данный момент подключено устройство
+    Serial.print("IP-адрес шлюза(роутера) подключенной сети: "); Serial.println(WiFi.gatewayIP());
+    /*
+    if (Ping.ping(WiFi.gatewayIP()) > 0) 
+    {
+      jpr(" -- response time : %d/%.2f/%d ms\n", Ping.minTime(), Ping.averageTime(), Ping.maxTime());
+    } 
+    else 
+    {
+      jprln("\n\nCannot Ping the gateway - REBOOT");
+      jprln("***** WiFi reconnect *****");
+      WiFi.reconnect();
+      delay(8000);
+      if (WiFi.status() != WL_CONNECTED) 
+      {
+        jprln("***** WiFi restart *****");
+        init_wifi();
+      }
+      delay(15000);
+      if (WiFi.status() != WL_CONNECTED) 
+      {
+        jprln("***** Reboot *****");
+        reboot_now = true;
+      }
+    }
+    */
+    delay(1000);
+ 
+    // Ping Host
+    /*      
+    const char* remote_host = "google.com";
+    jpr(remote_host);
+    if (Ping.ping(remote_host) > 0) 
+    {
+      jpr(" -- response time : %d/%.2f/%d ms\n", Ping.minTime(), Ping.averageTime(), Ping.maxTime());
+    } 
+    else 
+    {
+      jprln(" Ping Error !");
+    }
+    delay(1000);
+    */      
+    /*      
+    if (WiFi.status() != WL_CONNECTED) 
+    {
+      jprln("***** WiFi reconnect *****");
+      WiFi.reconnect();
+      delay(8000);
 
-void InternetCheckObj(httpd_handle_t obj_httpd,char obj[30]) 
+      if (WiFi.status() != WL_CONNECTED) 
+      {
+        jprln("***** WiFi restart *****");
+        init_wifi();
+      }
+    }
+    */
+  }
+
+  /*
+  Serial.println(WiFi.softAPIP());  logfile.println(WiFi.softAPIP());
+  Serial.println(WiFi.localIP()); logfile.println(WiFi.localIP());
+
+  if (!MDNS.begin(devname)) 
+  {
+    jprln("Error setting up MDNS responder!");
+  } 
+  else 
+  {
+    jpr("mDNS responder started '%s'\n", devname);
+  }
+  */
+}
+// ----------------------------------------------------------------------------
+void InternetCheckObj(httpd_handle_t obj_httpd, char obj[30]) 
 {
   // Выделяем переменную по ошибкам, это целое число со знаком. Отсутствие ошибки обозначается кодом ESP_OK 
   esp_err_t client_err;
@@ -463,8 +537,7 @@ void InternetCheckObj(httpd_handle_t obj_httpd,char obj[30])
   // а на выходе функция запишет в неё количество успешно заполненных дескрипторов
   // client_fds — указатель на массив, куда будут записаны дескрипторы сокетов активных клиентов.
   client_err = httpd_get_client_list(obj_httpd, &client_count, client_fds);
-  sayln(obj);
-  sayln("Клиенты сервера камеры (сокеты): %d\n", client_count);
+  sayln("Клиенты (сокеты) %s:", obj);
   for (size_t i = 0; i < client_count; i++) 
   {
     // Выбираем дескриптор текущего сединения
@@ -478,132 +551,6 @@ void InternetCheckObj(httpd_handle_t obj_httpd,char obj[30])
     print_sock(sock);
   }
 }
-
-/*
-void InternetCheck10(httpd_handle_t camera_httpd, httpd_handle_t stream81_httpd, httpd_handle_t stream82_httpd) 
-{
-  // Выделяем переменную по ошибкам, это целое число со знаком. Отсутствие ошибки обозначается кодом ESP_OK 
-  esp_err_t client_err;
-  // Определяем структуру для представления адреса сокета (в функциях сокетного интерфейса - bind, connect, accept ...
-  // struct sockaddr_in {
-  //   short           sin_family;   // Семейство адресов (должно быть AF_INET)
-  //   u_short         sin_port;     // Номер порта
-  //   struct in_addr  sin_addr;     // IP-адрес
-  //   char            sin_zero; };  // Заполнение до 8 байт нулями
-  struct sockaddr_in* client_list;
-  size_t clients = 10;
-  size_t client_count = 10;
-  int client_fds[10];
-  // Получаем список текущих дескрипторов сокетов активных клиентских сессий
-  // esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds);
-  // handle — дескриптор экземпляра сервера, который возвращается функцией httpd_start
-  // fds — указатель на переменную типа size_t. На входе это размер предоставленного массива client_fds, 
-  // а на выходе функция запишет в неё количество успешно заполненных дескрипторов
-  // client_fds — указатель на массив, куда будут записаны дескрипторы сокетов активных клиентов.
-  client_err = httpd_get_client_list(camera_httpd, &client_count, client_fds);
-  sayln("Клиенты сервера камеры (сокеты): %d\n", client_count);
-  for (size_t i = 0; i < client_count; i++) 
-  {
-    // Выбираем дескриптор текущего сединения
-    int sock = client_fds[i];
-    // Проверяем, является ли соединение сокетом, возвращаемые значения:
-    // HTTPD_WS_CLIENT_INVALID   = 0 — дескриптор sock не принадлежит ни одному активному клиенту этого сервера = camera_httpd
-    // HTTPD_WS_CLIENT_HTTP      = 1 — дескриптор sock принадлежит активному клиенту, но протокол для этого соединения не является WebSocket (например, это обычное HTTP-соединение).
-    // HTTPD_WS_CLIENT_WEBSOCKET = 2 — дескриптор sock принадлежит активному клиенту, и для этого соединения активно соединение по протоколу WebSocket.
-    int x = httpd_ws_get_fd_info(camera_httpd, sock) ;
-    sayln("сокет=%d, fd=%d, info=%d", i, sock, x);
-    print_sock(sock);
-  }
-      / *
-      client_err = httpd_get_client_list(stream81_httpd, &client_count, client_fds);
-      jpr("stream81_httpd Sockets , Num = %d\n", client_count);
-      for (size_t i = 0; i < client_count; i++) 
-      {
-        int sock = client_fds[i];
-        //Serial.printf("%d, sock %d\n", i, sock);
-        int x = httpd_ws_get_fd_info(camera_httpd, sock) ;
-        jpr("Socket %d, fd=%d, info=%d \n", i, sock, x);
-        print_sock(sock);
-      }
-      client_err = httpd_get_client_list(stream82_httpd, &client_count, client_fds);
-      jpr("stream82_httpd Sockets , Num = %d\n", client_count);
-      for (size_t i = 0; i < client_count; i++) {
-        int sock = client_fds[i];
-        //Serial.printf("%d, sock %d\n", i, sock);
-        int x = httpd_ws_get_fd_info(camera_httpd, sock) ;
-        jpr("Socket %d, fd=%d, info=%d \n", i, sock, x);
-        print_sock(sock);
-      }
-
-      if (found_router) 
-      {
-        // Ping local IP
-        Serial.println(WiFi.gatewayIP());
-        if (Ping.ping(WiFi.gatewayIP()) > 0) 
-        {
-          jpr(" -- response time : %d/%.2f/%d ms\n", Ping.minTime(), Ping.averageTime(), Ping.maxTime());
-        } 
-        else 
-        {
-          jprln("\n\nCannot Ping the gateway - REBOOT");
-          jprln("***** WiFi reconnect *****");
-          WiFi.reconnect();
-          delay(8000);
-          if (WiFi.status() != WL_CONNECTED) 
-          {
-            jprln("***** WiFi restart *****");
-            init_wifi();
-          }
-          delay(15000);
-          if (WiFi.status() != WL_CONNECTED) 
-          {
-            jprln("***** Reboot *****");
-            reboot_now = true;
-          }
-
-        }
-        delay(1000);
-
-        // Ping Host
-        / *
-        const char* remote_host = "google.com";
-        jpr(remote_host);
-        if (Ping.ping(remote_host) > 0) {
-          jpr(" -- response time : %d/%.2f/%d ms\n", Ping.minTime(), Ping.averageTime(), Ping.maxTime());
-        } else {
-          jprln(" Ping Error !");
-        }
-        delay(1000);
-        * /
-
-        if (WiFi.status() != WL_CONNECTED) {
-
-          jprln("***** WiFi reconnect *****");
-          WiFi.reconnect();
-          delay(8000);
-
-          if (WiFi.status() != WL_CONNECTED) {
-            jprln("***** WiFi restart *****");
-            init_wifi();
-          }
-        }
-      }
-
-      Serial.println(WiFi.softAPIP());  logfile.println(WiFi.softAPIP());
-      Serial.println(WiFi.localIP()); logfile.println(WiFi.localIP());
-
-      if (!MDNS.begin(devname)) 
-      {
-        jprln("Error setting up MDNS responder!");
-      } 
-      else 
-      {
-        jpr("mDNS responder started '%s'\n", devname);
-      }
-      * /
-}
-*/
-
 // ----------------------------------------------------------------------------
 void print_sock(int sock) 
 {
@@ -614,7 +561,7 @@ void print_sock(int sock)
   socklen_t addrLen = sizeof(clientAddr);
   int clientFd = sock; //client.getSocket();
   // Выделяем буфер текстового представления адреса по протоколу IPv6
-  // (INET6_ADDRSTRLEN равно 46)
+  // (INET6_ADDRSTRLEN равно 46 символов)
   char ip[INET6_ADDRSTRLEN] = {0};
   // Определяем адрес удаленного сокета, с которым установлено сетевое взаимодействие текущего сокета
   // int getpeername(int s, struct sockaddr *name, socklen_t *namelen),
@@ -653,70 +600,5 @@ void print_sock(int sock)
     Serial.println("Ошибка получения адреса текущего сокета");
   }
 }
-/*
-void print_sock(int sock) 
-{
-  sockaddr_in6 clientAddr;
-  socklen_t addrLen = sizeof(clientAddr);
-
-  int clientFd = sock; //client.getSocket();
-
-  char ip[INET6_ADDRSTRLEN] = {0};
-
-  if (getpeername(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
-  {
-    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    //jpr("family %d ", clientAddr.sin6_family);
-    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    //jpr("Peer Client IP4: ");
-    //jpr(ip);
-    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    //jpr(", Peer Client IP6: ");
-    //jpr(ip);
-    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    //jpr(", Client Port: ");
-    //jprln("%d", clientPort);
-
-  } 
-  else 
-  {
-    Serial.println("Failed to get client address.");
-  }
-
-  if (getsockname(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
-  {
-    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
-    //jpr("family %d ", clientAddr.sin6_family);
-    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    //jpr("Sock Client IP4: ");
-    //jpr(ip);
-    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
-    //jpr(", Sock Client IP6: ");
-    //jpr(ip);
-    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
-    //jpr(", Client Port: ");
-    //jprln("%d", clientPort);
-
-  } else {
-    Serial.println("Failed to get client address.");
-  }
-}
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ************************************************************** fs_wifi.h ***

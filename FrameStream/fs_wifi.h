@@ -24,7 +24,9 @@
 #include "inimem.h"
 #include "fs_trass.h"
 
-void print_sock(int sock); 
+void print_sock(int sock);
+void InternetCheckObj(httpd_handle_t obj_httpd,char obj[30]); 
+ 
 
 
 // Создаем структуру времени timeinfo в которую будем вкладывать
@@ -435,6 +437,51 @@ bool init_wifi()
 // ****************************************************************************
 void InternetCheck10(httpd_handle_t camera_httpd, httpd_handle_t stream81_httpd, httpd_handle_t stream82_httpd) 
 {
+  InternetCheckObj(camera_httpd,"camera_httpd");
+  InternetCheckObj(stream81_httpd,"stream81_httpd");
+  InternetCheckObj(stream82_httpd,"stream82_httpd");
+}
+
+void InternetCheckObj(httpd_handle_t obj_httpd,char obj[30]) 
+{
+  // Выделяем переменную по ошибкам, это целое число со знаком. Отсутствие ошибки обозначается кодом ESP_OK 
+  esp_err_t client_err;
+  // Определяем структуру для представления адреса сокета (в функциях сокетного интерфейса - bind, connect, accept ...
+  // struct sockaddr_in {
+  //   short           sin_family;   // Семейство адресов (должно быть AF_INET)
+  //   u_short         sin_port;     // Номер порта
+  //   struct in_addr  sin_addr;     // IP-адрес
+  //   char            sin_zero; };  // Заполнение до 8 байт нулями
+  struct sockaddr_in* client_list;
+  size_t clients = 10;
+  size_t client_count = 10;
+  int client_fds[10];
+  // Получаем список текущих дескрипторов сокетов активных клиентских сессий
+  // esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds);
+  // handle — дескриптор экземпляра сервера, который возвращается функцией httpd_start
+  // fds — указатель на переменную типа size_t. На входе это размер предоставленного массива client_fds, 
+  // а на выходе функция запишет в неё количество успешно заполненных дескрипторов
+  // client_fds — указатель на массив, куда будут записаны дескрипторы сокетов активных клиентов.
+  client_err = httpd_get_client_list(obj_httpd, &client_count, client_fds);
+  sayln(obj);
+  sayln("Клиенты сервера камеры (сокеты): %d\n", client_count);
+  for (size_t i = 0; i < client_count; i++) 
+  {
+    // Выбираем дескриптор текущего сединения
+    int sock = client_fds[i];
+    // Проверяем, является ли соединение сокетом, возвращаемые значения:
+    // HTTPD_WS_CLIENT_INVALID   = 0 — дескриптор sock не принадлежит ни одному активному клиенту этого сервера = camera_httpd
+    // HTTPD_WS_CLIENT_HTTP      = 1 — дескриптор sock принадлежит активному клиенту, но протокол для этого соединения не является WebSocket (например, это обычное HTTP-соединение).
+    // HTTPD_WS_CLIENT_WEBSOCKET = 2 — дескриптор sock принадлежит активному клиенту, и для этого соединения активно соединение по протоколу WebSocket.
+    int x = httpd_ws_get_fd_info(obj_httpd, sock) ;
+    sayln("сокет=%d, fd=%d, info=%d", i, sock, x);
+    print_sock(sock);
+  }
+}
+
+/*
+void InternetCheck10(httpd_handle_t camera_httpd, httpd_handle_t stream81_httpd, httpd_handle_t stream82_httpd) 
+{
   // Выделяем переменную по ошибкам, это целое число со знаком. Отсутствие ошибки обозначается кодом ESP_OK 
   esp_err_t client_err;
   // Определяем структуру для представления адреса сокета (в функциях сокетного интерфейса - bind, connect, accept ...
@@ -467,7 +514,7 @@ void InternetCheck10(httpd_handle_t camera_httpd, httpd_handle_t stream81_httpd,
     sayln("сокет=%d, fd=%d, info=%d", i, sock, x);
     print_sock(sock);
   }
-      /*
+      / *
       client_err = httpd_get_client_list(stream81_httpd, &client_count, client_fds);
       jpr("stream81_httpd Sockets , Num = %d\n", client_count);
       for (size_t i = 0; i < client_count; i++) 
@@ -553,9 +600,9 @@ void InternetCheck10(httpd_handle_t camera_httpd, httpd_handle_t stream81_httpd,
       {
         jpr("mDNS responder started '%s'\n", devname);
       }
-      */
+      * /
 }
-
+*/
 
 // ----------------------------------------------------------------------------
 void print_sock(int sock) 

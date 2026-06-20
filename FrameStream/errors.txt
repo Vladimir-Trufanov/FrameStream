@@ -3,73 +3,29 @@ support@arduino.cc
 Здравствуйте! Я, tve58, попытался авторизоваться, но вышло сообщение: "Sorry, you have been blocked
 You are unable to access arduino.cc". Что делать далее?
 
-So far: 1010 frames, in   84.8 seconds, for last 100 frames: avg frame size   29.7 kb, 12.49 fps ...
-Кадр:    1658, время записи велико к среднему  417 >   39, позиция в файле 3015324, 
-So far: 2010 frames, in  165.6 seconds, for last 100 frames: avg frame size   29.5 kb, 12.52 fps ...
-[---------- 10 Minute Internet Check -----------] ядро: 1, приоритет: 1, свободная куча  81756 от ОЗУ 290064, FreePSRAM 2608952 от FLASH 4194304 
-Local time: Thu Jan  1 03:03:00 1970
+So far: 0410 frames, in   46.4 seconds, for last 100 frames: avg frame size   28.0 kb, 7.79 fps ...
+[---------- 10 Minute Internet Check -----------] ядро: 1, приоритет: 1, свободная куча  68856 от ОЗУ 290120, FreePSRAM 2805752 от FLASH 4194304 
+Local time: Sat Jun 20 08:46:25 2026
 
-Цшаш 1Цшаш 2camera_httpd Sockets , Num = 0
-stream81_httpd Sockets , Num = 0
-stream82_httpd Sockets , Num = 0
-0.0.0.0
-Кадр:    2066, время записи велико к среднему  505 >   38, позиция в файле 3BE0788, 
+camera_httpd
+Клиенты сервера камеры (сокеты): 2
 
+сокет=0, fd=59, info=1
+Семейство AF_INET6. Удаленный сокет: IP4=192.168.4.2, IP6=C0A8:402::4330:4138:3A34, порт=39098
+Семейство AF_INET6.   Текущий сокет: IP4=192.168.4.1, IP6=C0A8:401::4330:4138:3A34, порт=80
+сокет=1, fd=60, info=1
+Семейство AF_INET6. Удаленный сокет: IP4=192.168.4.2, IP6=C0A8:402::4330:4138:3A34, порт=39100
+Семейство AF_INET6.   Текущий сокет: IP4=192.168.4.1, IP6=C0A8:401::4330:4138:3A34, порт=80
+stream81_httpd
+Клиенты сервера камеры (сокеты): 0
 
-[---------- 10 Minute Internet Check -----------] ядро: 1, приоритет: 1, свободная куча  63848 от ОЗУ 290120, FreePSRAM 2543644 от FLASH 4194304 
-Local time: Wed Jun 17 22:20:29 2026
+stream82_httpd
+Клиенты сервера камеры (сокеты): 1
 
-2 camera_httpd Sockets, Num = 1
-2 Socket 0, fd=62, info=1 
-family 10 Peer Client IP4: 192.168.4.3, Peer Client IP6: C0A8:403::200E:4330:4138:3A34, Client Port: 64267
-family 10 Sock Client IP4: 192.168.4.1, Sock Client IP6: C0A8:401::200E:4330:4138:3A34, Client Port: 80
-1 camera_httpd Sockets , Num = 1
-1 Socket 0, fd=62, info=1 
-family 10 Peer Client IP4: 192.168.4.3, Peer Client IP6: C0A8:403::A1B7:4330:4138:3A34, Client Port: 64267
-family 10 Sock Client IP4: 192.168.4.1, Sock Client IP6: C0A8:401::A1B7:4330:4138:3A34, Client Port: 80
-2 camera_httpd Sockets, Num = 1
-2 Socket 0, fd=62, info=1 
-family 10 Peer Client IP4: 192.168.4.3, Peer Client IP6: C0A8:403::200E:4330:4138:3A34, Client Port: 64267
-family 10 Sock Client IP4: 192.168.4.1, Sock Client IP6: C0A8:401::200E
-
-stream_82 done
-So far: 3010 frames, in  373.5 seconds, for last 100 frames: avg frame size   30.3 kb, 12.48 fps ...
-End the AviEnd of avi - closing the files
-*** Video recorded and saved ***
-Recorded  3579 frames in   419 seconds
-File size is 148687704 bytes
-Adjusted FPS is  8.52
-Max data rate is 373792 bytes/s
-Frame duration is 117345 us
-Average frame length is 41530 bytes
-Average picture time (ms) 3.578653
-Average write time (ms)  69.300084
-Normal jpg %3.1f
-Extend jpg %3.1f
-Bad    jpg %6.5f
-Slow sd writes 0, 0.000 % 
-Writng the index, 3579 frames
----
-Время ожидания камеры         80ms,  0.0%
-Время съёмки               12808ms,  3.0%
-Время ожидания SD             24ms,  0.0%
-Время записи на SD        248403ms, 59.1%
-Время работы браузера        145ms,  0.0%
-Общее время               420293ms, 100.0%
-End the avi at 851949.  It was 3579 frames, 851949 ms at 30.29 fps...
-
-Start the avi ... at 851950
-Framesize 13, quality 12, length 420 seconds
-
-Starting an avi File open: /Esp32dacha144/Esp32dacha144.003.avi
-Recording 420 seconds
-So far: 0110 frames, in    8.7 seconds, for last 100 frames: avg frame size   29.8 kb, 12.61 fps ...
-
-
-
-
-
-
+сокет=0, fd=61, info=1
+Семейство AF_INET6. Удаленный сокет: IP4=192.168.4.2, IP6=C0A8:402::4330:4138:3A34, порт=39416
+Семейство AF_INET6.   Текущий сокет: IP4=192.168.4.1, IP6=C0A8:401::4330:4138:3A34, порт=82
+Stream 82 at 17.112 fps
 
 
 

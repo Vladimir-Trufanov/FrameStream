@@ -38,25 +38,17 @@ FrameStream
 		inimem.h
 [Open project files]
 0=errors.txt
-1=fs_avi.h
-2=FrameStream.ino
-3=fs_trass.h
-4=fs_stream.h
+1=FrameStream.ino
+2=fs_stream.h
 [Selected Project Files]
 Main=
-Selected=fs_stream.h
+Selected=FrameStream.ino
 [errors.txt]
-TopLine=48
-Caret=1,71
-[fs_avi.h]
-TopLine=1
-Caret=15,13
+TopLine=9
+Caret=1,31
 [FrameStream.ino]
-TopLine=249
-Caret=27,263
-[fs_trass.h]
-TopLine=45
-Caret=12,60
+TopLine=370
+Caret=16,388
 [fs_stream.h]
-TopLine=128
-Caret=1,134
+TopLine=33
+Caret=1,44

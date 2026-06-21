@@ -44,6 +44,10 @@ static const char vernum[]="v2.2.5, 15.06.2026";
 #include <ESPping.h>
 #include "lwip/sockets.h"
 
+// Определяем экземпляр HTTP-серверов (тип httpd_handle_t используется для создания 
+// и управления веб-серверами и возвращается функцией httpd_start(). Она создаёт 
+// экземпляр HTTP-сервера, выделяет память и ресурсы в зависимости от указанной 
+// конфигурации и возвращает указатель на экземпляр. 
 #include <HTTPClient.h>
 httpd_handle_t camera_httpd = NULL;
 
@@ -69,6 +73,7 @@ httpd_handle_t camera_httpd = NULL;
 #include "FlMgr.h"          
 ESPxWebFlMgr filemgr(filemanagerport); // we want a different port than the webserver
 
+// Объявляем функции модуля
 void startCameraServer(); 
 void stopCameraServer(); 
 void the_camera_loop (void* pvParameter); 
@@ -385,22 +390,79 @@ void loop()
     }
   }
 }
-
+///////////////////////////////////////////////////////////////////////////////
+//                                  startCameraServer()                      //
+///////////////////////////////////////////////////////////////////////////////
 void startCameraServer() 
 {
-  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-  config.max_uri_handlers = 17; //61.3 from 12
-  config.stack_size = 4096 + 1024 + 1024 + 1024;
-  config.lru_purge_enable = true;
-  //61 config.enable_so_linger = true;
-  //61 config.linger_timeout = 1;
-  //61 config.keep_alive_enable = true;
-  //config.enable_so_linger = true;
-  //61 config.max_open_sockets   = 10;
-  //61 config.backlog_conn       = 10; //from def of 5
-  //61 config.core_id = 0; // from tskNO_AFFINITY
-
-  Serial.print("http task prio: "); Serial.println(config.task_priority);
+  // Конфигурируем CameraServer: 
+  //    httpd_handle_t используется для создания и управления веб-серверами,
+  // и возвращается функцией httpd_start(). Она создаёт экземпляр HTTP-сервера, 
+  // выделяет память и ресурсы в зависимости от указанной конфигурации и возвращает указатель на экземпляр.
+  //   httpd_config_t — структура в ESP32, которая используется для конфигурации HTTP-сервера,
+  // она передаётся в вызов httpd_start — функцию, которая создаёт экземпляр HTTP-сервера, 
+  // выделяет ему память и ресурсы в зависимости от заданной конфигурации. 
+  //   Некоторые особенности использования: 
+  // - настройка приоритета задачи и размера стека во время создания экземпляра сервера;
+  // - указание портов для данных и управления (контрольный порт используется для внутренней сигнализации);
+  // - настройка очереди ожидающих соединений (параметр backlog_conn) — помогает 
+  // справляться с кратковременными всплесками запросов, не теряя соединения.
+  //   httpd_uri_t - строит функциональность сервера на регистрации URI-обработчиков, 
+  // которые сопоставляют конкретные URI и методы HTTP с функциями. 
+  //   httpd_req_t - объекты, которые получают функции-обработчики для доступа к 
+  // деталям запроса. Далее обработчики используют httpd_resp_send() для отправки ответов. 
+  //
+  // Пример: в этом примере сервер по умолчанию слушает на порту 80 и регистрирует обработчик URI, 
+  // который отправляет «Hello, world!» в ответ на запрос GET по пути /hello.
+  /*
+  void start_server() 
+  {
+    httpd_handle_t server = NULL; 
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG(); 
+    httpd_uri_t hello_uri = 
+    { 
+      .uri      = "/hello", 
+      .method   = HTTP_GET, 
+      .handler  = hello_get_handler, 
+      .user_ctx = NULL
+    };
+    if (httpd_start(&server, &config) == ESP_OK) 
+    { 
+      httpd_register_uri_handler(server, &hello_uri);  
+    }  
+  } 
+  static esp_err_t hello_get_handler(httpd_req_t *req) 
+  {
+    const char* resp_str = (const char*) "Hello, world!";
+    httpd_resp_send(req, resp_str, strlen(resp_str));
+    return ESP_OK;
+  }
+  */
+  httpd_config_t config = HTTPD_DEFAULT_CONFIG();  // https://circuitlabs.net/http-https-server-implementation/
+  config.max_uri_handlers = 17;                    // задали максимальное число регистрируемых обработчиков URI 
+  config.stack_size = 4096 + 1024 + 1024 + 1024;   // определили размер стека задачи
+  // Включаем опцию очистки наименее использующихся соединений (LRU), 
+  // если достигается максимальное количество одновременных подключений 
+  // клиентов (max_open_sockets). 
+  config.lru_purge_enable = true;                  // включили механизм LRU-очистки старых соединений 
+  // Меняем поведение сокета при закрытии с еще заполненным буфером отправки:
+  // a) по умолчанию, если enable_so_linger = false, при вызове функции закрытия соединения (close()) 
+  // система сразу возвращает управление. При этом операционная система в фоновом режиме пытается 
+  // отправить оставшиеся данные. Соединение закрывается, даже если часть данных не была доставлена;
+  // b) если enable_so_linger = true, то при вызове close() выполнение программы блокируется на время, 
+  // заданное параметром linger_timeout (в секундах). В течение этого времени ОС пытается отправить все данные из буфера.
+  // Если данные успешно отправлены до истечения таймаута — соединение закрывается корректно. Если таймаут истекает, 
+  // соединение принудительно разрывается.
+  config.enable_so_linger = true;
+  config.linger_timeout = 1;
+  // Оставляем умалчиваемые свойства
+  /*
+  config.max_open_sockets = 7;     // максимальное количество одновременных клиентских подключений (для HTTPS по умолчанию 4)
+  config.keep_alive_enable = true; // вместо открытия для запроса нового TCP-соединения оставляет соединение открытым для нескольких запросов
+  config.backlog_conn = 5;         // максимальное количество ожидающих подключения в очереди прослушивания.
+  config.core_id = 0;              // from tskNO_AFFINITY
+  */
+  Serial.print("Приоритет startCameraServer: "); Serial.println(config.task_priority);
 
   httpd_uri_t index_uri = {
     .uri       = "/",
@@ -442,7 +504,7 @@ void startCameraServer()
     .handler   = reboot_handler,
     .user_ctx  = NULL
   };
-
+  // Регистрируем обработчик запроса на запись нового avi-файла: restart_handler
   httpd_uri_t restart_uri = {
     .uri       = "/restart",
     .method    = HTTP_GET,
@@ -463,6 +525,7 @@ void startCameraServer()
     .handler   = start_handler,
     .user_ctx  = NULL
   };
+  // Регистрируем обработчик запроса на остановку записи avi-файла: stop_handler
   httpd_uri_t stop_uri = {
     .uri       = "/stop",
     .method    = HTTP_GET,
@@ -516,14 +579,14 @@ void startCameraServer()
     httpd_register_uri_handler(camera_httpd, &time_uri);
     httpd_register_uri_handler(camera_httpd, &start_uri);
     httpd_register_uri_handler(camera_httpd, &stop_uri);
-    httpd_register_uri_handler(camera_httpd, &edit_uri); //61.3 index->camera
+    httpd_register_uri_handler(camera_httpd, &edit_uri); 
     httpd_register_uri_handler(camera_httpd, &find_uri);
     httpd_register_uri_handler(camera_httpd, &status_uri);
     httpd_register_uri_handler(camera_httpd, &reindex_uri);
     httpd_register_uri_handler(camera_httpd, &ota_uri);
   }
 
-  Serial.println("Camera http started");
+  Serial.println("startCameraServer стартовала");
 }
 
 void stopCameraServer() 

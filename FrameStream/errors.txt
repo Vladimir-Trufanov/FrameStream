@@ -28,50 +28,6 @@ stream82_httpd
 Stream 82 at 17.112 fps
 
 
-/*
-static esp_err_t stream_81_handler(httpd_req_t *req) 
-{
-  esp_err_t res;
-  long start = millis();
-  //print_mem("MEM - перед запуском stream_81_handler         ");
-  // Отмечаем запуск потока
-  stream_81 = true;
-  req_81 = req;
-  stream_81_frames = 0;
-  stream_81_start = millis();
-  time_in_web1 += (millis() - start);
-  // Устанавливаем тип содержимого, который будем передавать:
-  // _STREAM_CONTENT_TYPE - application/octet-stream — общий MIME-тип, определённый в RFC 2046. 
-  // Он предназначен для неинтерпретируемых бинарных данных — произвольных байтов, 
-  // которые не относятся к конкретному типу медиа. Octet означает 8-битный байт 
-  // (основную единицу бинарных данных в вычислениях), а stream — непрерывную последовательность байтов без внутренней структуры. 
-  if (stream_81) 
-  {
-    res = httpd_resp_set_type(req_81,_STREAM_CONTENT_TYPE);
-    if (res != ESP_OK) 
-    {
-      stream_81 = false;
-    }
-  }
-  // Циклимся - держим задачу в рабочем состоянии
-  while (stream_81 == true) 
-  {         
-    //delay(1000);
-    delay(200);
-  }
-  // При сбросе флага завершаем поток
-  Serial.println("Поток stream_81 завершен");
-  delay(500);
-  // Функцией httpd_resp_send_408 отправляем ответ клиенту с кодом 408, чтобы сообщить ему, 
-  // что запрос не был обработан в течение указанного времени.
-  httpd_resp_send_408(req_81);
-  req_81 = NULL;
-  return ESP_OK;
-}
-*/
-
-
-
 
 
 

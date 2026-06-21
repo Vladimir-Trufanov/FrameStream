@@ -336,8 +336,8 @@ void loop()
   }
   // 
   wakeup = millis();
-  //if (wakeup - last_wakeup > (10  * 60 * 1000) ) 
-  if (wakeup - last_wakeup > (2  * 60 * 1000) ) 
+  if (wakeup - last_wakeup > (10  * 60 * 1000) ) 
+  //if (wakeup - last_wakeup > (2  * 60 * 1000) ) 
   {
     last_wakeup = millis();
     // print_mem("---------- 10 Minute Internet Check -----------");

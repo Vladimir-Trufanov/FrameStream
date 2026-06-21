@@ -18,8 +18,6 @@ Extensions=*.*
 [Project tree]
 FrameStream
 	+FrameStream
-		+old
-			old\FrameStream.ino
 		config.h
 		CRC32.h
 		errors.txt
@@ -43,26 +41,22 @@ FrameStream
 1=fs_avi.h
 2=FrameStream.ino
 3=fs_trass.h
-4=fs_wifi.h
-5=inimem.h
+4=fs_stream.h
 [Selected Project Files]
 Main=
-Selected=fs_wifi.h
+Selected=fs_stream.h
 [errors.txt]
-TopLine=174
-Caret=1,201
+TopLine=48
+Caret=1,71
 [fs_avi.h]
 TopLine=1
 Caret=15,13
 [FrameStream.ino]
-TopLine=323
-Caret=32,340
+TopLine=249
+Caret=27,263
 [fs_trass.h]
-TopLine=121
-Caret=58,155
-[fs_wifi.h]
-TopLine=433
-Caret=75,448
-[inimem.h]
-TopLine=77
-Caret=31,89
+TopLine=45
+Caret=12,60
+[fs_stream.h]
+TopLine=128
+Caret=1,134

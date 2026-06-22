@@ -163,7 +163,6 @@ unsigned long idx_offset = 4;
 int bad_jpg = 0;               // количество плохих кадров
 int extend_jpg = 0;            // количество расширенных кадров
 int normal_jpg = 0;            // количество нормальных кадров
-int we_are_already_stopped=0;  // 1 - "видео-запись уже остановлена"
 
 // Сбрасываем флаг "удалить старые файлы по завершению записи текущего файла avi"
 int delete_old_stuff_flag = 0;

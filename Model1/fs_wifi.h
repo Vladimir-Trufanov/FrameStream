@@ -1,0 +1,604 @@
+/** Arduino, ESP32, C/C++ *************************************** fs_wifi.h ***
+ * 
+ *                                          Обеспечить работу, связанную с wifi
+ *                                                     
+ * v2.2.3, 20.06.2026                                 Автор:      Труфанов В.Е.
+ * Copyright © 2026 tve                               Дата создания: 24.01.2026
+**/
+
+#pragma once 
+
+#include "time.h"
+#include "WiFi.h"
+#include <WiFiMulti.h>
+#include <ArduinoOTA.h>
+#include "ESPmDNS.h"
+// Обслуживаем режим энергосбережения
+#include "esp_wifi.h" 
+// Подключаем библиотеку для связи с сервером SNTP, которая является 
+// библиотекой ядра ESP32 по умолчанию и не требуют установки
+#include "esp_sntp.h"
+// Для подключения дескрипторов обработчиков типа httpd_handle_t
+#include "esp_http_server.h"
+
+#include "inimem.h"
+#include "fs_trass.h"
+
+void print_sock(int sock);
+void InternetCheckObj(httpd_handle_t obj_httpd,char obj[30]); 
+ 
+
+
+// Создаем структуру времени timeinfo в которую будем вкладывать
+// выбранное и преобразованное время в секундах с начала эпохи
+struct tm timeinfo;
+
+WiFiMulti jMulti;
+WiFiEventId_t eventID;
+
+// Вводим имя и пароль точки доступа
+//const char* tssid = "OPPO A9 2020";  // "TP-Link_B394" "tve-DESKTOP" "linksystve"
+//const char* tpass = "b277a4ee84e8";  // "18009217"     "Ue18-647"    "x93k6kq6wf"
+
+/* 
+
+// ****************************************************************************
+// *      Обеспечить заглушку через макрос на событие с WiFi=201, когда не    *
+// *                 удаётся подключиться к локальной сети                    *
+// ****************************************************************************
+// По настройке в IDE "Core Debug Level: Error", выводим только ошибки,
+// сообщения "Reason: 201 - NO_AP_FOUND" зажимаем в обработке события  WiFi.onEvent:
+/ *
+12:56:58.974 -> [366612][W][STA.cpp:137] _onStaArduinoEvent(): Reason: 201 - NO_AP_FOUND
+12:57:01.399 -> [369029][W][STA.cpp:137] _onStaArduinoEvent(): Reason: 201 - NO_AP_FOUND
+12:57:03.821 -> [371446][W][STA.cpp:137] _onStaArduinoEvent(): Reason: 201 - NO_AP_FOUND
+[ESP 32 Arduino: Получение информации о событиях Wi-Fi](https://techtutorialsx.wordpress.com/2019/08/15/esp32-arduino-getting-wifi-event-information/)
+[tools/sdk/include/esp32/esp_event_legacy.h](https://github.com/espressif/arduino-esp32/blob/04963009eedfbc1e0ea2e1378ae69e7cebda6fd6/tools/sdk/include/esp32/esp_event_legacy.h#L56)
+[libraries/WiFi/src/WiFiType.h](https://github.com/espressif/arduino-esp32/blob/a59eafbc9dfa3ce818c110f996eebf68d755be24/libraries/WiFi/src/WiFiType.h#L35)
+* /
+#define onEventWiFi();                                                                       \
+  eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)                         \ 
+  {                                                                                          \
+    if (info.wifi_sta_disconnected.reason == 201) {}                                         \
+    else if (info.wifi_sta_disconnected.reason == 64) {}                                     \
+    else sayln("info.wifi_sta_disconnected.reason =  %d",info.wifi_sta_disconnected.reason); \
+  });
+  
+// Подключить ESP32 к указанной сети Wi-Fi
+bool initWiFi(); 
+// Отключить режим энергосбережения                   
+void iniWiFiPsNone(); 
+// Настроить интервал синхронизации, имя сервера, режим работы и часовой пояс
+void notify(struct timeval* t); 
+void initSNTP(); 
+// Извлечь информацию о текущем времени и вывести ее в отформатированном виде
+void printTime(); 
+// Настроить часовой пояс 
+void setTimezone(); 
+// Ожидать синхронизацию                        
+void wait4SNTP(); 
+
+// ****************************************************************************
+// *                 Подключить локальную WiFi и установить время             *
+// ****************************************************************************
+void iniLocalWiFi() 
+{
+  isLocalWiFi=initWiFi();
+  if (isLocalWiFi)
+  {
+    initSNTP();
+    wait4SNTP();
+  }
+}
+ 
+// ****************************************************************************
+// *      Подключить ESP32 к указанной сети Wi-Fi (непрерывно проверять       *
+// *  состояние подключения до тех пор, пока оно не будет успешно установлено *
+// ****************************************************************************
+bool initWiFi() 
+{
+  bool Result=false;
+  int j;
+  say("Контроллер подключается к WiFi ");
+  WiFi.begin(tssid, tpass);
+  for (j = 0; j < 16; j++) 
+  {
+    delay (500);
+    say(".");
+    if (WiFi.status() == WL_CONNECTED) 
+    {
+      sayln("\nWiFi подключен!");
+      Serial.println(WiFi.localIP()); 
+      Serial.print("http://"); Serial.print(WiFi.localIP()); Serial.println(":81/stream"); 
+
+      ssid = String(tssid); 
+      pass = String(tpass);   
+      Result=true;
+      break;
+    }
+  }
+  if (j==16) sayln("\nНе удалось подключиться к локальной сети WiFi!");
+  return Result;
+}
+// ****************************************************************************
+// *                      Отключить режим энергосбережения                    *
+// ****************************************************************************
+void iniWiFiPsNone() 
+{
+  // Отключаем режим энергосбережения: 
+  // esp_wifi_get_ps — функция из API драйвера Wi-Fi для платы ESP32, которая получает 
+  // режим энергосбережения (sleep mode) Wi-Fi. 
+  // Функция входит в класс WiFi и возвращает значение типа wifi_ps_type_t. 
+  // Режим энергосбережения WiFi влияет на скорость соединения. Можно установить один из трёх режимов: 
+  // WIFI_PS_NONE — режим отключён; WIFI_PS_MIN_MODEM — минимальное энергосбережение; WIFI_PS_MAX_MODEM — максимальное энергосбережение.
+  // Функция позволяет системе автоматически просыпаться из сна, когда это требуется драйвером Wi-Fi, 
+  // и поддерживать соединение с точкой доступа (AP). 
+  // Функция esp_wifi_get_ps вызывается в коде приложения, когда нужно получить текущий 
+  // режим энергосбережения Wi-Fi. Например, в функции, которая управляет работой Wi-Fi, 
+  // можно вызвать WiFi.getSleep() — она вернёт значение типа wifi_ps_type_t.
+  // Важно: режим энергосбережения влияет на то, как драйвер Wi-Fi обрабатывает 
+  // пакеты данных — при включённом режиме энергосбережения полученные данные могут 
+  // быть задержаны на период, указанный в настройках DTIM. 
+  wifi_ps_type_t the_type;
+  esp_err_t get_ps = esp_wifi_get_ps(&the_type);
+  sayln("\nНачальный режим энергосбережения: %d", the_type);
+  esp_err_t set_ps = esp_wifi_set_ps(WIFI_PS_NONE);
+  esp_err_t new_ps = esp_wifi_get_ps(&the_type);
+  sayln("-Текущий- режим энергосбережения: %d", the_type);
+  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, brown_reg_temp);
+}
+// ****************************************************************************
+// * Настроить интервал синхронизации, имя сервера, режим работы и часовой пояс
+// ****************************************************************************
+void notify(struct timeval* t) 
+{
+  say("\nВремя синхронизировано: "); printTime(); 
+}
+void initSNTP() 
+{ 
+  if (esp_sntp_enabled()) 
+  { 
+    esp_sntp_stop(); 
+  }
+  // Определяем, как часто синхронизировать внутренние часы ESP32 с сервером 
+  // SNTP. Интервал указывается в микросекундах. Интервал в 60*60*1000UL 
+  // микросекунд означает синхронизацию каждый час. Разумные интервалы запросов 
+  // обычно составляют от одного-двух раз в день до 5 раз в час. 
+  sntp_set_sync_interval(1 * 60 * 60 * 10 * 1000UL);  // через 10 часов
+  // Указываем функцию уведомления (callback), которая вызывается при каждой
+  // cинхронизации. В данном коде для этой цели определяем функцию notify(). 
+  sntp_set_time_sync_notification_cb(notify);
+  // Устанавливаем режим работы: ESP_SNTP_OPMODE_POLL — просто опрашивать
+  // сервер SNTP (есть также ESP_SNTP_OPMODE_LISTENONLY)
+  esp_sntp_setoperatingmode(ESP_SNTP_OPMODE_POLL);
+  // Указываем имя/адрес сервера. При желании можно указать несколько серверов.
+  // Например:
+  //   esp_sntp_setservername(0, «pool.ntp.org»);
+  //   esp_sntp_setservername(1, «de.pool.ntp.org»);
+  //   esp_sntp_setservername(2, «time.nist.gov»);
+  esp_sntp_setservername(0, "ntp.msk-ix.ru");
+  // Запускаем службу SNTP с указанными выше параметрами
+  esp_sntp_init();
+  // Устанавливаем часовой пояс, поскольку сервер SNTP 
+  // возвращает время в формате UTC
+  setTimezone();
+}
+// ****************************************************************************
+// *   Извлечь информацию о текущем времени и вывести ее в отформатированном  *
+// *   виде с помощью struct tm структуры данных:                             *
+// *                               https://cplusplus.com/reference/ctime/tm/  *
+// ****************************************************************************
+/ *
+ "%A, %B %d %Y %H:%M:%S" - это спецификаторы формата,  которые определяют,  как
+ в struct tm timeinfo; будет отформатирован текст, а члены tm struct следующие:
+  
+  Тип элемента Значение                        Диапазон
+  -----------------------------------------------------
+  tm_sec  int  секунды после минуты            0-61*
+  tm_min  int  минуты после часа               0-59
+  tm_hour int  часы с полуночи                 0-23
+  tm_mday int  день месяца                     1-31
+  tm_mon  int  месяцы с января                 0-11
+  tm_year int  годы с 1900
+  tm_wday  —   количество дней с воскресенья   0-6
+  tm_yday  —   количество дней с 1 января      0-365
+  tm_isdst —   флаг перехода на летнее время 
+  
+  function strftime() - format time as string:
+  https://cplusplus.com/reference/ctime/strftime/
+* /
+void printTime() 
+{
+  getLocalTime(&timeinfo);
+  say("%d",  timeinfo.tm_year+1900); say("-%d", timeinfo.tm_mon+1);  say("-%d", timeinfo.tm_mday);
+  say(" %d", timeinfo.tm_hour);      say(":%d", timeinfo.tm_min);  sayln(":%d", timeinfo.tm_sec);
+}
+// ****************************************************************************
+// *                           Настроить часовой пояс                         *
+// ****************************************************************************
+void setTimezone() 
+{ 
+  // Здесь устанавливается стандартное время для региона - Европа/Москва
+  // https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
+  setenv("TZ", "MSK-3", 1);
+  tzset();
+}
+// ****************************************************************************
+// *                            Ожидать синхронизацию                         *
+// ****************************************************************************
+void wait4SNTP() 
+{
+  say("Ожидание синхронизации времени ");
+  while (sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED) 
+  {
+    delay(300);
+    say(".");
+  }
+}
+*/
+
+// ****************************************************************************
+// *       Подключить локальные WiFi и создать одну свою от контроллера       *
+// ****************************************************************************
+bool init_wifi() 
+{
+  // Инициируем нулевую попытку подключения
+  int connAttempts = 0;
+
+  //uint32_t brown_reg_temp = READ_PERI_REG(RTC_CNTL_BROWN_OUT_REG);
+  //Serial.printf("Brownout was %d\n", brown_reg_temp);
+  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+  //WiFi.disconnect(true, true);
+
+  // Устанавливаем режим работы WiFi, как станции (STA). В этом режиме контроллер 
+  // не создаёт собственную сеть, а подключается к уже существующей сети WiFi, 
+  // например, к локальной сети (роутеру или иному «раздающему» устройству). 
+  //
+  // В режиме STA ESP32 действует как другое клиентское устройство в сети (например, ноутбук или смартфон). 
+  // Его основная цель — обнаружить и подключиться к точке доступа (AP) с помощью SSID (имени сети) и пароля (обычно Pre-Shared Key или PSK). 
+  // После подключения ESP32 получает IP-адрес от AP (обычно через DHCP от роутера) 
+  // и может общаться с другими устройствами в локальной сети и, если AP предоставляет это, получать доступ в интернет.
+  //
+  // Важно: подключение к Wi-Fi не является мгновенным, поэтому необходимо регулярно проверять статус соединения 
+  // с помощью функции WiFi.status(). После успешного подключения функция возвращает WL_CONNECTED. 
+  WiFi.mode(WIFI_STA);
+  
+  // Настраиваем имя, которое клиент DHCP использует для идентификации устройства
+  // (в типичной сетевой настройке это имя отображается в списке устройств маршрутизатора Wi-Fi.
+  // По умолчанию имя ESP32 — «espressif». С помощью этой функции можно изменить стандартное имя, 
+  // например, для дифференциации устройств в режиме мягкого доступа к точке доступа. 
+  // Аргумент - это строка, которая содержит новое имя. Она должна быть не длиннее 
+  // 32 символов, содержать только буквы, цифры и символ «-»). 
+
+  // Важно: функцию нужно вызвать до начала Wi-Fi с помощью WiFi.begin(), WiFi.softAP(), 
+  // WiFi.mode() или WiFi.run(). Чтобы изменить имя, можно сбросить Wi-Fi с помощью WiFi.mode(WIFI_MODE_NULL), 
+  // затем вызвать WiFi.setHostname() и перезагрузить Wi-Fi с нуля. 
+  // Если hostname не указан, будет назначено стандартное имя на основе типа чипа и MAC-адреса. 
+  WiFi.setHostname(devname);
+
+  // Резервируем место для параметров входа локальной сети
+  char ssidch1[20];
+  char passch1[20];
+  char ssidch2[20];
+  char passch2[20];
+  char ssidch3[20];
+  char passch3[20];
+  if (cssid3 == "ssid") 
+  {
+    cssid3 = String(devname);
+  }
+
+  cssid1.toCharArray(ssidch1, cssid1.length() + 1);
+  cpass1.toCharArray(passch1, cpass1.length() + 1);
+  cssid2.toCharArray(ssidch2, cssid2.length() + 1);
+  cpass2.toCharArray(passch2, cpass2.length() + 1);
+  cssid3.toCharArray(ssidch3, cssid3.length() + 1);
+  cssid3.toCharArray(ssidota, cssid3.length() + 1);
+  cpass3.toCharArray(passch3, cpass3.length() + 1);
+
+  jpr("\n>>>>>>>>>>>>>>>>>>>>>%s<\n", ssidch1);
+  jpr(">>>>>>>>>>>>>>>>>>>>>%s<\n", ssidch2);
+  jpr(">>>>>>>>>>>>>>>>>>>>>%s< / >%s<\n", ssidch3, passch3);
+
+  if (String(cssid1) != "ssid") 
+  {
+    found_router = true;
+    jMulti.addAP(ssidch1, passch1);
+  }
+  if (String(cssid2) != "ssid") 
+  {
+    found_router = true;
+    jMulti.addAP(ssidch2, passch2);
+  }
+  if (found_router) 
+  {
+    jMulti.run();
+  }
+
+  /*
+  // Заполняем параметры для WiFi сети и показываем их
+  ssid.toCharArray(ssidch1, ssid.length() + 1);
+  pass.toCharArray(passch1, pass.length() + 1);
+  say("\n>>>>>>>>>>>>>>>>>>>>>%s<\n", ssidch1);
+  // Подключаемся к локальной сетим
+  jMulti.addAP(ssidch1, passch1);
+  jMulti.run();
+  */
+  
+  // Выбираем и показываем Mac-адрес WiFi
+  String wifiMacString = WiFi.macAddress();
+  Serial.println("Mac-адрес точки доступа: "+wifiMacString);
+
+  String idfver = esp_get_idf_version();
+  Serial.println(esp_get_idf_version());
+
+  jpr("Setting AP (Access Point)…");
+  WiFi.softAP(ssidch3, passch3);
+
+  IPAddress IP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(IP);
+
+  sprintf(localip, "%s", WiFi.softAPIP().toString().c_str());
+  Serial.print("AP IP: "); Serial.println(localip); Serial.println(" ");
+  
+  /*
+  const char _localIP[] = "  Локальный IP: ";
+  sayln("Контроллер подключается к локальной точке доступа");
+  Serial.println(" ");
+  while (WiFi.status() != WL_CONNECTED ) 
+  {
+    delay(1000);
+    Serial.print(".");
+    if (connAttempts++ == 15) break;   
+  }
+  
+  sprintf(localip,"%s",WiFi.localIP().toString().c_str());
+  Serial.print(_localIP); Serial.println(localip); 
+  */
+  
+  Serial.println(" ");
+  sayln("Определяется местное время");
+  // configTime(0, 0, "pool.ntp.org");
+  configTime(10800, 0, "ntp.msk-ix.ru");
+  char tzchar[60];
+  TIMEZONE.toCharArray(tzchar, TIMEZONE.length() + 1);        // name of your camera for mDNS, Router, and filenames
+  Serial.printf("Char >%s<\n", tzchar);
+  setenv("TZ", tzchar, 1);  // mountain time zone from #define at top
+  tzset();
+  time(&now);
+  // try for 15 seconds to get the time, then give up - 10 seconds after boot
+  while (now < 5) 
+  {        
+    delay(1000);
+    Serial.print("o");
+    time(&now);
+  }
+  Serial.print("Местное время: "); Serial.print(ctime(&now));
+  
+  sprintf(localip, "%s", WiFi.localIP().toString().c_str());
+  Serial.print("IP: "); Serial.println(localip); Serial.println(" ");
+
+  // Запускаем службу multicast DNS (mDNS). Это позволяет использовать имя хоста 
+  // в веб-браузере вместо IP-адреса при доступе к ESP32 с компьютера. 
+  // Особенности работы: динамическая обработка IP-адресов — даже если IP-адрес 
+  // устройства изменится, mDNS автоматически преобразует новый IP-адрес в то же имя хоста;
+  // нулевая настройка — дополнительная настройка DNS не требуется, поскольку mDNS 
+  // работает автономно в локальных сетях; автоматическое добавление суффикса — 
+  // если имя хоста уже существует в локальной сети, библиотека автоматически добавляет суффикс. 
+  // Например, если esp32.local уже существует, она переименовывает его в esp32-2.local. 
+  //
+  // В коде ESP32 функция MDNS.begin() вызывается в функции setup() после подключения к сети. 
+  // В качестве аргумента метода передаётся желаемое имя хоста. Например, если IP-адрес устройства
+  // — 192.168.4.1, можно получить доступ к нему с помощью «esp32.local в веб-браузере. 
+  // Важно: имя хоста не должно быть длиннее 63 символов. 
+  // 
+  // Некоторые ошибки, которые могут возникать при использовании функции MDNS.begin, и способы их решения:
+  // а) mDNS не запущен в коде — если MDNS.begin() не вызван или помещён перед подключением к Wi-Fi, сервис не будет рекламироваться. 
+  // Решение: инициализировать mDNS после успешного подключения, поместив MDNS.begin("esp32") 
+  // внутри события подключения к Wi-Fi;
+  // б) Firewall или антивирус блокируют mDNS — в системах без встроенной поддержки mDNS 
+  // (Linux, Windows) правила брандмауэра могут препятствовать входящим ответам mDNS 
+  // на порт 5353. Решение: проверить правила брандмауэра и, если нужно, изменить их;
+  // в) сеть не позволяет многоадресный трафик — некоторые режимы AP, горячие точки или
+  // гостевые сети Wi-Fi изолируют клиентов и блокируют многоадресный трафик, включая mDNS. 
+  // Решение: проверить политики сети и, если нужно, изменить их.
+  if (!MDNS.begin(devname)) 
+  {
+    sayln("Ошибка при запуске multicast DNS (mDNS)");
+  } 
+  else 
+  {
+    sayln("multicast DNS (mDNS) стартовал с именем '%s'", devname);
+  }
+
+  eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) 
+  {
+    //  info.disconnected.reason ==>  info.wifi_sta_disconnected.reason - update with esp32_arduino 2.00 v58
+    if (info.wifi_sta_disconnected.reason != 201) 
+    {
+      //say( "\nframe_cnt: %8d, WiFi event Reason: %d , Status: %d\n", frame_cnt, info.wifi_sta_disconnected.reason, WiFi.status());
+    }
+  });
+
+  wifi_ps_type_t the_type;
+  esp_err_t get_ps = esp_wifi_get_ps(&the_type);
+  //Serial.printf("The power save was : %d\n", the_type);
+  esp_err_t set_ps = esp_wifi_set_ps(WIFI_PS_NONE);
+  esp_err_t new_ps = esp_wifi_get_ps(&the_type);
+  //Serial.printf("The power save is : %d\n", the_type);
+
+  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, brown_reg_temp);
+  return true;
+}
+
+// ****************************************************************************
+// *                            -----Ожидать синхронизацию                         *
+// ****************************************************************************
+void InternetCheck10(httpd_handle_t camera_httpd, httpd_handle_t stream81_httpd, httpd_handle_t stream82_httpd) 
+{
+  //InternetCheckObj(camera_httpd,"camera_httpd");
+  //InternetCheckObj(stream81_httpd,"stream81_httpd");
+  //InternetCheckObj(stream82_httpd,"stream82_httpd");
+  
+  if (found_router) 
+  {
+    // Получаем IP-адрес шлюза (роутера) той сети, к которой в данный момент подключено устройство
+    Serial.print("IP-адрес шлюза(роутера) подключенной сети: "); Serial.println(WiFi.gatewayIP());
+    /*
+    if (Ping.ping(WiFi.gatewayIP()) > 0) 
+    {
+      jpr(" -- response time : %d/%.2f/%d ms\n", Ping.minTime(), Ping.averageTime(), Ping.maxTime());
+    } 
+    else 
+    {
+      jprln("\n\nCannot Ping the gateway - REBOOT");
+      jprln("***** WiFi reconnect *****");
+      WiFi.reconnect();
+      delay(8000);
+      if (WiFi.status() != WL_CONNECTED) 
+      {
+        jprln("***** WiFi restart *****");
+        init_wifi();
+      }
+      delay(15000);
+      if (WiFi.status() != WL_CONNECTED) 
+      {
+        jprln("***** Reboot *****");
+        reboot_now = true;
+      }
+    }
+    */
+    delay(1000);
+ 
+    // Ping Host
+    /*      
+    const char* remote_host = "google.com";
+    jpr(remote_host);
+    if (Ping.ping(remote_host) > 0) 
+    {
+      jpr(" -- response time : %d/%.2f/%d ms\n", Ping.minTime(), Ping.averageTime(), Ping.maxTime());
+    } 
+    else 
+    {
+      jprln(" Ping Error !");
+    }
+    delay(1000);
+    */      
+    /*      
+    if (WiFi.status() != WL_CONNECTED) 
+    {
+      jprln("***** WiFi reconnect *****");
+      WiFi.reconnect();
+      delay(8000);
+
+      if (WiFi.status() != WL_CONNECTED) 
+      {
+        jprln("***** WiFi restart *****");
+        init_wifi();
+      }
+    }
+    */
+  }
+
+  /*
+  Serial.println(WiFi.softAPIP());  logfile.println(WiFi.softAPIP());
+  Serial.println(WiFi.localIP()); logfile.println(WiFi.localIP());
+
+  if (!MDNS.begin(devname)) 
+  {
+    jprln("Error setting up MDNS responder!");
+  } 
+  else 
+  {
+    jpr("mDNS responder started '%s'\n", devname);
+  }
+  */
+}
+// ----------------------------------------------------------------------------
+void InternetCheckObj(httpd_handle_t obj_httpd, char obj[30]) 
+{
+  // Выделяем переменную по ошибкам, это целое число со знаком. Отсутствие ошибки обозначается кодом ESP_OK 
+  esp_err_t client_err;
+  // Определяем структуру для представления адреса сокета (в функциях сокетного интерфейса - bind, connect, accept ...
+  // struct sockaddr_in {
+  //   short           sin_family;   // Семейство адресов (должно быть AF_INET)
+  //   u_short         sin_port;     // Номер порта
+  //   struct in_addr  sin_addr;     // IP-адрес
+  //   char            sin_zero; };  // Заполнение до 8 байт нулями
+  struct sockaddr_in* client_list;
+  size_t clients = 10;
+  size_t client_count = 10;
+  int client_fds[10];
+  // Получаем список текущих дескрипторов сокетов активных клиентских сессий
+  // esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds);
+  // handle — дескриптор экземпляра сервера, который возвращается функцией httpd_start
+  // fds — указатель на переменную типа size_t. На входе это размер предоставленного массива client_fds, 
+  // а на выходе функция запишет в неё количество успешно заполненных дескрипторов
+  // client_fds — указатель на массив, куда будут записаны дескрипторы сокетов активных клиентов.
+  client_err = httpd_get_client_list(obj_httpd, &client_count, client_fds);
+  sayln("Клиенты (сокеты) %s:", obj);
+  for (size_t i = 0; i < client_count; i++) 
+  {
+    // Выбираем дескриптор текущего сединения
+    int sock = client_fds[i];
+    // Проверяем, является ли соединение сокетом, возвращаемые значения:
+    // HTTPD_WS_CLIENT_INVALID   = 0 — дескриптор sock не принадлежит ни одному активному клиенту этого сервера = camera_httpd
+    // HTTPD_WS_CLIENT_HTTP      = 1 — дескриптор sock принадлежит активному клиенту, но протокол для этого соединения не является WebSocket (например, это обычное HTTP-соединение).
+    // HTTPD_WS_CLIENT_WEBSOCKET = 2 — дескриптор sock принадлежит активному клиенту, и для этого соединения активно соединение по протоколу WebSocket.
+    int x = httpd_ws_get_fd_info(obj_httpd, sock) ;
+    sayln("сокет=%d, fd=%d, info=%d", i, sock, x);
+    print_sock(sock);
+  }
+}
+// ----------------------------------------------------------------------------
+void print_sock(int sock) 
+{
+  // Назначаем адрес сокета для протокола IPv6. Она используется функциями работы с сокетами 
+  // (например, bind(), connect()) для передачи информации о сетевом адресе 
+  sockaddr_in6 clientAddr;
+  // Определяем длину адреса сокета
+  socklen_t addrLen = sizeof(clientAddr);
+  int clientFd = sock; //client.getSocket();
+  // Выделяем буфер текстового представления адреса по протоколу IPv6
+  // (INET6_ADDRSTRLEN равно 46 символов)
+  char ip[INET6_ADDRSTRLEN] = {0};
+  // Определяем адрес удаленного сокета, с которым установлено сетевое взаимодействие текущего сокета
+  // int getpeername(int s, struct sockaddr *name, socklen_t *namelen),
+  // где s — дескриптор сокета, name — указатель на структуру sockaddr, куда будет 
+  // записано значение адреса удалённого сокета, namelen — указатель на переменную,
+  // которая изначально содержит размер этой структуры (чтобы функция знала, сколько данных можно прочитать)
+  if (getpeername(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
+  {
+    // inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
+    if (clientAddr.sin6_family==10) say("Семейство AF_INET6. ");
+    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
+    say("Удаленный сокет: IP4="); say(ip);
+    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
+    say(", IP6="); say(ip);
+    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
+    say(", порт="); sayln("%d", clientPort);
+  } 
+  else 
+  {
+    Serial.println("Ошибка получения адреса удаленного сокета");
+  }
+  // Определяем адрес текущего сокета
+  if (getsockname(clientFd, (struct sockaddr*)&clientAddr, &addrLen) == 0) 
+  {
+    //inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, ip, sizeof(ip));
+    if (clientAddr.sin6_family==10) say("Семейство AF_INET6. ");
+    inet_ntop(AF_INET, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
+    say("  Текущий сокет: IP4="); say(ip);
+    inet_ntop(AF_INET6, &clientAddr.sin6_addr.un.u32_addr[3], ip, sizeof(ip));
+    say(", IP6="); say(ip);
+    uint16_t clientPort = ntohs(clientAddr.sin6_port); // Extract port
+    say(", порт="); sayln("%d", clientPort);
+  } 
+  else 
+  {
+    Serial.println("Ошибка получения адреса текущего сокета");
+  }
+}
+
+// ************************************************************** fs_wifi.h ***

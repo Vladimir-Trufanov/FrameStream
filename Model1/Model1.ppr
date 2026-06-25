@@ -6,7 +6,7 @@ Compilator.ProgSaveAll=0
 Compilator.ProgRunSelection=0
 Compilator.LogType=0
 Compilator.LogEncoding=0
-DefaultDir=C:\FrameStream\FrameStream
+DefaultDir=C:\FrameStream\Model1
 DefaultCP=0
 LogtoEnd=1
 DontOpen=0
@@ -16,8 +16,8 @@ ProjectFilesOnly=0
 HTServer=localhost
 Extensions=*.*
 [Project tree]
-FrameStream
-	+FrameStream
+Model1
+	+Model1
 		config.h
 		CRC32.h
 		errors.txt
@@ -25,8 +25,6 @@ FrameStream
 		FlMgr.h
 		FlMgrWp.h
 		FlMgrWpF.h
-		FrameStream.ino
-		FrameStream.ppr
 		fs_avi.h
 		fs_camera.h
 		fs_eprom.h
@@ -36,39 +34,16 @@ FrameStream
 		fs_trass.h
 		fs_wifi.h
 		inimem.h
+		Model1.ino
 [Open project files]
-0=errors.txt
-1=FrameStream.ino
-2=fs_trass.h
-3=inimem.h
-4=fs_avi.h
-5=fs_sd.h
-6=fs_camera.h
-7=fs_server.h
+0=Новый1.txt
+1=Model1.ino
 [Selected Project Files]
 Main=
-Selected=fs_server.h
-[errors.txt]
-TopLine=29
-Caret=1,29
-[FrameStream.ino]
-TopLine=465
-Caret=33,476
-[fs_trass.h]
-TopLine=19
-Caret=27,19
-[inimem.h]
-TopLine=37
-Caret=5,42
-[fs_avi.h]
-TopLine=49
-Caret=9,61
-[fs_sd.h]
-TopLine=107
-Caret=1,119
-[fs_camera.h]
-TopLine=754
-Caret=5,766
-[fs_server.h]
-TopLine=1350
-Caret=18,1350
+Selected=Model1.ino
+[Новый1.txt]
+TopLine=1
+Caret=1,1
+[Model1.ino]
+TopLine=1
+Caret=37,4

@@ -36,14 +36,22 @@ Model1
 		inimem.h
 		Model1.ino
 [Open project files]
-0=Новый1.txt
-1=Model1.ino
+0=Model1.ino
+1=fs_server.h
+2=fs_trass.h
+3=errors.txt
 [Selected Project Files]
 Main=
-Selected=Model1.ino
-[Новый1.txt]
-TopLine=1
-Caret=1,1
+Selected=fs_server.h
 [Model1.ino]
+TopLine=463
+Caret=18,475
+[fs_server.h]
+TopLine=1344
+Caret=21,1351
+[fs_trass.h]
+TopLine=45
+Caret=1,55
+[errors.txt]
 TopLine=1
-Caret=37,4
+Caret=1,9

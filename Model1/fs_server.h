@@ -48,13 +48,6 @@ static esp_err_t ota_handler(httpd_req_t *req);
 static esp_err_t delete_handler(httpd_req_t *req); 
 static esp_err_t reindex_handler(httpd_req_t *req); 
 
-int capture_timer = 0;
-int total_captures = 0;
-int skips = 0;
-int extras = 0;
-int captures = 0;
-int previous_capture = 0;
-
 /*
 // Определяем экземпляры HTTP-серверов. 
 // Тип httpd_handle_t используется для создания и управления веб-серверами и
@@ -1346,7 +1339,17 @@ document.addEventListener('DOMContentLoaded', function() {
   return ESP_OK;
 }
 */
-// ----------------------------------------------------------------------------
+ 
+// ****************************************************************************
+// *              ---Показать состояние памяти с заданным префиксом              *
+// ****************************************************************************
+int capture_timer = 0;
+int captures = 0;
+int total_captures = 0;
+int skips = 0;
+int extras = 0;
+int previous_capture = 0;
+
 static esp_err_t capture_handler(httpd_req_t *req) 
 {
   long start = millis();
@@ -1354,12 +1357,13 @@ static esp_err_t capture_handler(httpd_req_t *req)
   esp_err_t res = ESP_OK;
   char fname[100];
   int file_number = 0;
-
   char  buf[120];
   size_t buf_len;
 
-  if (capture_timer + 30000 <  millis() ) {
-    if  (frame_cnt < 1000 ) {
+  if (capture_timer + 30000 <  millis()) 
+  {
+    if  (frame_cnt < 1000 ) 
+    {
       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
 
       print_mem("capture");
@@ -1374,23 +1378,29 @@ static esp_err_t capture_handler(httpd_req_t *req)
     skips = 0;
     extras = 0;
     capture_timer = millis();
-  } else {
+  } 
+  else 
+  {
     captures++;
     total_captures++;
   }
 
-  if (millis() - previous_capture < 50) { // limit captures to 20 per second (50) ... make that 13 per second (75)
+  if (millis() - previous_capture < 50) 
+  { // limit captures to 20 per second (50) ... make that 13 per second (75)
     //Serial.printf("s");
     skips++;
     res = httpd_resp_send_408(req); // just let the requests be missed rather than rejecting it //61
-  } else {
+  } 
+  else 
+  {
     previous_capture = millis();
     file_number++;
     sprintf(fname, "inline; filename=capture_%d.jpg", file_number);
 
     xSemaphoreTake( baton, portMAX_DELAY );
 
-    if (fb_record_time > (millis() - 500)) {
+    if (fb_record_time > (millis() - 500)) 
+    {
       //Serial.printf("-");
       fb_capture_len = fb_record_len;
       fb_capture_time = fb_record_time;
@@ -1399,23 +1409,28 @@ static esp_err_t capture_handler(httpd_req_t *req)
       httpd_resp_set_type(req, "image/jpeg");
       httpd_resp_set_hdr(req, "Content-Disposition", fname);
       res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
-    } else {
+    } 
+    else 
+    {
       xSemaphoreGive( baton );
       fb = esp_camera_fb_get(); //get_good_jpeg();
       extras++;
       //Serial.print("N");
       //Serial.printf("millis %d, fb1 %d, fb2 %d\n", millis(), fb_record_time, fb_streaming_time);
-      if (!fb) {
+      if (!fb) 
+      {
         Serial.println("Photos - Camera Capture Failed");
         res = httpd_resp_send_408(req);
         //res = ESP_FAIL;
         //start_streaming = false;
-      } else {
-        xSemaphoreTake( baton, portMAX_DELAY );
+      } 
+      else 
+      {
+        xSemaphoreTake(baton, portMAX_DELAY);
         fb_capture_len = fb->len;
         fb_capture_time = millis();
         memcpy(fb_capture, fb->buf, fb->len);
-        xSemaphoreGive( baton );
+        xSemaphoreGive(baton);
         esp_camera_fb_return(fb);
         httpd_resp_set_type(req, "image/jpeg");
         httpd_resp_set_hdr(req, "Content-Disposition", fname);
@@ -1423,96 +1438,11 @@ static esp_err_t capture_handler(httpd_req_t *req)
       }
     }
   }
-
   time_in_web1 += (millis() - start);
-
   return res;
 }
-/*
-static esp_err_t capture_handler(httpd_req_t *req) 
-{
 
-  long start = millis();
 
-  camera_fb_t * fb = NULL;
-  esp_err_t res = ESP_OK;
-  char fname[100];
-  int file_number = 0;
-
-  char  buf[120];
-  size_t buf_len;
-
-  if (capture_timer + 30000 <  millis() ) {
-    if  (frame_cnt < 1000 ) {
-      //jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
-
-      //print_mem("capture");
-
-      int sock = httpd_req_to_sockfd(req);
-      //jpr("Socket: %d\n", httpd_req_to_sockfd(req));
-      print_sock(sock);
-    }
-    
-    captures = 1;
-    total_captures++;
-    skips = 0;
-    extras = 0;
-    capture_timer = millis();
-  } else {
-    captures++;
-    total_captures++;
-  }
-
-  if (millis() - previous_capture < 50) { // limit captures to 20 per second (50) ... make that 13 per second (75)
-    //Serial.printf("s");
-    skips++;
-    res = httpd_resp_send_408(req); // just let the requests be missed rather than rejecting it //61
-  } else {
-    previous_capture = millis();
-    file_number++;
-    sprintf(fname, "inline; filename=capture_%d.jpg", file_number);
-
-    xSemaphoreTake( baton, portMAX_DELAY );
-
-    if (fb_record_time > (millis() - 500)) {
-      //Serial.printf("-");
-      fb_capture_len = fb_record_len;
-      fb_capture_time = fb_record_time;
-      memcpy(fb_capture, fb_record,  fb_record_len);  // v59.5
-      xSemaphoreGive( baton );
-      httpd_resp_set_type(req, "image/jpeg");
-      httpd_resp_set_hdr(req, "Content-Disposition", fname);
-      res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
-    } else {
-      xSemaphoreGive( baton );
-      fb = esp_camera_fb_get(); //get_good_jpeg();
-      extras++;
-      //Serial.print("N");
-      //Serial.printf("millis %d, fb1 %d, fb2 %d\n", millis(), fb_record_time, fb_streaming_time);
-      if (!fb) {
-        Serial.println("Photos - Camera Capture Failed");
-        res = httpd_resp_send_408(req);
-        //res = ESP_FAIL;
-        //start_streaming = false;
-      } else {
-        xSemaphoreTake( baton, portMAX_DELAY );
-        fb_capture_len = fb->len;
-        fb_capture_time = millis();
-        memcpy(fb_capture, fb->buf, fb->len);
-        xSemaphoreGive( baton );
-        esp_camera_fb_return(fb);
-        httpd_resp_set_type(req, "image/jpeg");
-        httpd_resp_set_hdr(req, "Content-Disposition", fname);
-        res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
-      }
-    }
-  }
-
-  time_in_web1 += (millis() - start);
-
-  return res;
-}
-*/
 // ----------------------------------------------------------------------------
 static esp_err_t index_handler(httpd_req_t *req) 
 {

@@ -18,6 +18,10 @@ Extensions=*.*
 [Project tree]
 FrameStream
 	+FrameStream
+		+fil
+			fil\fs_server.h
+		-old
+			old\fs_server.h
 		config.h
 		CRC32.h
 		errors.txt
@@ -39,12 +43,8 @@ FrameStream
 [Open project files]
 0=errors.txt
 1=FrameStream.ino
-2=fs_trass.h
-3=inimem.h
-4=fs_avi.h
-5=fs_sd.h
-6=fs_camera.h
-7=fs_server.h
+2=fs_server.h
+3=fil\fs_server.h
 [Selected Project Files]
 Main=
 Selected=fs_server.h
@@ -54,21 +54,9 @@ Caret=1,29
 [FrameStream.ino]
 TopLine=465
 Caret=33,476
-[fs_trass.h]
-TopLine=19
-Caret=27,19
-[inimem.h]
-TopLine=37
-Caret=5,42
-[fs_avi.h]
-TopLine=49
-Caret=9,61
-[fs_sd.h]
-TopLine=107
-Caret=1,119
-[fs_camera.h]
-TopLine=754
-Caret=5,766
 [fs_server.h]
-TopLine=1350
-Caret=18,1350
+TopLine=1525
+Caret=1,1533
+[fil\fs_server.h]
+TopLine=1412
+Caret=1,1437

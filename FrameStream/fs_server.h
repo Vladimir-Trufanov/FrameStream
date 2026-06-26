@@ -27,10 +27,6 @@
 #include "inimem.h"
 #include "fs_wifi.h"
 
-/*
-#include "sd.h"
-*/
-
 static esp_err_t index_handler(httpd_req_t *req); 
 static esp_err_t capture_handler(httpd_req_t *req); 
 static esp_err_t sphotos_handler(httpd_req_t *req); 
@@ -47,13 +43,6 @@ static esp_err_t edit_handler(httpd_req_t *req);
 static esp_err_t ota_handler(httpd_req_t *req);
 static esp_err_t delete_handler(httpd_req_t *req); 
 static esp_err_t reindex_handler(httpd_req_t *req); 
-
-int capture_timer = 0;
-int total_captures = 0;
-int skips = 0;
-int extras = 0;
-int captures = 0;
-int previous_capture = 0;
 
 /*
 // Определяем экземпляры HTTP-серверов. 
@@ -1227,7 +1216,9 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 */
 
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+// *  -----Обработать запрос запуска остановленной записи avi-файла: start_handler *    
+// ****************************************************************************
 static esp_err_t photos_handler(httpd_req_t *req) 
 {
 
@@ -1346,173 +1337,206 @@ document.addEventListener('DOMContentLoaded', function() {
   return ESP_OK;
 }
 */
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+// *    Обработать запрос к странице  "/capture" - предоставить изображение   *
+// *        снимка с камеры по обращению из корневой страницы сервера         *
+// ****************************************************************************
+
+/*
+  Предполагается, что вызов показа снимков с камеры (то ли из браузера, то ли 
+по внешнему событию от ??12 или 16-того контакта) будет происходить не ранее, чем 
+через тридцать секунд. Этот интервал определяет и перезагрузку счетчиков.
+  Предполагается, что серии снятия кадров с камеры укладываются в 30 секунд.
+*/
+
+int capture_timer = 0;        // начало отсчета 30-секундного интервала
+int captures = 0;             // снято снимков по запросу или событию за текущий 30-секундного интервала
+uint16_t total_captures = 0;  // всего снято снимков по запросу или событию с начала перезагрузки контроллера (<65535)
+int previous_capture = 0;     // время начала снятия с камеры предыдущего кадра
+int skips = 0;                // пропущено снимков
+int extras = 0;
+
 static esp_err_t capture_handler(httpd_req_t *req) 
 {
-  long start = millis();
-  camera_fb_t * fb = NULL;
+  // Резервируем буфер для снятия кадра с камеры функцией esp_camera_fb_get,
+  // esp_camera_fb_get будет возвращать указатель на структуру camera_fb_t. 
+  // В этой структуре хранятся: указатель на пиксельные данные (поле buf);
+  // длина буфера в байтах (поле len); ширина изображения в пикселях (поле width);
+  // высота изображения в пикселях (поле height); формат структуры пиксельных данных (поле format);
+  // отметка времени (поле timestamp).
+  // Алгоритм работы: для получения снимка с камеры делается вызов: camera_fb_t* fb = esp_camera_fb_get(), 
+  // если fb = null (захват камеры не удался), можно вывести сообщение об ошибке,
+  // подождать 1 секунду и затем перезагрузить плату ESP32.
+  // Если снимок получен, то после использования буфера память, выделенную функцией esp_camera_fb_get(),
+  // нужно освободить с помощью функции esp_camera_fb_return() 
+  camera_fb_t* fb = NULL;
+  // Резервируем переменную для кода ошибок (целое со знаком). 
+  // Успешный возврат (отсутствие ошибки) обозначается кодом ESP_OK, который определён как 0.
   esp_err_t res = ESP_OK;
-  char fname[100];
-  int file_number = 0;
 
+  char fname[100];
+  //int file_number = 0;
   char  buf[120];
   size_t buf_len;
 
-  if (capture_timer + 30000 <  millis() ) {
-    if  (frame_cnt < 1000 ) {
+  // Отмечаем начало обращения к текущей странице в браузере
+  long start = millis();
+  
+  // Если начало новой серии снимков с камеры (новый 30-секундный интервал), то
+  // настраиваем счетчики и отмечаем новую серию снимков
+  if (capture_timer + 30000 <  millis()) 
+  {
+    sayln("Начало отправки новой серии снимков с камеры");
+
+    if  (frame_cnt < 1000 ) 
+    {
       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
-
       print_mem("capture");
-
       int sock = httpd_req_to_sockfd(req);
       jpr("Socket: %d\n", httpd_req_to_sockfd(req));
       print_sock(sock);
     }
-    
-    captures = 1;
-    total_captures++;
-    skips = 0;
+
+    captures = 1;              // отметили снятие с камеры 1 кадра серии
+    total_captures++;          // изменили счетчик снятых кадров с камеры 
+    skips = 0;                 // инициировали счетчик пропущенных кадров
     extras = 0;
-    capture_timer = millis();
-  } else {
+    capture_timer = millis();  // отметили начало новой серии
+  } 
+  // Изменяем счетчики снимков с камеры
+  else 
+  {
     captures++;
     total_captures++;
+    // sayln("      captures = %5d", captures);
+    // sayln("total_captures = %5d", total_captures);
   }
-
-  if (millis() - previous_capture < 50) { // limit captures to 20 per second (50) ... make that 13 per second (75)
-    //Serial.printf("s");
+   
+  /*
+    Предполагается, что на снятие и показ кадра изображения с камеры уходит
+  менее 50 мсек (то есть частота не выше 20 кадров в секунду).
+    В дальнейшем можно перенастроить на 13 кадров в секунду (75 мсек).
+  */
+  
+  // Если время от предыдущего кадра менее 50 мсек, то пропускаем съемку и говорим об ошибке 408  
+  if (millis() - previous_capture < 50) 
+  { 
     skips++;
+    // Функцией httpd_resp_send_408 отправляем ответ клиенту с кодом 408, чтобы сообщить ему, 
+    // что запрос не был обработан в течение заданного времени
+    // (просто пропускается запрос, а не отклоняется)
     res = httpd_resp_send_408(req); // just let the requests be missed rather than rejecting it //61
-  } else {
+  }
+  //
+  else 
+  {
+    // Фиксируем время на будущее, как предыдущий кадр
     previous_capture = millis();
-    file_number++;
-    sprintf(fname, "inline; filename=capture_%d.jpg", file_number);
+    //file_number++;
+    //sprintf(fname, "inline; filename=capture_%d.jpg", file_number);
+    sprintf(fname, "inline; filename=img%d.jpg", total_captures);
 
-    xSemaphoreTake( baton, portMAX_DELAY );
+    xSemaphoreTake(baton, portMAX_DELAY);
 
-    if (fb_record_time > (millis() - 500)) {
-      //Serial.printf("-");
+    if (fb_record_time > (millis() - 500)) 
+    {
+      sayln("=== Выводим ранее сделанный кадр");
+
       fb_capture_len = fb_record_len;
       fb_capture_time = fb_record_time;
       memcpy(fb_capture, fb_record,  fb_record_len);  // v59.5
-      xSemaphoreGive( baton );
+      xSemaphoreGive(baton);
+
+      /*
+      [Content-Disposition](https://developer.mozilla.org/ru/docs/Web/HTTP/Reference/Headers/Content-Disposition) 
+        В обычном HTTP-ответе заголовок Content-Disposition является индикатором того, что ожидаемый контент ответа 
+      будет отображаться в браузере, как веб-страница или часть веб-страницы, или же как вложение, 
+      которое затем может быть скачано и сохранено локально.
+        В случае, если тело HTTP-запроса типа multipart/form-data, то общий заголовок Content-Disposition 
+      используется для каждой из составных частей multipart тела для указания дополнительных сведений по полю,
+      к которому применён заголовок. Каждая часть отделена с помощью границы (boundary), определённой в заголовке Content-Type. 
+      Content-Disposition, используемый непосредственно для всего тела HTTP-запроса, ни на что не влияет.
+        Заголовок Content-Disposition определён для более широкого контекста MIME-сообщений для e-mail, 
+      поэтому для HTTP-форм и POST-запросов используются только несколько допустимых параметров. В контексте HTTP 
+      можно использовать только значение form-data, а также опциональные директивы name и filename.
+        Синтаксис для заголовка ответа с обычным телом:
+      (первым параметром в контексте HTTP должен быть или inline - это значение по умолчанию, 
+      указывающее, что контент должен быть отображён внутри веб-страницы или как веб-страница 
+      или attachment - указывает на скачиваемый контент; большинство браузеров отображают диалог
+      "Сохранить как" с заранее заполненным именем файла из параметра filename, если он задан)
+      Content-Disposition: inline
+      Content-Disposition: attachment
+      Content-Disposition: attachment; filename="filename.jpg"
+        Синтаксис для заголовка ответа в составном теле:
+      (первым параметром в контексте HTTP всегда является form-data; дополнительные параметры регистронезависимые 
+      и могут иметь аргументы, значения которых следуют после знака '=' и берутся в кавычки. Несколько параметров 
+      разделяются через точку с запятой ';')
+      Content-Disposition: form-data
+      Content-Disposition: form-data; name="fieldName"
+      Content-Disposition: form-data; name="fieldName"; filename="filename.jpg"
+        Директивы:
+        name - за параметром следует строка с именем HTML-поля на форме, к которому относится 
+      данная часть составного тела. При работе с несколькими файлами в том же самом поле 
+      (например, атрибуты multiple элемента <input type=file>), могут быть несколько частей 
+      с одинаковым именем. Если name имеет значение '_charset_', указывающее, что данная часть 
+      не является HTML-полем, то она содержит кодировку по умолчанию для всех частей, в которых явно кодировка не указана;
+        filename - за параметром указана строка с оригинальным именем передаваемого файла. 
+      Это имя опционально и не может слепо использоваться приложением: информация о пути 
+      должна быть очищена и должно быть сделано преобразование к файловой системе сервера. 
+      Этот параметр предоставляет в основном справочную информацию. Когда используется 
+      в комбинации с Content-Disposition: attachment, это значение будет использовано как 
+      имя файла по умолчанию для диалога "Сохранить как";
+      filename* - оба параметра "filename" и "filename*" отличаются только тем, что "filename*" 
+      использует кодирование, определённое в RFC 5987. Когда присутствуют оба параметра "filename" 
+      и "filename*" в одном поле заголовке, то преимущество имеет "filename*" над "filename", 
+      но только в случае когда оба значения корректны.
+        Пример - ответ, вызывающий диалог "Сохранить как":
+      200 OK
+      Content-Type: text/html; charset=utf-8
+      Content-Disposition: attachment; filename="cool.html"
+      Content-Length: 22
+      <HTML>Save me!</HTML>
+      */
+      
+      // Отправляем изображение кадра в ответ на запрос
       httpd_resp_set_type(req, "image/jpeg");
       httpd_resp_set_hdr(req, "Content-Disposition", fname);
       res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
-    } else {
-      xSemaphoreGive( baton );
+    } 
+    else 
+    {
+      sayln("=== Делаем новый кадр");
+      xSemaphoreGive(baton);
       fb = esp_camera_fb_get(); //get_good_jpeg();
       extras++;
       //Serial.print("N");
       //Serial.printf("millis %d, fb1 %d, fb2 %d\n", millis(), fb_record_time, fb_streaming_time);
-      if (!fb) {
+      if (!fb)
+      {
         Serial.println("Photos - Camera Capture Failed");
         res = httpd_resp_send_408(req);
         //res = ESP_FAIL;
         //start_streaming = false;
-      } else {
-        xSemaphoreTake( baton, portMAX_DELAY );
+      } 
+      else 
+      {
+        xSemaphoreTake(baton, portMAX_DELAY);
         fb_capture_len = fb->len;
         fb_capture_time = millis();
         memcpy(fb_capture, fb->buf, fb->len);
-        xSemaphoreGive( baton );
+        xSemaphoreGive(baton);
         esp_camera_fb_return(fb);
+        // Отправляем изображение кадра в ответ на запрос
         httpd_resp_set_type(req, "image/jpeg");
         httpd_resp_set_hdr(req, "Content-Disposition", fname);
         res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
       }
     }
   }
-
+  // Пересчитываем время работы контроллера в браузере
   time_in_web1 += (millis() - start);
-
   return res;
 }
-/*
-static esp_err_t capture_handler(httpd_req_t *req) 
-{
-
-  long start = millis();
-
-  camera_fb_t * fb = NULL;
-  esp_err_t res = ESP_OK;
-  char fname[100];
-  int file_number = 0;
-
-  char  buf[120];
-  size_t buf_len;
-
-  if (capture_timer + 30000 <  millis() ) {
-    if  (frame_cnt < 1000 ) {
-      //jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
-
-      //print_mem("capture");
-
-      int sock = httpd_req_to_sockfd(req);
-      //jpr("Socket: %d\n", httpd_req_to_sockfd(req));
-      print_sock(sock);
-    }
-    
-    captures = 1;
-    total_captures++;
-    skips = 0;
-    extras = 0;
-    capture_timer = millis();
-  } else {
-    captures++;
-    total_captures++;
-  }
-
-  if (millis() - previous_capture < 50) { // limit captures to 20 per second (50) ... make that 13 per second (75)
-    //Serial.printf("s");
-    skips++;
-    res = httpd_resp_send_408(req); // just let the requests be missed rather than rejecting it //61
-  } else {
-    previous_capture = millis();
-    file_number++;
-    sprintf(fname, "inline; filename=capture_%d.jpg", file_number);
-
-    xSemaphoreTake( baton, portMAX_DELAY );
-
-    if (fb_record_time > (millis() - 500)) {
-      //Serial.printf("-");
-      fb_capture_len = fb_record_len;
-      fb_capture_time = fb_record_time;
-      memcpy(fb_capture, fb_record,  fb_record_len);  // v59.5
-      xSemaphoreGive( baton );
-      httpd_resp_set_type(req, "image/jpeg");
-      httpd_resp_set_hdr(req, "Content-Disposition", fname);
-      res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
-    } else {
-      xSemaphoreGive( baton );
-      fb = esp_camera_fb_get(); //get_good_jpeg();
-      extras++;
-      //Serial.print("N");
-      //Serial.printf("millis %d, fb1 %d, fb2 %d\n", millis(), fb_record_time, fb_streaming_time);
-      if (!fb) {
-        Serial.println("Photos - Camera Capture Failed");
-        res = httpd_resp_send_408(req);
-        //res = ESP_FAIL;
-        //start_streaming = false;
-      } else {
-        xSemaphoreTake( baton, portMAX_DELAY );
-        fb_capture_len = fb->len;
-        fb_capture_time = millis();
-        memcpy(fb_capture, fb->buf, fb->len);
-        xSemaphoreGive( baton );
-        esp_camera_fb_return(fb);
-        httpd_resp_set_type(req, "image/jpeg");
-        httpd_resp_set_hdr(req, "Content-Disposition", fname);
-        res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
-      }
-    }
-  }
-
-  time_in_web1 += (millis() - start);
-
-  return res;
-}
-*/
 // ----------------------------------------------------------------------------
 static esp_err_t index_handler(httpd_req_t *req) 
 {

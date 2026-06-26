@@ -48,11 +48,11 @@ FrameStream
 Main=
 Selected=fs_server.h
 [errors.txt]
-TopLine=29
-Caret=1,29
+TopLine=3
+Caret=2,3
 [FrameStream.ino]
-TopLine=465
-Caret=33,476
+TopLine=476
+Caret=27,488
 [fs_server.h]
-TopLine=1512
-Caret=1,1378
+TopLine=1289
+Caret=1,1317

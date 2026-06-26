@@ -1,31 +1,63 @@
-support@arduino.cc
+/*
+static esp_err_t fphotos_handler(httpd_req_t *req) 
+{
 
-Здравствуйте! Я, tve58, попытался авторизоваться, но вышло сообщение: "Sorry, you have been blocked
-You are unable to access arduino.cc". Что делать далее?
+  long start = millis();
 
-So far: 0410 frames, in   46.4 seconds, for last 100 frames: avg frame size   28.0 kb, 7.79 fps ...
-[---------- 10 Minute Internet Check -----------] ядро: 1, приоритет: 1, свободная куча  68856 от ОЗУ 290120, FreePSRAM 2805752 от FLASH 4194304 
-Local time: Sat Jun 20 08:46:25 2026
+  //print_mem("fphotos_handler");
 
-camera_httpd
-Клиенты сервера камеры (сокеты): 2
+  const char the_message[] = "Status";
 
-сокет=0, fd=59, info=1
-Семейство AF_INET6. Удаленный сокет: IP4=192.168.4.2, IP6=C0A8:402::4330:4138:3A34, порт=39098
-Семейство AF_INET6.   Текущий сокет: IP4=192.168.4.1, IP6=C0A8:401::4330:4138:3A34, порт=80
-сокет=1, fd=60, info=1
-Семейство AF_INET6. Удаленный сокет: IP4=192.168.4.2, IP6=C0A8:402::4330:4138:3A34, порт=39100
-Семейство AF_INET6.   Текущий сокет: IP4=192.168.4.1, IP6=C0A8:401::4330:4138:3A34, порт=80
-stream81_httpd
-Клиенты сервера камеры (сокеты): 0
+  time(&now);
+  const char *strdate = ctime(&now);
 
-stream82_httpd
-Клиенты сервера камеры (сокеты): 1
+  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>%s ESP32-CAM Video Recorder Junior</title>
+</head>
+<body>
+<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
+ <br>
+ One photo every 1 seconds for 10 seconds - roll forward or back - refresh for more live photos
+ <br>
 
-сокет=0, fd=61, info=1
-Семейство AF_INET6. Удаленный сокет: IP4=192.168.4.2, IP6=C0A8:402::4330:4138:3A34, порт=39416
-Семейство AF_INET6.   Текущий сокет: IP4=192.168.4.1, IP6=C0A8:401::4330:4138:3A34, порт=82
-Stream 82 at 17.112 fps
+<br><div id="image-container"></div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var c = document.location.origin;
+  const ic = document.getElementById('image-container');  
+  var i = 1;
+  
+  var timing = 1000; // time between snapshots for multiple shots
+
+  function loop() {
+    ic.insertAdjacentHTML('beforeend','<img src="'+`${c}/capture?_cb=${Date.now()}`+'">')
+    ic.insertAdjacentHTML('beforeend','<br>')
+    ic.insertAdjacentHTML('beforeend',Date())
+    ic.insertAdjacentHTML('beforeend','<br>')
+
+    i = i + 1;
+    if ( i <= 10 ) {             // 10 frames
+      window.setTimeout(loop, timing);
+    }
+  }
+  loop();
+  
+})
+</script><br>
+</body>
+</html>)rawliteral";
+
+  sprintf(the_page, msg, devname, devname, vernum, strdate );
+
+  httpd_resp_send(req, the_page, strlen(the_page));
+  time_in_web1 += (millis() - start);
+  return ESP_OK;
+}
+*/
 
 
 

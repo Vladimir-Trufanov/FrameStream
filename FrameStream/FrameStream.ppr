@@ -44,7 +44,6 @@ FrameStream
 0=errors.txt
 1=FrameStream.ino
 2=fs_server.h
-3=fil\fs_server.h
 [Selected Project Files]
 Main=
 Selected=fs_server.h
@@ -55,8 +54,5 @@ Caret=1,29
 TopLine=465
 Caret=33,476
 [fs_server.h]
-TopLine=1525
-Caret=1,1533
-[fil\fs_server.h]
-TopLine=1412
-Caret=1,1437
+TopLine=1512
+Caret=1,1378

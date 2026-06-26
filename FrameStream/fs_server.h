@@ -1354,7 +1354,7 @@ int captures = 0;             // снято снимков по запросу �
 uint16_t total_captures = 0;  // всего снято снимков по запросу или событию с начала перезагрузки контроллера (<65535)
 int previous_capture = 0;     // время начала снятия с камеры предыдущего кадра
 int skips = 0;                // пропущено снимков
-int extras = 0;
+int extras = 0;               // снято новых кадров
 
 static esp_err_t capture_handler(httpd_req_t *req) 
 {
@@ -1374,10 +1374,7 @@ static esp_err_t capture_handler(httpd_req_t *req)
   // Успешный возврат (отсутствие ошибки) обозначается кодом ESP_OK, который определён как 0.
   esp_err_t res = ESP_OK;
 
-  char fname[100];
-  //int file_number = 0;
-  char  buf[120];
-  size_t buf_len;
+  char cdfname[100];     // буфер для заголовка "Content-Disposition" 
 
   // Отмечаем начало обращения к текущей странице в браузере
   long start = millis();
@@ -1387,7 +1384,7 @@ static esp_err_t capture_handler(httpd_req_t *req)
   if (capture_timer + 30000 <  millis()) 
   {
     sayln("Начало отправки новой серии снимков с камеры");
-
+    /*
     if  (frame_cnt < 1000 ) 
     {
       jpr("Total captures %5d, Last 30 sec: captures %d, %0.1f per second, skips %d, extras %d\n", total_captures, captures, 1000.0 * captures / (millis() - capture_timer), skips, extras);
@@ -1396,11 +1393,11 @@ static esp_err_t capture_handler(httpd_req_t *req)
       jpr("Socket: %d\n", httpd_req_to_sockfd(req));
       print_sock(sock);
     }
-
+    */
     captures = 1;              // отметили снятие с камеры 1 кадра серии
     total_captures++;          // изменили счетчик снятых кадров с камеры 
     skips = 0;                 // инициировали счетчик пропущенных кадров
-    extras = 0;
+    extras = 0;                
     capture_timer = millis();  // отметили начало новой серии
   } 
   // Изменяем счетчики снимков с камеры
@@ -1427,24 +1424,22 @@ static esp_err_t capture_handler(httpd_req_t *req)
     // (просто пропускается запрос, а не отклоняется)
     res = httpd_resp_send_408(req); // just let the requests be missed rather than rejecting it //61
   }
-  //
+  // Готовим изображение снятого кадра для отображения на странице, отправившей запрос "img=scr"
   else 
   {
     // Фиксируем время на будущее, как предыдущий кадр
     previous_capture = millis();
-    //file_number++;
-    //sprintf(fname, "inline; filename=capture_%d.jpg", file_number);
-    sprintf(fname, "inline; filename=img%d.jpg", total_captures);
+    // Формирум текст заголовка "Content-Disposition"
+    sprintf(cdfname, "inline; filename=img%d.jpg", total_captures);
 
-    xSemaphoreTake(baton, portMAX_DELAY);
-
+    // Выводим ранее сделанный кадр
     if (fb_record_time > (millis() - 500)) 
     {
-      sayln("=== Выводим ранее сделанный кадр");
-
+      sayln("Выводится ранее сделанный кадр img%d.jpg", total_captures);
+      xSemaphoreTake(baton, portMAX_DELAY);
       fb_capture_len = fb_record_len;
       fb_capture_time = fb_record_time;
-      memcpy(fb_capture, fb_record,  fb_record_len);  // v59.5
+      memcpy(fb_capture, fb_record,  fb_record_len); 
       xSemaphoreGive(baton);
 
       /*
@@ -1500,23 +1495,19 @@ static esp_err_t capture_handler(httpd_req_t *req)
       
       // Отправляем изображение кадра в ответ на запрос
       httpd_resp_set_type(req, "image/jpeg");
-      httpd_resp_set_hdr(req, "Content-Disposition", fname);
+      httpd_resp_set_hdr(req, "Content-Disposition", cdfname);
       res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
     } 
+    // Снимаем и выводим новый кадр из камеры
     else 
     {
-      sayln("=== Делаем новый кадр");
-      xSemaphoreGive(baton);
+      sayln("Снимается и выводится новый кадр img%d.jpg", total_captures);
       fb = esp_camera_fb_get(); //get_good_jpeg();
       extras++;
-      //Serial.print("N");
-      //Serial.printf("millis %d, fb1 %d, fb2 %d\n", millis(), fb_record_time, fb_streaming_time);
       if (!fb)
       {
-        Serial.println("Photos - Camera Capture Failed");
+        sayln("Ошибка получения кадра из камеры");
         res = httpd_resp_send_408(req);
-        //res = ESP_FAIL;
-        //start_streaming = false;
       } 
       else 
       {
@@ -1528,7 +1519,7 @@ static esp_err_t capture_handler(httpd_req_t *req)
         esp_camera_fb_return(fb);
         // Отправляем изображение кадра в ответ на запрос
         httpd_resp_set_type(req, "image/jpeg");
-        httpd_resp_set_hdr(req, "Content-Disposition", fname);
+        httpd_resp_set_hdr(req, "Content-Disposition", cdfname);
         res = httpd_resp_send(req, (const char *)fb_capture, fb_capture_len);
       }
     }

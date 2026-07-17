@@ -3,7 +3,7 @@
  *                               Управлять контроллером ESP32-CAM через браузер 
  *                             по локальной сети и собственной сети контроллера 
  *                                                     
- * v2.2.1, 14.06.2026                                 Автор:      Труфанов В.Е.
+ * v2.3.0, 26.06.2026                                 Автор:      Труфанов В.Е.
  * Copyright © 2026 tve                               Дата создания: 29.01.2026
  * 
 **/
@@ -53,7 +53,7 @@ static esp_err_t reindex_handler(httpd_req_t *req);
 httpd_handle_t camera_httpd = NULL;
 */
 
-char the_page[4200];
+char the_page[4200];              // буфер для формирования текущей страницы сервера
 char file_to_read[50];
 char file_to_write[50];
 bool do_the_reindex = false;
@@ -1101,121 +1101,6 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 */
 
-// ----------------------------------------------------------------------------
-static esp_err_t fphotos_handler(httpd_req_t *req) 
-{
-  long start = millis();
-  print_mem("fphotos_handler");
-  const char the_message[] = "Status";
-  time(&now);
-  const char *strdate = ctime(&now);
-  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>%s ESP32-CAM Video Recorder Junior</title>
-</head>
-<body>
-<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
- <br>
- One photo every 1 seconds for 10 seconds - roll forward or back - refresh for more live photos
- <br>
-
-<br><div id="image-container"></div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var c = document.location.origin;
-  const ic = document.getElementById('image-container');  
-  var i = 1;
-  
-  var timing = 1000; // time between snapshots for multiple shots
-
-  function loop() {
-    ic.insertAdjacentHTML('beforeend','<img src="'+`${c}/capture?_cb=${Date.now()}`+'">')
-    ic.insertAdjacentHTML('beforeend','<br>')
-    ic.insertAdjacentHTML('beforeend',Date())
-    ic.insertAdjacentHTML('beforeend','<br>')
-
-    i = i + 1;
-    if ( i <= 10 ) {             // 10 frames
-      window.setTimeout(loop, timing);
-    }
-  }
-  loop();
-  
-})
-</script><br>
-</body>
-</html>)rawliteral";
-
-  sprintf(the_page, msg, devname, devname, vernum, strdate );
-
-  httpd_resp_send(req, the_page, strlen(the_page));
-  time_in_web1 += (millis() - start);
-  return ESP_OK;
-}
-/*
-static esp_err_t fphotos_handler(httpd_req_t *req) 
-{
-
-  long start = millis();
-
-  //print_mem("fphotos_handler");
-
-  const char the_message[] = "Status";
-
-  time(&now);
-  const char *strdate = ctime(&now);
-
-  const char msg[] PROGMEM = R"rawliteral(<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>%s ESP32-CAM Video Recorder Junior</title>
-</head>
-<body>
-<h1>%s<br>ESP32-CAM Video Recorder Junior %s <br><font color="red">%s</font></h1><br>
- <br>
- One photo every 1 seconds for 10 seconds - roll forward or back - refresh for more live photos
- <br>
-
-<br><div id="image-container"></div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var c = document.location.origin;
-  const ic = document.getElementById('image-container');  
-  var i = 1;
-  
-  var timing = 1000; // time between snapshots for multiple shots
-
-  function loop() {
-    ic.insertAdjacentHTML('beforeend','<img src="'+`${c}/capture?_cb=${Date.now()}`+'">')
-    ic.insertAdjacentHTML('beforeend','<br>')
-    ic.insertAdjacentHTML('beforeend',Date())
-    ic.insertAdjacentHTML('beforeend','<br>')
-
-    i = i + 1;
-    if ( i <= 10 ) {             // 10 frames
-      window.setTimeout(loop, timing);
-    }
-  }
-  loop();
-  
-})
-</script><br>
-</body>
-</html>)rawliteral";
-
-  sprintf(the_page, msg, devname, devname, vernum, strdate );
-
-  httpd_resp_send(req, the_page, strlen(the_page));
-  time_in_web1 += (millis() - start);
-  return ESP_OK;
-}
-*/
-
 // ****************************************************************************
 // *  -----Обработать запрос запуска остановленной записи avi-файла: start_handler *    
 // ****************************************************************************
@@ -1337,18 +1222,112 @@ document.addEventListener('DOMContentLoaded', function() {
   return ESP_OK;
 }
 */
+
+// ****************************************************************************
+// *              Обработать запрос к странице "/fphotos" -                   *
+// *           показать 10 изображений с интервалом в 1 секунду               *
+// ****************************************************************************
+static esp_err_t fphotos_handler(httpd_req_t *req) 
+{
+  // Отмечаем начало работы функции
+  long start = millis();
+  print_mem("fphotos_handler");
+  const char the_message[] = "Status";
+  time(&now);
+  const char *strdate = ctime(&now);
+
+  const char msg[] PROGMEM = R"rawliteral(
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>%s FrameStream - Одна фотография каждую секунду в течение 10 секунд</title>
+</head>
+
+<body>
+  <h1>%s<br>FrameStream %s <br><font color="red">%s</font></h1> <br><br>
+  Одна фотография каждую секунду в течение 10 секунд <br><br>
+  <div id="image-container"></div>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() 
+  {
+    var c = document.location.origin;
+    const ic = document.getElementById('image-container');  
+    var i = 1;
+    var timing = 1000; // время между съемками для нескольких снимков = 1 сек
+
+    function loop() 
+    {
+      ic.insertAdjacentHTML('beforeend','<img src="'+`${c}/capture?_cb=${Date.now()}`+'">')
+      ic.insertAdjacentHTML('beforeend','<br>')
+      ic.insertAdjacentHTML('beforeend',Date())
+      ic.insertAdjacentHTML('beforeend','<br>')
+
+      // 10 frames
+      i = i + 1;
+      if ( i <= 10 ) 
+      {             
+        window.setTimeout(loop, timing);
+      }
+    }
+    
+    loop();
+  })
+  </script>
+  <br>
+</body>
+</html>)rawliteral";
+  
+  /*
+  Функция sprintf — инструмент для форматирования данных: она берёт значения переменных, 
+  подставляет их в строку по заданному шаблону и сохраняет результат в массив символов (буфер).
+  (https://www.programmingelectronics.com/sprintf-arduino/)
+  (https://mypractic.com/lesson-30-text-strings-in-arduino-converting-data-to-strings-and-vice-versa-string-class/)
+  
+  int sprintf(char *buffer, const char *format, [аргументы...]);
+  
+  buffer — указатель на массив "char", куда функция запишет отформатированную строку
+  (буфер должен быть достаточно велик, чтобы вместить итоговую строку, включая завершающий нулевой символ). 
+  Если записать больше, чем выделено, произойдёт "переполнение буфера", это может привести к сбою программы.
+  format — строка формата. В ней могут встречаться "спецификаторы формата" (заместители), которые начинаются 
+  с символа "%". После "%" идёт символ, указывающий тип данных: 
+    `%d` — целое число (со знаком) 
+    `%u` — unsigned int 
+    `%ld` — long int 
+    `%s` — строка (массив символов) 
+    `%c` — символ 
+    `%x` — шестнадцатеричное число (в нижнем регистре) 
+    `%X` — шестнадцатеричное число (в верхнем регистре) 
+  
+  И ещё можно добавлять модификаторы: ширина поля (`%5d` — число шириной минимум 5 символов, дополняется пробелами;
+  `%02d` — дополняется нулями).
+
+  [аргументы...] — значения переменных, которые нужно подставить в строку формата в том порядке, 
+  в каком встречаются спецификаторы. 
+
+  Функция возвращает количество записанных символов (без учёта нулевого завершающего). [2](https://www.programmingelectronics.com/sprintf-arduino/)
+  */
+
+  // Заполняем буфер страницы текстом и параметрами
+  sprintf(the_page, msg, devname, devname, vernum, strdate );
+  // Отправляем страницу сереверу в баузер
+  httpd_resp_send(req, the_page, strlen(the_page));
+  // Пересчитываем время работы контроллера в браузере
+  time_in_web1 += (millis() - start);
+  return ESP_OK;
+}
+
 // ****************************************************************************
 // *    Обработать запрос к странице  "/capture" - предоставить изображение   *
 // *        снимка с камеры по обращению из корневой страницы сервера         *
 // ****************************************************************************
-
 /*
   Предполагается, что вызов показа снимков с камеры (то ли из браузера, то ли 
 по внешнему событию от ??12 или 16-того контакта) будет происходить не ранее, чем 
 через тридцать секунд. Этот интервал определяет и перезагрузку счетчиков.
   Предполагается, что серии снятия кадров с камеры укладываются в 30 секунд.
 */
-
 int capture_timer = 0;        // начало отсчета 30-секундного интервала
 int captures = 0;             // снято снимков по запросу или событию за текущий 30-секундного интервала
 uint16_t total_captures = 0;  // всего снято снимков по запросу или событию с начала перезагрузки контроллера (<65535)

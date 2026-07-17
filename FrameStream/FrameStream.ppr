@@ -44,9 +44,10 @@ FrameStream
 0=errors.txt
 1=FrameStream.ino
 2=fs_server.h
+3=fs_wifi.h
 [Selected Project Files]
 Main=
-Selected=fs_server.h
+Selected=fs_wifi.h
 [errors.txt]
 TopLine=3
 Caret=2,3
@@ -56,3 +57,6 @@ Caret=27,488
 [fs_server.h]
 TopLine=1289
 Caret=1,1317
+[fs_wifi.h]
+TopLine=328
+Caret=6,243
